@@ -1,0 +1,8 @@
+{
+  "phase": "BOOTSTRAP",
+  "current_milestone": "M00",
+  "ready": false,
+  "last_verified_run": null,
+  "consecutive_failed_runs": 0,
+  "notes": "Supervisor owns VERIFIED/READY state."
+}

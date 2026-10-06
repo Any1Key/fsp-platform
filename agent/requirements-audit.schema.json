@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string"},
+          "verified": {"type": "boolean"},
+          "evidence": {"type": "string"},
+          "reason": {"type": "string"}
+        },
+        "required": ["id", "verified", "evidence", "reason"]
+      }
+    }
+  },
+  "required": ["requirements"]
+}

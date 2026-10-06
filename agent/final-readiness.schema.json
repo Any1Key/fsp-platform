@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "ready": {"type": "boolean"},
+    "blockers": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "summary": {"type": "string"}
+  },
+  "required": ["ready", "blockers", "summary"]
+}

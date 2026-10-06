@@ -1,0 +1,70 @@
+:root {
+  --brand-primary: #402fff;
+  --brand-accent: #ec1d35;
+  --brand-light: #ededed;
+  --brand-muted: #c8c9ca;
+  --brand-ink: #1b1c21;
+  --surface: #f7f7fa;
+  --card: #ffffff;
+  --text: #1b1c21;
+  --muted: #656872;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--surface); color: var(--text); }
+body { font-family: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace; }
+.shell {
+  min-height: 100vh;
+  background: radial-gradient(circle at 85% 10%, rgba(64,47,255,.18), transparent 28rem),
+              linear-gradient(180deg, #1b1c21 0 32rem, var(--surface) 32rem);
+}
+.topbar {
+  max-width: 1280px; margin: 0 auto; padding: 24px 32px;
+  display: flex; justify-content: space-between; align-items: center; color: white;
+}
+.brand { display: flex; align-items: center; gap: 14px; font-weight: 750; letter-spacing: .08em; }
+.badge {
+  border: 1px solid rgba(255,255,255,.24); border-radius: 999px;
+  padding: 9px 13px; font-size: 11px; color: #ededed;
+}
+.hero {
+  max-width: 1280px; margin: 0 auto; padding: 54px 32px 78px;
+  display: grid; grid-template-columns: 1.15fr .85fr; gap: 64px; align-items: center; color: white;
+}
+.eyebrow { color: #a9a1ff; font-size: 12px; letter-spacing: .13em; }
+h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055em; margin: 20px 0; }
+.lead { max-width: 760px; color: #d5d5dc; line-height: 1.7; font-size: 15px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.actions span { border-radius: 12px; padding: 12px 15px; font-size: 12px; }
+.primary { background: var(--brand-primary); color: white; }
+.secondary { border: 1px solid #555760; color: #ededed; }
+.proofCard {
+  background: white; color: var(--text); border-radius: 24px; padding: 30px;
+  box-shadow: 0 25px 90px rgba(0,0,0,.28); transform: rotate(-1deg);
+}
+.cardLabel { color: var(--brand-primary); font-size: 11px; letter-spacing: .12em; }
+.proofCard h2 { font-size: 27px; margin: 14px 0 26px; }
+.metric { display: flex; align-items: end; justify-content: space-between; }
+.metric span { color: var(--muted); font-size: 12px; }
+.metric strong { font-size: 42px; color: var(--brand-primary); }
+.bar { height: 8px; border-radius: 99px; overflow: hidden; background: #e9e8f1; margin: 8px 0 22px; }
+.bar i { display: block; height: 100%; background: var(--brand-primary); border-radius: inherit; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips span { padding: 8px 10px; border-radius: 9px; background: #f0efff; color: #3024bd; font-size: 11px; }
+.fspLine { margin-top: 24px; border-top: 1px solid #ececf0; padding-top: 18px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--brand-accent); margin-right: 7px; }
+.principles {
+  max-width: 1280px; margin: 0 auto; padding: 48px 32px 80px;
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 16px;
+}
+.principles article { background: white; border: 1px solid #e3e3e8; border-radius: 18px; padding: 24px; }
+.principles b { color: var(--brand-primary); font-size: 12px; }
+.principles h3 { margin: 26px 0 8px; }
+.principles p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+@media (max-width: 850px) {
+  .topbar { padding: 18px 20px; }
+  .badge { display: none; }
+  .hero { grid-template-columns: 1fr; padding: 40px 20px 52px; gap: 34px; }
+  .proofCard { transform: none; }
+  .principles { grid-template-columns: 1fr; padding: 32px 20px 60px; }
+  .shell { background: linear-gradient(180deg, #1b1c21 0 50rem, var(--surface) 50rem); }
+}

@@ -1,0 +1,50 @@
+{
+  "realm": "fsp",
+  "enabled": true,
+  "displayName": "FSP Talent",
+  "registrationAllowed": true,
+  "verifyEmail": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "candidate",
+        "description": "Candidate user"
+      },
+      {
+        "name": "employer",
+        "description": "Employer user"
+      }
+    ]
+  },
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "noreply@fsp-talent.local",
+    "fromDisplayName": "FSP Talent"
+  },
+  "clients": [
+    {
+      "clientId": "fsp-web",
+      "name": "FSP Talent Web",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "fsp-qa",
+  "private": true,
+  "scripts": {
+    "test": "playwright test tests/smoke.spec.ts",
+    "screenshots": "playwright test tests/screenshots.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
+  }
+}
