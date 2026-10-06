@@ -1,5 +1,5 @@
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Annotated, Any, Literal
 from uuid import uuid4
 
@@ -14,7 +14,13 @@ from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 
-from .assessments import AssessmentError, AssessmentService, public_attempt
+from .assessments import (
+    RETEST_COOLDOWN_DAYS,
+    AssessmentError,
+    AssessmentService,
+    public_attempt,
+    public_history_item,
+)
 from .auth import (
     Principal,
     Role,
@@ -141,6 +147,38 @@ class CandidateProfileResponse(BaseModel):
     skills: list[str]
     work_preferences: CandidateWorkPreferences
     updated_at: datetime
+
+
+class CandidateDashboardProfileResponse(BaseModel):
+    display_name: str | None
+    headline: str | None
+
+
+class CandidateDashboardAttemptResponse(BaseModel):
+    attempt_id: str
+    specialization: str
+    declared_grade: str
+    status: Literal["in_progress", "submitted"]
+    score: float | None
+    grade_state: Literal["verified", "not_confirmed"] | None
+    created_at: datetime
+
+
+class CandidateCurrentAssessmentResponse(BaseModel):
+    attempt_id: str
+    specialization: str
+    declared_grade: str
+    verified_grade: str | None
+    grade_state: Literal["verified", "not_confirmed"]
+    score: float
+    assessed_at: datetime
+
+
+class CandidateDashboardResponse(BaseModel):
+    profile: CandidateDashboardProfileResponse
+    current_assessment: CandidateCurrentAssessmentResponse | None
+    retest_available_at: datetime | None
+    attempt_history: list[CandidateDashboardAttemptResponse]
 
 
 class ProtectedCandidateProfileUpdateRequest(BaseModel):
@@ -517,6 +555,58 @@ def candidate_profile(
     db: Annotated[Session, Depends(get_db_session)],
 ) -> CandidateProfileResponse:
     return CandidateProfileResponse.model_validate(get_profile(db, principal))
+
+
+@app.get(
+    "/api/v1/candidate/dashboard",
+    tags=["candidate dashboard"],
+    response_model=CandidateDashboardResponse,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_dashboard(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CandidateDashboardResponse:
+    """Return the authenticated candidate's safe assessment overview."""
+
+    profile = get_profile(db, principal)
+    attempts = assessment_service.history_for(principal.subject)
+    submitted_attempts = [attempt for attempt in attempts if attempt.submitted]
+    latest_submitted = submitted_attempts[-1] if submitted_attempts else None
+    latest_attempt = attempts[-1] if attempts else None
+
+    current = None
+    if latest_submitted is not None and latest_submitted.score is not None and latest_submitted.grade_state:
+        current = CandidateCurrentAssessmentResponse(
+            attempt_id=latest_submitted.attempt_id,
+            specialization=latest_submitted.specialization,
+            declared_grade=latest_submitted.declared_grade,
+            verified_grade=(
+                latest_submitted.declared_grade
+                if latest_submitted.grade_state == "verified"
+                else None
+            ),
+            grade_state=latest_submitted.grade_state,
+            score=latest_submitted.score,
+            assessed_at=latest_submitted.created_at,
+        )
+
+    return CandidateDashboardResponse(
+        profile=CandidateDashboardProfileResponse(
+            display_name=profile["display_name"],
+            headline=profile["headline"],
+        ),
+        current_assessment=current,
+        retest_available_at=(
+            latest_attempt.created_at + timedelta(days=RETEST_COOLDOWN_DAYS)
+            if latest_attempt is not None
+            else None
+        ),
+        attempt_history=[
+            CandidateDashboardAttemptResponse.model_validate(public_history_item(attempt))
+            for attempt in reversed(attempts)
+        ],
+    )
 
 
 @app.get(

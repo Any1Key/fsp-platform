@@ -6,6 +6,7 @@ import { PrivacySettings } from "./privacy-settings";
 import { CandidateProfile } from "./candidate-profile";
 import { CandidateProtectedProfile } from "./candidate-protected-profile";
 import { CandidateResume } from "./candidate-resume";
+import { CandidateDashboard } from "./candidate-dashboard";
 
 type Session = {
   identity_id: string | null;
@@ -141,6 +142,7 @@ export function AuthStatus() {
         </button>
         {auth.session.role === "candidate" && (
           <>
+            <CandidateDashboard token={keycloak.current?.token ?? ""} />
             <PrivacySettings token={keycloak.current?.token ?? ""} />
             <CandidateProtectedProfile token={keycloak.current?.token ?? ""} />
             <CandidateProfile token={keycloak.current?.token ?? ""} />

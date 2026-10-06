@@ -178,6 +178,20 @@ class AssessmentService:
         except KeyError as exc:
             raise AssessmentError("attempt_not_found") from exc
 
+    def history_for(self, candidate_id: str) -> tuple[Attempt, ...]:
+        """Return this candidate's attempts in creation order.
+
+        The bootstrap repository is process-local, but the projection keeps
+        the ownership boundary explicit so callers cannot accidentally list a
+        different candidate's assessment history.
+        """
+
+        return tuple(
+            self.attempts[attempt_id]
+            for attempt_id in self.history.get(candidate_id, [])
+            if attempt_id in self.attempts
+        )
+
     def submit(self, attempt_id: str, answers: dict[str, int], followups: dict[str, str] | None = None, telemetry: dict[str, Any] | None = None) -> Attempt:
         attempt = self.get(attempt_id)
         if attempt.submitted:
@@ -214,4 +228,18 @@ def public_attempt(attempt: Attempt) -> dict[str, Any]:
             for item in attempt.items
         ],
         **({"score": attempt.score, "grade_state": attempt.grade_state, "integrity_signals": attempt.integrity_signals} if attempt.submitted else {}),
+    }
+
+
+def public_history_item(attempt: Attempt) -> dict[str, Any]:
+    """Serialize the dashboard-safe part of an attempt."""
+
+    return {
+        "attempt_id": attempt.attempt_id,
+        "specialization": attempt.specialization,
+        "declared_grade": attempt.declared_grade,
+        "status": "submitted" if attempt.submitted else "in_progress",
+        "score": attempt.score,
+        "grade_state": attempt.grade_state,
+        "created_at": attempt.created_at,
     }

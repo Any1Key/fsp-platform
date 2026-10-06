@@ -25,7 +25,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] PDF resume upload validation
 - [x] resume parser + review-before-save
 - [x] standardized profile PDF
-- [ ] candidate dashboard
+- [x] candidate dashboard
 
 ## M03 — Taxonomy and calibrated unique assessment
 - [ ] taxonomy data/model

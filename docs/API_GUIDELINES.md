@@ -60,6 +60,21 @@ returns identity email, contacts, DOB/minor state, resume documents, consent
 metadata, or assessment results. Employers receive `ROLE_REQUIRED` and cannot
 use this self-scoped resource.
 
+## Candidate dashboard
+
+`GET /api/v1/candidate/dashboard` returns the authenticated candidate's safe
+assessment overview. Ownership is derived from the verified principal subject;
+the route accepts no candidate ID. The response includes profile display
+fields, the latest submitted category/grade result, retest availability and
+recent-first attempt history. `current_assessment` is `null` until an attempt
+is submitted. An unconfirmed result remains visible with its declared grade,
+`verified_grade: null` and `grade_state: not_confirmed`.
+
+The route does not return answer keys, prompts, integrity telemetry, email,
+contacts, protected DOB/minor state or consent metadata. Employers receive
+`ROLE_REQUIRED`. See `docs/CANDIDATE_DASHBOARD.md` for the bootstrap storage
+boundary and UI states.
+
 ## Candidate resume upload
 
 `GET /api/v1/candidate/resume` returns the authenticated candidate's latest
