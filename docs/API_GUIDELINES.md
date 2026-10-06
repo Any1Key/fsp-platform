@@ -40,8 +40,10 @@ processing consent, publication consent, policy version/timestamps and
 discoverability state. `PATCH` accepts one or more boolean state changes; the
 server supplies the configured policy version and records a non-PII audit
 event. Publication requires processing consent, and discoverability requires
-publication consent. Withdrawing a parent consent cascades to dependent
-settings.
+publication consent. A minor also requires a current submitted/approved
+representative consent document before publication; the server withdraws
+publication and discoverability if an existing profile becomes minor without
+one. Withdrawing processing consent cascades to dependent settings.
 
 `POST /api/v1/candidate/privacy/export` records an authenticated export
 request and returns `202` with a request ID and `requested` status. It is an
@@ -67,5 +69,17 @@ the private date of birth. The response derives `minor_state` on the server as
 client cannot submit an age or state. Writes require processing consent, and a
 future date is rejected. The endpoint is separate from the professional
 profile and never exposes the value to employers or matching code. The
-parent/legal-representative consent-document flow is a later protected
-workflow.
+parent/legal-representative document is handled by the separate protected
+workflow below.
+
+## Minor consent document
+
+`GET /api/v1/candidate/minor-consent-document` returns only the authenticated
+candidate's derived minor state, requirement flag, policy version and safe
+metadata for the latest document. `POST` accepts one multipart `document` PDF,
+validates its type/signature and configured size limit, and returns `201` with
+metadata/status only. The PDF bytes stay under the configured private storage
+directory and are never returned by the API. Upload requires processing consent
+and a server-derived minor state; a replacement marks the previous record
+`replaced` while retaining protected storage for retention handling. Employers
+receive `ROLE_REQUIRED` for both routes.

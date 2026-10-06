@@ -8,7 +8,7 @@ matching feature.
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any, Literal
 from uuid import uuid4
 
@@ -57,7 +57,7 @@ def minor_state_for(
     birth_date = _as_date(date_of_birth)
     if birth_date is None:
         return "not_set"
-    current_date = today or date.today()
+    current_date = today or datetime.now(UTC).date()
     try:
         adult_on = birth_date.replace(year=birth_date.year + adult_age_years)
     except ValueError:
@@ -102,11 +102,15 @@ def update_protected_profile(
     ).mappings().one()
     if current["processing_consent_version"] is None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="processing_consent_required")
-    if date_of_birth is not None and date_of_birth > date.today():
+    if date_of_birth is not None and date_of_birth > datetime.now(UTC).date():
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="date_of_birth_in_future")
 
     previous_state = minor_state_for(current["date_of_birth"], adult_age_years=settings.adult_age_years)
     next_state = minor_state_for(date_of_birth, adult_age_years=settings.adult_age_years)
+    identity_id = db.execute(
+        text("SELECT identity_id FROM candidate_profile WHERE id = :profile_id"),
+        {"profile_id": profile_id},
+    ).scalar_one()
     db.execute(
         text(
             "UPDATE candidate_profile SET date_of_birth = :date_of_birth, "
@@ -115,10 +119,6 @@ def update_protected_profile(
         {"date_of_birth": date_of_birth, "profile_id": profile_id},
     )
     if previous_state != next_state:
-        identity_id = db.execute(
-            text("SELECT identity_id FROM candidate_profile WHERE id = :profile_id"),
-            {"profile_id": profile_id},
-        ).scalar_one()
         db.execute(
             text(
                 "INSERT INTO audit_event "
@@ -135,5 +135,13 @@ def update_protected_profile(
                 ),
             },
         )
+    from .minor_consent import revoke_publication_if_minor_document_missing
+
+    revoke_publication_if_minor_document_missing(
+        db,
+        identity_id=identity_id,
+        profile_id=profile_id,
+        state=next_state,
+    )
     db.commit()
     return _response(date_of_birth, settings)

@@ -80,6 +80,34 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "PUBLICATION_CONSENT_REQUIRED",
         "Publication consent is required before discoverability.",
     ),
+    "minor_document_processing_consent_required": (
+        "MINOR_DOCUMENT_PROCESSING_CONSENT_REQUIRED",
+        "Processing consent is required before uploading a representative document.",
+    ),
+    "minor_document_only_for_minor": (
+        "MINOR_DOCUMENT_ONLY_FOR_MINOR",
+        "A representative consent document is required only for a minor profile.",
+    ),
+    "minor_consent_document_required": (
+        "MINOR_CONSENT_DOCUMENT_REQUIRED",
+        "A parent or legal-representative consent document is required before publication.",
+    ),
+    "minor_document_invalid_filename": (
+        "MINOR_DOCUMENT_INVALID_FILENAME",
+        "Upload a PDF document with a valid filename.",
+    ),
+    "minor_document_invalid_type": (
+        "MINOR_DOCUMENT_INVALID_TYPE",
+        "The representative document must be uploaded as a PDF.",
+    ),
+    "minor_document_invalid_pdf": (
+        "MINOR_DOCUMENT_INVALID_PDF",
+        "The uploaded file is not a valid PDF document.",
+    ),
+    "minor_document_too_large": (
+        "MINOR_DOCUMENT_TOO_LARGE",
+        "The representative document exceeds the configured size limit.",
+    ),
     "authorization_header_required": (
         "AUTHORIZATION_REQUIRED",
         "A Bearer access token is required.",

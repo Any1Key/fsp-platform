@@ -3,7 +3,7 @@ from datetime import date, datetime
 from typing import Annotated, Any, Literal
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -28,6 +28,7 @@ from .candidates import get_profile, update_profile
 from .config import get_settings
 from .db import get_db_session
 from .errors import ErrorResponse, error_response, normalize_http_error
+from .minor_consent import get_document_status, upload_document
 from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 from .protected_candidate import MinorState, get_protected_profile, update_protected_profile
 
@@ -150,6 +151,23 @@ class ProtectedCandidateProfileResponse(BaseModel):
     date_of_birth: date | None
     minor_state: MinorState
     adult_age_years: int
+
+
+class MinorConsentDocumentMetadata(BaseModel):
+    id: str
+    policy_version: str
+    original_filename: str
+    content_type: Literal["application/pdf"]
+    size_bytes: int
+    status: Literal["submitted", "approved", "rejected", "replaced", "withdrawn"]
+    uploaded_at: datetime
+
+
+class MinorConsentDocumentResponse(BaseModel):
+    minor_state: MinorState
+    required: bool
+    policy_version: str
+    document: MinorConsentDocumentMetadata | None
 
 
 class CandidatePrivacyResponse(BaseModel):
@@ -521,6 +539,42 @@ def update_candidate_protected_profile(
             get_settings(),
             date_of_birth=request.date_of_birth,
         )
+    )
+
+
+@app.get(
+    "/api/v1/candidate/minor-consent-document",
+    tags=["candidate privacy"],
+    response_model=MinorConsentDocumentResponse,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_minor_consent_document(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> MinorConsentDocumentResponse:
+    return MinorConsentDocumentResponse.model_validate(
+        get_document_status(db, principal, get_settings())
+    )
+
+
+@app.post(
+    "/api/v1/candidate/minor-consent-document",
+    tags=["candidate privacy"],
+    response_model=MinorConsentDocumentResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        409: {"model": ErrorResponse, "description": "Minor document prerequisite is not satisfied"},
+        422: {"model": ErrorResponse, "description": "Invalid PDF upload"},
+    },
+)
+def upload_candidate_minor_consent_document(
+    document: Annotated[UploadFile, File(description="Private parent/legal-representative PDF")],
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> MinorConsentDocumentResponse:
+    return MinorConsentDocumentResponse.model_validate(
+        upload_document(db, principal, get_settings(), document)
     )
 
 

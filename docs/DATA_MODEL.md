@@ -7,7 +7,10 @@
   completes. The selected role is then the local authorization binding and is
   checked against any explicit Keycloak role claim.
 - `candidate_profile`: identity, protected contacts, private `date_of_birth`, summary, experience, role, preferences, privacy, consents, FSP link. Minor state is derived at read time from the private DOB and configured adult-age threshold; it is never a matching input. Processing and publication consent store policy version, timestamp and source; discoverability is separate and consent-dependent.
-- `minor_consent_document`: candidate, version/status, protected file metadata, timestamps, reviewer/audit metadata.
+- `minor_consent_document`: candidate, policy version/status, original filename,
+  content type/size/digest, UUID storage key, timestamps, and optional
+  reviewer/audit metadata. File bytes are stored outside the database in a
+  configured private directory and are never employer-visible.
 - `company`: owner, name, description, industry, public contacts, trust fields.
 
 ## Taxonomy

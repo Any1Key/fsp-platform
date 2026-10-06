@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from sqlalchemy import create_engine, text
@@ -92,7 +92,7 @@ def test_protected_dob_validates_without_partial_update_and_audits_only_state(au
     )
     assert saved.status_code == 200
 
-    future = (date.today() + timedelta(days=1)).isoformat()
+    future = (datetime.now(UTC).date() + timedelta(days=1)).isoformat()
     invalid = client.patch(
         "/api/v1/candidate/protected-profile",
         headers=headers,
@@ -114,11 +114,12 @@ def test_protected_dob_validates_without_partial_update_and_audits_only_state(au
             ).all()
     finally:
         engine.dispose()
-    assert audit[-1][0] == "protected_age_state_changed"
-    assert '"from":"not_set"' in audit[-1][1]
-    assert '"to":"minor"' in audit[-1][1]
-    assert "2010-10-07" not in audit[-1][1]
-    assert "candidate@team.ru" not in audit[-1][1]
+    age_state_events = [event for event in audit if event[0] == "protected_age_state_changed"]
+    assert len(age_state_events) == 1
+    assert '"from":"not_set"' in age_state_events[0][1]
+    assert '"to":"minor"' in age_state_events[0][1]
+    assert "2010-10-07" not in age_state_events[0][1]
+    assert "candidate@team.ru" not in age_state_events[0][1]
 
 
 def test_protected_dob_is_self_scoped_and_employer_forbidden(auth_context):

@@ -66,13 +66,19 @@ removes a candidate from future search.
 request as `requested` and creates an audit event. This is an MVP concept until
 the fulfillment worker and legally reviewed retention/deletion policy exist.
 
-For a configured minor threshold, publication/discoverability requires required legal-representative document status. Employer never receives the document.
+For a configured minor threshold, publication/discoverability requires a
+current submitted or approved legal-representative document. If a saved DOB
+changes an already published profile into the minor state without a current
+document, publication and discoverability are withdrawn. Employer never
+receives the document.
 
 ## Minor documents
 - private protected storage;
-- validate file type/size;
+- candidate-only `GET/POST /api/v1/candidate/minor-consent-document` boundary;
+- validate PDF type/signature/size and store under a UUID key;
+- return status and safe metadata, never file bytes or storage paths;
 - authorization checks;
-- audit upload/replace/review/delete;
+- audit upload/replace/review/delete without filenames, hashes, or raw content;
 - configurable retention;
 - do not include in Telegram or logs.
 

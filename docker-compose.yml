@@ -70,6 +70,9 @@ services:
       KEYCLOAK_JWKS_URL: ${KEYCLOAK_JWKS_URL:-http://keycloak:8080/realms/fsp/protocol/openid-connect/certs}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-fsp-web}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      PRIVATE_STORAGE_DIR: ${PRIVATE_STORAGE_DIR:-/var/lib/fsp/private}
+    volumes:
+      - backend-private-data:/var/lib/fsp/private
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
@@ -128,3 +131,4 @@ services:
 volumes:
   app-db-data:
   keycloak-db-data:
+  backend-private-data:

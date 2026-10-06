@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CandidateMinorConsent } from "./candidate-minor-consent";
 
 type ProtectedProfile = {
   date_of_birth: string | null;
@@ -91,39 +92,42 @@ export function CandidateProtectedProfile({ token }: { token: string }) {
   if (!profile) return <section className="protectedPanel error">{message ?? "Приватные данные недоступны"}</section>;
 
   return (
-    <section className="protectedPanel" aria-label="Приватные данные кандидата">
-      <div className="profileHeading">
-        <div>
-          <span className="authLabel">PRIVATE IDENTITY DATA</span>
-          <strong>Дата рождения</strong>
-          <small>Нужна только для приватных возрастных процессов и не участвует в подборе.</small>
+    <>
+      <section className="protectedPanel" aria-label="Приватные данные кандидата">
+        <div className="profileHeading">
+          <div>
+            <span className="authLabel">PRIVATE IDENTITY DATA</span>
+            <strong>Дата рождения</strong>
+            <small>Нужна только для приватных возрастных процессов и не участвует в подборе.</small>
+          </div>
+          <span className="profileStatus">{stateLabels[profile.minor_state]}</span>
         </div>
-        <span className="profileStatus">{stateLabels[profile.minor_state]}</span>
-      </div>
-      <div className="protectedForm">
-        <label>
-          Дата рождения
-          <input
-            type="date"
-            value={dateOfBirth}
-            max={new Date().toISOString().slice(0, 10)}
-            onChange={(event) => {
-              setDateOfBirth(event.target.value);
-              setMessage(null);
-            }}
-          />
-        </label>
-        <div className="protectedHint">
-          <span>Состояние: {stateLabels[profile.minor_state]}</span>
-          <small>Возрастной порог сервиса: {profile.adult_age_years} лет. Документы представителя — отдельный защищенный процесс.</small>
+        <div className="protectedForm">
+          <label>
+            Дата рождения
+            <input
+              type="date"
+              value={dateOfBirth}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(event) => {
+                setDateOfBirth(event.target.value);
+                setMessage(null);
+              }}
+            />
+          </label>
+          <div className="protectedHint">
+            <span>Состояние: {stateLabels[profile.minor_state]}</span>
+            <small>Возрастной порог сервиса: {profile.adult_age_years} лет. Документы представителя — отдельный защищенный процесс.</small>
+          </div>
+          <div className="profileFooter">
+            <small aria-live="polite">{message ?? "Эти сведения не видны работодателям."}</small>
+            <button className="authButton primaryButton" type="button" disabled={saving} onClick={save}>
+              {saving ? "Сохраняем…" : "Сохранить"}
+            </button>
+          </div>
         </div>
-        <div className="profileFooter">
-          <small aria-live="polite">{message ?? "Эти сведения не видны работодателям."}</small>
-          <button className="authButton primaryButton" type="button" disabled={saving} onClick={save}>
-            {saving ? "Сохраняем…" : "Сохранить"}
-          </button>
-        </div>
-      </div>
-    </section>
+      </section>
+      {profile.minor_state === "minor" && <CandidateMinorConsent token={token} />}
+    </>
   );
 }

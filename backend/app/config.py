@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     require_verified_email: bool = True
     privacy_policy_version: str = "2026-10-06"
     adult_age_years: int = Field(default=18, ge=1, le=100)
+    minor_consent_document_policy_version: str = "2026-10-06"
+    minor_consent_document_max_bytes: int = Field(default=10 * 1024 * 1024, ge=1)
+    private_storage_dir: str = "/var/lib/fsp/private"
     cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     @property

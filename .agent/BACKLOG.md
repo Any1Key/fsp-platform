@@ -21,7 +21,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 ## M02 — Candidate profile, resume, minor flow
 - [x] manual profile
 - [x] protected DOB/minor state (never ranking input)
-- [ ] parent/legal-representative consent-document flow
+- [x] parent/legal-representative consent-document flow
 - [ ] PDF resume upload validation
 - [ ] resume parser + review-before-save
 - [ ] standardized profile PDF

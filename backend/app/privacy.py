@@ -18,6 +18,8 @@ from sqlalchemy.orm import Session
 
 from .auth import Principal, sync_identity
 from .config import Settings
+from .minor_consent import has_current_document
+from .protected_candidate import minor_state_for
 
 CONSENT_SOURCE = "web"
 
@@ -129,6 +131,17 @@ def update_privacy(
         next_discoverable = False
     elif not next_publication:
         next_discoverable = False
+
+    birth_date = db.execute(
+        text("SELECT date_of_birth FROM candidate_profile WHERE id = :profile_id"),
+        {"profile_id": profile_id},
+    ).scalar_one()
+    if (
+        next_publication
+        and minor_state_for(birth_date, adult_age_years=settings.adult_age_years) == "minor"
+        and not has_current_document(db, profile_id)
+    ):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="minor_consent_document_required")
 
     processing_changed = current.processing_consent != next_processing
     publication_changed = current.publication_consent != next_publication

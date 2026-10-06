@@ -86,6 +86,24 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .protectedForm input:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
 .protectedHint { display: grid; gap: 5px; color: #d5d5dc; font-size: 11px; line-height: 1.5; }
 .protectedHint small { color: #b7b7c1; font-size: 10px; }
+.minorConsentPanel {
+  flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14);
+  padding-top: 16px; color: #ededed;
+}
+.minorConsentPanel.muted, .minorConsentPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.minorConsentPanel.error { color: #ffb6bd; }
+.minorConsentBody { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.minorConsentBody > small, .minorConsentStatus { color: #b7b7c1; font-size: 10px; line-height: 1.5; }
+.minorConsentStatus { display: grid; gap: 4px; }
+.minorConsentStatus strong { color: #ededed; font-size: 11px; }
+.uploadButton {
+  position: relative; overflow: hidden; display: inline-flex; justify-content: center;
+  border: 1px solid rgba(169,161,255,.48); border-radius: 10px; padding: 10px 13px;
+  color: #c3bdff; cursor: pointer; font-size: 10px; white-space: nowrap;
+}
+.uploadButton input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.uploadButton:has(input:disabled) { cursor: wait; opacity: .58; }
+.minorConsentMessage { color: #b7b7c1; font-size: 10px; line-height: 1.5; }
 .profileHeading, .experienceHeading, .profileFooter { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
 .profileHeading > div { display: grid; gap: 5px; }
 .profileHeading small, .profileForm small, .profileFooter small { color: #b7b7c1; font-size: 10px; line-height: 1.5; }
@@ -140,6 +158,7 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .authActions { flex-direction: column; }
   .authButton { width: 100%; }
   .profileHeading, .experienceHeading, .profileFooter { align-items: flex-start; flex-direction: column; }
+  .minorConsentBody { align-items: stretch; flex-direction: column; }
   .profileGrid { grid-template-columns: 1fr; }
   .profileFooter small { max-width: none; }
   .principles { grid-template-columns: 1fr; padding: 32px 20px 60px; }
