@@ -69,6 +69,8 @@ pygments==2.21.0
     # via pytest
 pyjwt==2.15.1
     # via fsp-backend
+pypdf==6.19.0
+    # via fsp-backend
 pytest==8.4.2
     # via
     #   fsp-backend

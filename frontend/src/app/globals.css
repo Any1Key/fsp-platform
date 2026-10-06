@@ -123,6 +123,21 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .resumeEmpty { margin: 0; }
 .resumePanel > .uploadButton { justify-self: start; }
 .resumePanel.error .uploadButton { margin-top: 8px; color: #c3bdff; }
+.resumeReview {
+  display: grid; gap: 12px; border: 1px solid rgba(169,161,255,.38); border-radius: 14px;
+  padding: 14px; background: rgba(64,47,255,.08);
+}
+.resumeReview.unsupported { color: #d5d5dc; }
+.resumeReviewHeading { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.resumeReviewHeading > div { display: grid; gap: 5px; }
+.resumeReviewHeading small, .resumeReview small, .resumeContactNote { color: #b7b7c1; font-size: 10px; line-height: 1.5; }
+.resumeReviewGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.resumeReview label { display: grid; gap: 6px; color: #d5d5dc; font-size: 10px; }
+.resumeReview input { width: 100%; border: 1px solid #555760; border-radius: 9px; padding: 10px 11px; background: rgba(255,255,255,.06); color: white; font: inherit; font-size: 11px; outline: none; }
+.resumeReview input:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
+.resumeExperience { display: grid; gap: 5px; }
+.resumeExperience strong { font-size: 10px; }
+.resumeReviewActions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .profileHeading, .experienceHeading, .profileFooter { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
 .profileHeading > div { display: grid; gap: 5px; }
 .profileHeading small, .profileForm small, .profileFooter small { color: #b7b7c1; font-size: 10px; line-height: 1.5; }
@@ -180,6 +195,9 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .minorConsentBody { align-items: stretch; flex-direction: column; }
   .resumeHeading, .resumeStatus { align-items: flex-start; flex-direction: column; }
   .resumePanel > .uploadButton, .resumePanel.error .uploadButton { width: 100%; }
+  .resumeReviewHeading, .resumeReviewGrid { align-items: stretch; flex-direction: column; grid-template-columns: 1fr; }
+  .resumeReviewActions { flex-direction: column-reverse; }
+  .resumeReviewActions .authButton { width: 100%; }
   .profileGrid { grid-template-columns: 1fr; }
   .profileFooter small { max-width: none; }
   .principles { grid-template-columns: 1fr; padding: 32px 20px 60px; }

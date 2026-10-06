@@ -23,7 +23,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] protected DOB/minor state (never ranking input)
 - [x] parent/legal-representative consent-document flow
 - [x] PDF resume upload validation
-- [ ] resume parser + review-before-save
+- [x] resume parser + review-before-save
 - [ ] standardized profile PDF
 - [ ] candidate dashboard
 

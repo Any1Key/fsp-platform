@@ -19,12 +19,12 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | AST-010 | P0 | Grade change/retest frequency limited | 90-day configurable test | VERIFIED | backend/app/assessments.py:136-138; backend/tests/test_assessments.py:22-30; .agent/runs/20261007-010446-c013/verification.log:205-229 |
 | AST-011 | P2 | Periodic short employer challenges | E2E + freshness | TODO |  |
 | AST-012 | P0 | Different candidates do not receive identical assessment forms | Form uniqueness property/integration tests | VERIFIED | backend/app/assessments.py:139-161; backend/tests/test_assessments.py:10-19; .agent/runs/20261006-234632-c009/verification.log |
-| AST-013 | P0 | Base grade assessment is scored by the platform/system | Scoring domain tests | VERIFIED | backend/app/assessments.py:181-202; backend/app/main.py:645-690; backend/tests/test_assessments.py:45-61 |
+| AST-013 | P0 | Base grade assessment is scored by the platform/system | Scoring domain tests | VERIFIED | backend/app/assessments.py:181-202; backend/app/main.py:681-726; backend/tests/test_assessments.py:45-61; .agent/runs/20261007-012514-c014/verification.log:345-369 |
 | AST-014 | P0 | Synthetic/labeled validation proves grade discrimination and detects grade collapse | Confusion matrix + grade-collapse report | TODO |  |
-| AST-015 | P0 | AI-resistant assessment uses progressive/session-specific controls; no AI detector as sole gate | Integrity E2E + design audit | VERIFIED | backend/app/assessments.py:158-200; backend/tests/test_assessments.py:33-42; docs/AI_ASSESSMENT_INTEGRITY.md:39-63 |
+| AST-015 | P0 | AI-resistant assessment uses progressive/session-specific controls; no AI detector as sole gate | Integrity E2E + design audit | VERIFIED | backend/app/assessments.py:139-200; backend/tests/test_assessments.py:33-42; docs/AI_ASSESSMENT_INTEGRITY.md:39-63 |
 | AST-016 | P0 | Exposure control prevents immediate reusable answer-key leakage | Exposure/version tests | VERIFIED | backend/app/assessments.py:161-170,205-216; backend/tests/test_assessments.py:45-60 |
 | CAND-001 | P0 | Candidate profile manual form | Candidate profile API integration tests + responsive UI build | VERIFIED | backend/app/candidates.py; backend/app/main.py:484-514; backend/tests/test_candidate_profile.py; frontend/src/components/candidate-profile.tsx; frontend/src/components/auth-status.tsx:144-146 |
-| CAND-002 | P0 | PDF resume upload + extraction | Upload validation/API/storage tests implemented; parser + review E2E remains | IN_PROGRESS | backend/app/resume.py; backend/tests/test_resume_upload.py; frontend/src/components/candidate-resume.tsx |
+| CAND-002 | P0 | PDF resume upload + extraction | Consent-gated deterministic PDF extraction, provenance/confidence review, explicit accept/reject, profile-write and privacy tests | IMPLEMENTED | backend/app/resume_parser.py; backend/app/resume.py; backend/alembic/versions/20261007_0007_resume_extraction.py; backend/tests/test_resume_upload.py; frontend/src/components/candidate-resume.tsx; docs/RESUME_PARSING.md |
 | CAND-003 | P0 | Generate standardized PDF profile | Artifact/API test | TODO |  |
 | CAND-004 | P0 | Show category/grade and assessment history | E2E | TODO |  |
 | CAND-005 | P0 | Incoming invitations with salary | E2E | TODO |  |
@@ -69,8 +69,8 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | DATA-003 | P0 | Candidate sees salary before communication | E2E | TODO |  |
 | DATA-004 | P0 | Invitation contains company + contact method | E2E | TODO |  |
 | DATA-005 | P0 | Interaction statuses visible to relevant sides | E2E | TODO |  |
-| AUTH-001 | P0 | Email registration + verification | Keycloak/Mailpit E2E | VERIFIED | qa/tests/auth-registration.spec.ts:103-161; infrastructure/keycloak/realm-fsp.json:5-8,37-41; .agent/runs/20261007-010446-c013/verification.log:235-272 |
-| AUTH-002 | P0 | Registration accepts only email domains ending in `.ru` | Identity validation tests | VERIFIED | backend/app/auth.py:50-58,99-109; backend/tests/test_auth.py:26-43,162-177; infrastructure/keycloak/realm-fsp.json:19 |
+| AUTH-001 | P0 | Email registration + verification | Keycloak/Mailpit E2E | VERIFIED | qa/tests/auth-registration.spec.ts:103-161; infrastructure/keycloak/realm-fsp.json:5-8,37-41; .agent/runs/20261007-012514-c014/verification.log:389-412 |
+| AUTH-002 | P0 | Registration accepts only email domains ending in `.ru` | Identity validation tests | VERIFIED | backend/app/auth.py:50-58,99-109; backend/tests/test_auth.py:26-43,162-177; infrastructure/keycloak/realm-fsp.json:19; .agent/runs/20261007-012514-c014/verification.log:395-396 |
 | AUTH-003 | P0 | Working Keycloak/OIDC integration is demonstrated | Demo E2E + JWT/role evidence | VERIFIED | backend/app/auth.py:74-120; frontend/src/components/auth-status.tsx:32-67; qa/tests/auth-registration.spec.ts:103-161; .agent/runs/20261007-010446-c013/compose-ps.txt |
 | AUTH-004 | P0 | Verified account without a Keycloak application role can complete one-time candidate/employer role onboarding | Signed-token API tests + browser role chooser | VERIFIED | backend/app/auth.py:123-224; backend/app/main.py:351-389; backend/tests/test_auth.py:74-132; frontend/src/components/auth-status.tsx:70-111 |
 | FSP-001 | P0 | Correct no-FSP-history case | Ranking/E2E | TODO |  |
@@ -80,17 +80,17 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | VAL-002 | P0 | Own validation procedure + real results | Validation suite | TODO |  |
 | NFR-001 | P0 | Runs on ordinary machine with reasonable memory | Compose review | TODO |  |
 | NFR-002 | P0 | Open unobfuscated source | Repository | TODO |  |
-| NFR-003 | P0 | Clear frontend/backend/storage separation | Architecture review + database session boundary tests | VERIFIED | docs/ARCHITECTURE.md:7-18,49-55; docker-compose.yml:1-105; backend/app/db.py; backend/tests/test_database.py |
-| NFR-004 | P0 | Reproducible Docker Compose startup | Locked installs, startup migration, and empty-database migration test | VERIFIED | backend/Dockerfile:5-10; backend/tests/test_migrations.py; .agent/runs/20261007-010446-c013/verification.log:182-204; .agent/runs/20261007-010446-c013/compose-ps.txt |
-| NFR-005 | P0 | OpenAPI documents API/errors | OpenAPI audit | VERIFIED | backend/app/errors.py; backend/app/main.py; backend/tests/test_errors.py:31-58; docs/API_GUIDELINES.md:10-34 |
+| NFR-003 | P0 | Clear frontend/backend/storage separation | Architecture review + database session boundary tests | VERIFIED | docs/ARCHITECTURE.md:7-18,49-55; docker-compose.yml:1-108; backend/app/db.py; backend/tests/test_database.py:13-50 |
+| NFR-004 | P0 | Reproducible Docker Compose startup | Locked installs, startup migration, and empty-database migration test | VERIFIED | backend/Dockerfile:1-16; backend/tests/test_migrations.py:15-89; .agent/runs/20261007-012514-c014/verification.log:322-344,418-427; .agent/runs/20261007-012514-c014/compose-ps.txt |
+| NFR-005 | P0 | OpenAPI documents API/errors | OpenAPI audit | VERIFIED | backend/app/errors.py; backend/app/main.py:207-242; backend/tests/test_errors.py:31-58; docs/API_GUIDELINES.md:25-34 |
 | NFR-006 | P0 | RBAC, secure tokens, consent/privacy | Security tests | TODO |  |
 | NFR-007 | P0 | Keycloak compatibility | OIDC implementation | VERIFIED | backend/app/auth.py:74-120; infrastructure/keycloak/realm-fsp.json:43-77; backend/tests/test_auth.py:116-263; qa/tests/auth-registration.spec.ts |
 | NFR-008 | P0 | Modern desktop browsers | Playwright | TODO |  |
 | NFR-009 | P1 | Responsive tablet/mobile (project upgrades optional item) | Responsive E2E/screenshots | TODO |  |
 | NFR-010 | P0 | Stable for tens of concurrent users with reproducible load test | Target load-test report | TODO |  |
-| NFR-011 | P0 | Core system requires no GPU and targets ~8 CPU / 32–64 GB RAM | Deployment/resource test | VERIFIED | scripts/resource-baseline.sh:30-184; docs/PERFORMANCE_RESULTS.md:7-23; .agent/runs/20261006-m00-resource-baseline-rerun/performance/summary.txt; .agent/runs/20261006-m00-resource-baseline-rerun/performance/policy.txt |
+| NFR-011 | P0 | Core system requires no GPU and targets ~8 CPU / 32–64 GB RAM | Deployment/resource test | VERIFIED | scripts/resource-baseline.sh:27-58,100-184; docs/PERFORMANCE_RESULTS.md:7-23; .agent/runs/20261006-m00-resource-baseline-rerun/performance/host-specs.txt; .agent/runs/20261006-m00-resource-baseline-rerun/performance/summary.txt; .agent/runs/20261006-m00-resource-baseline-rerun/performance/policy.txt |
 | NFR-012 | P1 | Optional local AI is isolated, asynchronous and has deterministic fallback | Failure/fallback tests | TODO |  |
-| NFR-013 | P0 | Automated CI validates locked backend/frontend/QA toolchains and Compose configuration | GitHub Actions workflow + CI contract test | VERIFIED | .github/workflows/ci.yml:16-86; agent/test-ci-contract.sh; .agent/runs/20261007-010446-c013/verification.log:19-23 |
+| NFR-013 | P0 | Automated CI validates locked backend/frontend/QA toolchains and Compose configuration | GitHub Actions workflow + CI contract test | VERIFIED | .github/workflows/ci.yml:16-86; agent/test-ci-contract.sh:15-34; .agent/runs/20261007-012514-c014/verification.log:21-25 |
 | LEGAL-001 | P0 | 152-FZ-oriented data minimization, consent, RBAC and audit controls are documented/implemented | Security/privacy audit | TODO |  |
 | LEGAL-002 | P1 | Withdrawal/deletion/export/retention workflows or demonstrable MVP concepts exist | Privacy E2E/docs | VERIFIED | backend/app/privacy.py:177-207; backend/tests/test_auth.py:220-303; docs/API_GUIDELINES.md:46-51; docs/SECURITY.md:55-67 |
 | LEGAL-003 | P0 | Telegram agent reporting never sends real PII/chat/minor documents | Reporter tests/config audit | TODO |  |
@@ -101,7 +101,7 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | DOC-005 | P0 | FSP integration scheme docs | Docs audit | TODO |  |
 | DOC-006 | P0 | API description | OpenAPI/docs | VERIFIED | docs/API_GUIDELINES.md:1-100; backend/app/main.py; backend/tests/test_errors.py:51-58 |
 | DOC-007 | P0 | Libraries/components with versions | COMPONENTS.md | VERIFIED | docs/COMPONENTS.md:3-17; backend/requirements.lock; backend/uv.lock; frontend/package-lock.json; qa/package-lock.json; docker-compose.yml |
-| DOC-008 | P0 | Step-by-step build/deploy/local run | Setup/deployment docs | VERIFIED | docs/DEPLOYMENT.md:3-99; .env.example; scripts/demo-reset.sh; .agent/runs/20261007-010446-c013/verification.log:182-204 |
+| DOC-008 | P0 | Step-by-step build/deploy/local run | Setup/deployment docs | VERIFIED | docs/DEPLOYMENT.md:3-99; .env.example; scripts/demo-reset.sh; .agent/runs/20261007-012514-c014/verification.log:322-344,418-427 |
 | DEMO-001 | P0 | Full candidate→assessment→employer→contact demo | Playwright + demo reset | TODO |  |
 | BONUS-001 | P2 | Fake-vacancy / bad-employer protection concept/MVP | Trust design | TODO |  |
 | BONUS-002 | P2 | ATS integration concept | Docs/contract | TODO |  |

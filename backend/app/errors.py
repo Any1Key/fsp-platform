@@ -124,6 +124,22 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "RESUME_TOO_LARGE",
         "The resume exceeds the configured size limit.",
     ),
+    "resume_not_found": (
+        "RESUME_NOT_FOUND",
+        "The requested resume is not available.",
+    ),
+    "resume_extraction_not_found": (
+        "RESUME_EXTRACTION_NOT_FOUND",
+        "No extracted fields are available for this resume.",
+    ),
+    "resume_already_reviewed": (
+        "RESUME_ALREADY_REVIEWED",
+        "This resume extraction has already been reviewed.",
+    ),
+    "resume_extraction_unavailable": (
+        "RESUME_EXTRACTION_UNAVAILABLE",
+        "This PDF does not contain extractable text.",
+    ),
     "authorization_header_required": (
         "AUTHORIZATION_REQUIRED",
         "A Bearer access token is required.",

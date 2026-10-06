@@ -11,7 +11,41 @@ type ResumeDocument = {
   uploaded_at: string;
 };
 
-type ResumeResponse = { document: ResumeDocument | null };
+type ExtractedExperience = {
+  role: string;
+  company: string;
+  started_on: string;
+  ended_on: string | null;
+  description: string | null;
+  confidence?: number;
+  source?: string;
+};
+
+type ResumeExtraction = {
+  id: string;
+  status: "needs_review" | "accepted" | "rejected" | "unsupported";
+  parser_version: string;
+  text_available: boolean;
+  fields: {
+    full_name?: { value: string | null; confidence: number; source: string };
+    headline?: { value: string | null; confidence: number; source: string };
+    contacts?: { emails: string[]; phones: string[]; links: string[] };
+    skills?: { value: string; confidence: number; source: string }[];
+    experience?: ExtractedExperience[];
+  };
+  extracted_at: string;
+  reviewed_at: string | null;
+};
+
+type ResumeResponse = { document: ResumeDocument | null; extraction: ResumeExtraction | null };
+
+type ReviewDraft = {
+  display_name: string;
+  headline: string;
+  summary: string;
+  skills: string;
+  experience: ExtractedExperience[];
+};
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -40,10 +74,23 @@ function formatSize(size: number): string {
   return `${(size / 1024 / 1024).toFixed(1)} МБ`;
 }
 
+function toReviewDraft(extraction: ResumeExtraction): ReviewDraft {
+  return {
+    display_name: extraction.fields.full_name?.value ?? "",
+    headline: extraction.fields.headline?.value ?? "",
+    summary: "",
+    skills: (extraction.fields.skills ?? []).map((skill) => skill.value).join(", "),
+    experience: extraction.fields.experience ?? [],
+  };
+}
+
 export function CandidateResume({ token }: { token: string }) {
   const [resume, setResume] = useState<ResumeDocument | null>(null);
+  const [extraction, setExtraction] = useState<ResumeExtraction | null>(null);
+  const [reviewDraft, setReviewDraft] = useState<ReviewDraft | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -56,7 +103,11 @@ export function CandidateResume({ token }: { token: string }) {
         return (await response.json()) as ResumeResponse;
       })
       .then((result) => {
-        if (active) setResume(result.document);
+        if (active) {
+          setResume(result.document);
+          setExtraction(result.extraction);
+          if (result.extraction?.status === "needs_review") setReviewDraft(toReviewDraft(result.extraction));
+        }
       })
       .catch((error: Error) => {
         if (active) setMessage(`Резюме недоступно: ${messageFor(error.message)}`);
@@ -86,11 +137,46 @@ export function CandidateResume({ token }: { token: string }) {
       if (!response.ok) throw new Error(await readError(response));
       const result = (await response.json()) as ResumeResponse;
       setResume(result.document);
-      setMessage("PDF загружен. Следующий шаг — проверить распознанные поля.");
+      setExtraction(result.extraction);
+      setReviewDraft(result.extraction?.status === "needs_review" ? toReviewDraft(result.extraction) : null);
+      setMessage(result.extraction?.status === "needs_review" ? "PDF обработан. Проверьте поля перед сохранением." : "PDF загружен, но текстовые поля не распознаны.");
     } catch (error) {
       setMessage(`Не удалось загрузить PDF: ${messageFor((error as Error).message)}`);
     } finally {
       setUploading(false);
+    }
+  }
+
+  function changeDraft(key: keyof ReviewDraft, value: string) {
+    setReviewDraft((current) => (current ? { ...current, [key]: value } : current));
+  }
+
+  async function review(accepted: boolean) {
+    if (!resume || !reviewDraft) return;
+    setReviewing(true);
+    setMessage(null);
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/candidate/resume/${resume.id}/review`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accepted,
+          display_name: reviewDraft.display_name || null,
+          headline: reviewDraft.headline || null,
+          summary: reviewDraft.summary || null,
+          skills: reviewDraft.skills.split(",").map((skill) => skill.trim()).filter(Boolean),
+          experience: reviewDraft.experience.map(({ confidence, source, ...item }) => item),
+        }),
+      });
+      if (!response.ok) throw new Error(await readError(response));
+      const result = (await response.json()) as ResumeResponse;
+      setExtraction(result.extraction);
+      setReviewDraft(null);
+      setMessage(accepted ? "Поля проверены и сохранены в профиле." : "Распознанные поля отклонены; профиль не изменен.");
+    } catch (error) {
+      setMessage(`Не удалось завершить проверку: ${messageFor((error as Error).message)}`);
+    } finally {
+      setReviewing(false);
     }
   }
 
@@ -133,6 +219,35 @@ export function CandidateResume({ token }: { token: string }) {
         <input type="file" accept="application/pdf,.pdf" disabled={uploading} onChange={upload} />
       </label>
       {message && <small className="resumeMessage" aria-live="polite">{message}</small>}
+      {extraction?.status === "unsupported" && (
+        <div className="resumeReview unsupported">
+          <strong>Текст не распознан</strong>
+          <small>Скан или изображение можно добавить вручную в профиль. Парсер не публикует неподтвержденные поля.</small>
+        </div>
+      )}
+      {extraction?.status === "needs_review" && reviewDraft && (
+        <div className="resumeReview" aria-label="Проверка распознанных полей">
+          <div className="resumeReviewHeading">
+            <div><strong>Проверьте распознанные поля</strong><small>Это заявленные данные из резюме, не подтвержденная категория.</small></div>
+            <span className="profileStatus">NEEDS REVIEW</span>
+          </div>
+          <div className="resumeReviewGrid">
+            <label>Имя и фамилия<input value={reviewDraft.display_name} onChange={(event) => changeDraft("display_name", event.target.value)} /></label>
+            <label>Заголовок<input value={reviewDraft.headline} onChange={(event) => changeDraft("headline", event.target.value)} /></label>
+          </div>
+          <label>Навыки <small>через запятую</small><input value={reviewDraft.skills} onChange={(event) => changeDraft("skills", event.target.value)} /></label>
+          {reviewDraft.experience.length > 0 && (
+            <div className="resumeExperience"><strong>Опыт из резюме</strong>{reviewDraft.experience.map((item, index) => <small key={`${item.company}-${index}`}>{item.role} · {item.company} · {item.started_on} — {item.ended_on ?? "не указано"}</small>)}</div>
+          )}
+          {extraction.fields.contacts && (extraction.fields.contacts.emails.length > 0 || extraction.fields.contacts.phones.length > 0) && (
+            <small className="resumeContactNote">Контакты распознаны для проверки, но автоматически в публичный профиль не переносятся.</small>
+          )}
+          <div className="resumeReviewActions">
+            <button className="authButton secondaryButton" type="button" disabled={reviewing} onClick={() => review(false)}>Отклонить поля</button>
+            <button className="authButton primaryButton" type="button" disabled={reviewing} onClick={() => review(true)}>{reviewing ? "Сохраняем…" : "Проверил — сохранить"}</button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

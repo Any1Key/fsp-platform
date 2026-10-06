@@ -31,7 +31,7 @@ from .errors import ErrorResponse, error_response, normalize_http_error
 from .minor_consent import get_document_status, upload_document
 from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 from .protected_candidate import MinorState, get_protected_profile, update_protected_profile
-from .resume import get_resume, upload_resume
+from .resume import get_resume, review_resume, upload_resume
 
 app = FastAPI(
     title="FSP Talent Platform API",
@@ -180,8 +180,32 @@ class ResumeDocumentMetadata(BaseModel):
     uploaded_at: datetime
 
 
+class ResumeExtractionResponse(BaseModel):
+    id: str
+    status: Literal["needs_review", "accepted", "rejected", "unsupported"]
+    parser_version: str
+    text_available: bool
+    fields: dict[str, Any]
+    extracted_at: datetime
+    reviewed_at: datetime | None
+
+
 class ResumeDocumentResponse(BaseModel):
     document: ResumeDocumentMetadata | None
+    extraction: ResumeExtractionResponse | None
+
+
+class ResumeReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    accepted: bool
+    display_name: str | None = Field(default=None, max_length=120)
+    headline: str | None = Field(default=None, max_length=160)
+    summary: str | None = Field(default=None, max_length=2000)
+    skills: list[Annotated[str, Field(min_length=1, max_length=80)]] | None = Field(
+        default=None, max_length=30
+    )
+    experience: list[CandidateExperience] | None = Field(default=None, max_length=12)
 
 
 class CandidatePrivacyResponse(BaseModel):
@@ -623,6 +647,33 @@ def upload_candidate_resume(
 ) -> ResumeDocumentResponse:
     return ResumeDocumentResponse.model_validate(
         upload_resume(db, principal, get_settings(), resume)
+    )
+
+
+@app.patch(
+    "/api/v1/candidate/resume/{document_id}/review",
+    tags=["candidate resume"],
+    response_model=ResumeDocumentResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        404: {"model": ErrorResponse, "description": "Resume or extraction not found"},
+        409: {"model": ErrorResponse, "description": "Resume extraction cannot be reviewed"},
+    },
+)
+def review_candidate_resume(
+    document_id: str,
+    request: ResumeReviewRequest,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> ResumeDocumentResponse:
+    return ResumeDocumentResponse.model_validate(
+        review_resume(
+            db,
+            principal,
+            document_id,
+            accepted=request.accepted,
+            fields=request.model_dump(exclude={"accepted"}, exclude_none=True),
+        )
     )
 
 

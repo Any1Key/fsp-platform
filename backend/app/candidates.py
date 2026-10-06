@@ -84,6 +84,8 @@ def update_profile(
     db: Session,
     principal: Principal,
     changes: dict[str, Any],
+    *,
+    commit: bool = True,
 ) -> dict[str, Any]:
     _, profile_id = _ensure_candidate_profile(db, principal)
     current = _profile_row(db, profile_id)
@@ -124,5 +126,6 @@ def update_profile(
         ),
         update_values,
     )
-    db.commit()
+    if commit:
+        db.commit()
     return _public_profile(_profile_row(db, profile_id))
