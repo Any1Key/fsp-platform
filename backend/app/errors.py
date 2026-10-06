@@ -72,6 +72,10 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "PROCESSING_CONSENT_REQUIRED",
         "Processing consent is required before publication.",
     ),
+    "date_of_birth_in_future": (
+        "DATE_OF_BIRTH_IN_FUTURE",
+        "Date of birth cannot be in the future.",
+    ),
     "publication_consent_required": (
         "PUBLICATION_CONSENT_REQUIRED",
         "Publication consent is required before discoverability.",

@@ -4,6 +4,7 @@ import Keycloak, { type KeycloakInstance } from "keycloak-js";
 import { useEffect, useRef, useState } from "react";
 import { PrivacySettings } from "./privacy-settings";
 import { CandidateProfile } from "./candidate-profile";
+import { CandidateProtectedProfile } from "./candidate-protected-profile";
 
 type Session = {
   identity_id: string | null;
@@ -140,6 +141,7 @@ export function AuthStatus() {
         {auth.session.role === "candidate" && (
           <>
             <PrivacySettings token={keycloak.current?.token ?? ""} />
+            <CandidateProtectedProfile token={keycloak.current?.token ?? ""} />
             <CandidateProfile token={keycloak.current?.token ?? ""} />
           </>
         )}

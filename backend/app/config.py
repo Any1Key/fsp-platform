@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,6 +24,7 @@ class Settings(BaseSettings):
     keycloak_jwks_cache_seconds: int = 300
     require_verified_email: bool = True
     privacy_policy_version: str = "2026-10-06"
+    adult_age_years: int = Field(default=18, ge=1, le=100)
     cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     @property

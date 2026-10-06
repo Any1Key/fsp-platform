@@ -33,7 +33,12 @@ environment and is not logged or committed.
 ## Data minimization
 Separate employer-visible professional profile from protected contacts, date of birth/minor status, consent documents and private interaction data.
 
-Age/date of birth must never influence matching/ranking.
+Age/date of birth must never influence matching/ranking. The candidate-only
+`/api/v1/candidate/protected-profile` boundary stores a nullable DOB, derives
+minor state server-side, requires processing consent for writes, and excludes
+the value from the professional profile, audit details and employer responses.
+The age threshold is configuration, not client input. This does not replace
+the separate legal-representative consent-document workflow.
 
 ## Contact/chat privacy
 Before a match:

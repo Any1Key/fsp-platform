@@ -57,3 +57,15 @@ preferences after processing consent is granted. The profile endpoint never
 returns identity email, contacts, DOB/minor state, resume documents, consent
 metadata, or assessment results. Employers receive `ROLE_REQUIRED` and cannot
 use this self-scoped resource.
+
+## Protected candidate identity data
+
+`GET /api/v1/candidate/protected-profile` and
+`PATCH /api/v1/candidate/protected-profile` are candidate-only endpoints for
+the private date of birth. The response derives `minor_state` on the server as
+`not_set`, `minor`, or `adult` using the configured adult-age threshold. The
+client cannot submit an age or state. Writes require processing consent, and a
+future date is rejected. The endpoint is separate from the professional
+profile and never exposes the value to employers or matching code. The
+parent/legal-representative consent-document flow is a later protected
+workflow.

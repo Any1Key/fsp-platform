@@ -6,7 +6,7 @@
   partial identity; it remains `pending` until candidate/employer onboarding
   completes. The selected role is then the local authorization binding and is
   checked against any explicit Keycloak role claim.
-- `candidate_profile`: identity, protected contacts, summary, experience, role, preferences, privacy, consents, FSP link, private DOB/minor state. Processing and publication consent store policy version, timestamp and source; discoverability is separate and consent-dependent.
+- `candidate_profile`: identity, protected contacts, private `date_of_birth`, summary, experience, role, preferences, privacy, consents, FSP link. Minor state is derived at read time from the private DOB and configured adult-age threshold; it is never a matching input. Processing and publication consent store policy version, timestamp and source; discoverability is separate and consent-dependent.
 - `minor_consent_document`: candidate, version/status, protected file metadata, timestamps, reviewer/audit metadata.
 - `company`: owner, name, description, industry, public contacts, trust fields.
 

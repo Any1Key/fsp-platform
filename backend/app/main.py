@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Any, Literal
 from uuid import uuid4
 
@@ -29,6 +29,7 @@ from .config import get_settings
 from .db import get_db_session
 from .errors import ErrorResponse, error_response, normalize_http_error
 from .privacy import PrivacyState, get_privacy, request_export, update_privacy
+from .protected_candidate import MinorState, get_protected_profile, update_protected_profile
 
 app = FastAPI(
     title="FSP Talent Platform API",
@@ -137,6 +138,18 @@ class CandidateProfileResponse(BaseModel):
     skills: list[str]
     work_preferences: CandidateWorkPreferences
     updated_at: datetime
+
+
+class ProtectedCandidateProfileUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    date_of_birth: date | None = None
+
+
+class ProtectedCandidateProfileResponse(BaseModel):
+    date_of_birth: date | None
+    minor_state: MinorState
+    adult_age_years: int
 
 
 class CandidatePrivacyResponse(BaseModel):
@@ -467,6 +480,48 @@ def update_candidate_profile(
     if not changes:
         raise HTTPException(status_code=422, detail="profile_update_required")
     return CandidateProfileResponse.model_validate(update_profile(db, principal, changes))
+
+
+@app.get(
+    "/api/v1/candidate/protected-profile",
+    tags=["candidate privacy"],
+    response_model=ProtectedCandidateProfileResponse,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_protected_profile(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> ProtectedCandidateProfileResponse:
+    return ProtectedCandidateProfileResponse.model_validate(
+        get_protected_profile(db, principal, get_settings())
+    )
+
+
+@app.patch(
+    "/api/v1/candidate/protected-profile",
+    tags=["candidate privacy"],
+    response_model=ProtectedCandidateProfileResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        409: {"model": ErrorResponse, "description": "Processing consent is required"},
+        422: {"model": ErrorResponse, "description": "Date of birth is invalid"},
+    },
+)
+def update_candidate_protected_profile(
+    request: ProtectedCandidateProfileUpdateRequest,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> ProtectedCandidateProfileResponse:
+    if "date_of_birth" not in request.model_fields_set:
+        raise HTTPException(status_code=422, detail="protected_profile_update_required")
+    return ProtectedCandidateProfileResponse.model_validate(
+        update_protected_profile(
+            db,
+            principal,
+            get_settings(),
+            date_of_birth=request.date_of_birth,
+        )
+    )
 
 
 @app.post(
