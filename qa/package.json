@@ -6,6 +6,6 @@
     "screenshots": "playwright test tests/screenshots.spec.ts"
   },
   "devDependencies": {
-    "@playwright/test": "1.55.0"
+    "@playwright/test": "1.55.1"
   }
 }

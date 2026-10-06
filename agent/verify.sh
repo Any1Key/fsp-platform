@@ -14,11 +14,16 @@ echo "=== FSP verification $rid ==="
 date
 git status --short || true
 
+echo "=== QA contract ==="
+"$ROOT/agent/test-qa-contract.sh"
+
 echo "=== compose config ==="
 docker compose config -q
 
 echo "=== build ==="
-docker compose build
+# QA is behind the test profile. Build with that profile enabled so the
+# Playwright browser image and npm package cannot drift through a stale image.
+docker compose --profile test build
 
 echo "=== up ==="
 docker compose up -d

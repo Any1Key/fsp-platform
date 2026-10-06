@@ -15,6 +15,26 @@ Default:
 - Keycloak `http://HOST:8081`
 - Mailpit `http://HOST:8025`
 
+The backend container applies the committed Alembic migrations before starting
+the API. To apply or inspect the schema manually from the repository:
+
+```bash
+cd backend
+DATABASE_URL='postgresql+psycopg://fsp:REDACTED@app-db:5432/fsp' alembic upgrade head
+alembic current
+```
+
+For an isolated migration smoke test without PostgreSQL:
+
+```bash
+cd backend
+DATABASE_URL='sqlite:///./local-foundation.sqlite' alembic upgrade head
+```
+
+The assessment service is still process-local until the separate M00 database
+session work unit wires repositories to this schema; the migration establishes
+its persistence boundary and does not claim that feature is complete.
+
 Stop:
 ```bash
 docker compose down
