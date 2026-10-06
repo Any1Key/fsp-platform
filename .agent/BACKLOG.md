@@ -5,7 +5,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 ## M00 — Foundation
 - [x] dependency locks and migrations
 - [x] DB/session infrastructure
-- [ ] API error envelope/request IDs
+- [x] API error envelope/request IDs
 - [ ] CI baseline
 - [ ] CPU-only resource baseline
 

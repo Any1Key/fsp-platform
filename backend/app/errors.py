@@ -1,0 +1,110 @@
+"""Shared API error schemas and safe error response helpers."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict
+
+
+class ErrorBody(BaseModel):
+    """Stable machine-readable error details exposed to API clients."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    code: str
+    message: str
+    request_id: str
+
+
+class ErrorResponse(BaseModel):
+    """The common error envelope for every non-success API response."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    error: ErrorBody
+
+
+ERROR_MESSAGES: dict[str, tuple[str, str]] = {
+    "database_unavailable": (
+        "DATABASE_UNAVAILABLE",
+        "The application database is temporarily unavailable.",
+    ),
+    "attempt_not_found": (
+        "ASSESSMENT_ATTEMPT_NOT_FOUND",
+        "The assessment attempt was not found.",
+    ),
+    "attempt_already_submitted": (
+        "ASSESSMENT_ATTEMPT_ALREADY_SUBMITTED",
+        "The assessment attempt has already been submitted.",
+    ),
+    "retest_locked_until_90_days": (
+        "ASSESSMENT_RETEST_LOCKED",
+        "A new assessment attempt is not available yet.",
+    ),
+    "all_items_are_required": (
+        "ASSESSMENT_ITEMS_REQUIRED",
+        "Answers are required for every assessment item.",
+    ),
+    "unsupported specialization or grade": (
+        "ASSESSMENT_BLUEPRINT_UNSUPPORTED",
+        "The requested specialization or grade is not supported.",
+    ),
+    "template_family_exposure_budget_reached": (
+        "ASSESSMENT_EXPOSURE_LIMIT",
+        "The assessment form is temporarily unavailable.",
+    ),
+}
+
+
+def request_id_for(request: Request) -> str:
+    """Return the middleware-assigned ID, with a safe fallback for direct use."""
+
+    return getattr(request.state, "request_id", "unknown")
+
+
+def error_response(
+    request: Request,
+    *,
+    status_code: int,
+    code: str,
+    message: str,
+) -> JSONResponse:
+    """Build the single response shape used by all API exception handlers."""
+
+    request_id = request_id_for(request)
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "error": {
+                "code": code,
+                "message": message,
+                "request_id": request_id,
+            }
+        },
+        headers={"X-Request-ID": request_id},
+    )
+
+
+def normalize_http_error(status_code: int, detail: Any) -> tuple[str, str]:
+    """Map internal route details to stable, non-sensitive public errors."""
+
+    if isinstance(detail, str) and detail in ERROR_MESSAGES:
+        return ERROR_MESSAGES[detail]
+    if status_code == 400:
+        return "BAD_REQUEST", "The request could not be processed."
+    if status_code == 401:
+        return "UNAUTHENTICATED", "Authentication is required."
+    if status_code == 403:
+        return "FORBIDDEN", "You do not have permission to perform this action."
+    if status_code == 404:
+        return "RESOURCE_NOT_FOUND", "The requested resource was not found."
+    if status_code == 409:
+        return "CONFLICT", "The request conflicts with the current resource state."
+    if status_code == 422:
+        return "VALIDATION_ERROR", "Request validation failed."
+    if status_code >= 500:
+        return "INTERNAL_ERROR", "The service could not complete the request."
+    return "REQUEST_ERROR", "The request could not be processed."

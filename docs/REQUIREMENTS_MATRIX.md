@@ -19,7 +19,7 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | AST-010 | P0 | Grade change/retest frequency limited | 90-day configurable test | VERIFIED | backend/app/assessments.py:136-138; backend/tests/test_assessments.py:22-30 |
 | AST-011 | P2 | Periodic short employer challenges | E2E + freshness | TODO |  |
 | AST-012 | P0 | Different candidates do not receive identical assessment forms | Form uniqueness property/integration tests | VERIFIED | backend/app/assessments.py:139-160; backend/tests/test_assessments.py:10-19 |
-| AST-013 | P0 | Base grade assessment is scored by the platform/system | Scoring domain tests | VERIFIED | backend/app/assessments.py:181-202; backend/tests/test_assessments.py:45-61 |
+| AST-013 | P0 | Base grade assessment is scored by the platform/system | Scoring domain tests | VERIFIED | backend/app/assessments.py:181-202; backend/app/main.py:134-149; backend/tests/test_assessments.py:45-61; .agent/runs/20261006-221728-c003/verification.log |
 | AST-014 | P0 | Synthetic/labeled validation proves grade discrimination and detects grade collapse | Confusion matrix + grade-collapse report | TODO |  |
 | AST-015 | P0 | AI-resistant assessment uses progressive/session-specific controls; no AI detector as sole gate | Integrity E2E + design audit | IMPLEMENTED | backend/tests/test_assessments.py |
 | AST-016 | P0 | Exposure control prevents immediate reusable answer-key leakage | Exposure/version tests | IMPLEMENTED | backend/tests/test_assessments.py |
@@ -79,9 +79,9 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | VAL-002 | P0 | Own validation procedure + real results | Validation suite | TODO |  |
 | NFR-001 | P0 | Runs on ordinary machine with reasonable memory | Compose review | TODO |  |
 | NFR-002 | P0 | Open unobfuscated source | Repository | TODO |  |
-| NFR-003 | P0 | Clear frontend/backend/storage separation | Architecture review + database session boundary tests | VERIFIED | docs/ARCHITECTURE.md; backend/app/db.py:14-74; backend/tests/test_database.py:13-51; .agent/runs/20261006-220702-c002/verification.log:167-175 |
-| NFR-004 | P0 | Reproducible Docker Compose startup | Locked installs, startup migration, and empty-database migration test | VERIFIED | backend/tests/test_migrations.py:15-84; backend/Dockerfile:1-12; .agent/runs/20261006-220702-c002/verification.log:16-175,181-212; .agent/runs/20261006-220702-c002/compose-ps.txt:1-7 |
-| NFR-005 | P0 | OpenAPI documents API/errors | OpenAPI audit | TODO |  |
+| NFR-003 | P0 | Clear frontend/backend/storage separation | Architecture review + database session boundary tests | VERIFIED | docs/ARCHITECTURE.md:7-18,48-54; docker-compose.yml:60-101; backend/app/db.py:14-74; backend/tests/test_database.py:13-51 |
+| NFR-004 | P0 | Reproducible Docker Compose startup | Locked installs, startup migration, and empty-database migration test | VERIFIED | backend/Dockerfile:5-10; backend/tests/test_migrations.py:15-84; .agent/runs/20261006-221728-c003/verification.log; .agent/runs/20261006-221728-c003/compose-ps.txt |
+| NFR-005 | P0 | OpenAPI documents API/errors | OpenAPI audit | VERIFIED | backend/app/errors.py; backend/app/main.py:18-72,79-149; backend/tests/test_errors.py:31-58 |
 | NFR-006 | P0 | RBAC, secure tokens, consent/privacy | Security tests | TODO |  |
 | NFR-007 | P0 | Keycloak compatibility | OIDC implementation | TODO |  |
 | NFR-008 | P0 | Modern desktop browsers | Playwright | TODO |  |
@@ -97,9 +97,9 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | DOC-003 | P0 | Matching/category docs | Docs audit | TODO |  |
 | DOC-004 | P0 | Validation procedure/results docs | Docs audit | TODO |  |
 | DOC-005 | P0 | FSP integration scheme docs | Docs audit | TODO |  |
-| DOC-006 | P0 | API description | OpenAPI/docs | TODO |  |
+| DOC-006 | P0 | API description | OpenAPI/docs | VERIFIED | docs/API_GUIDELINES.md; backend/app/main.py; backend/tests/test_errors.py:51-58 |
 | DOC-007 | P0 | Libraries/components with versions | COMPONENTS.md | VERIFIED | docs/COMPONENTS.md:3-17; backend/requirements.lock; backend/uv.lock; frontend/package-lock.json; qa/package-lock.json; docker-compose.yml |
-| DOC-008 | P0 | Step-by-step build/deploy/local run | Setup/deployment docs | VERIFIED | docs/DEPLOYMENT.md:3-58; .env.example; scripts/demo-reset.sh; .agent/runs/20261006-220702-c002/verification.log:16-166,218-227 |
+| DOC-008 | P0 | Step-by-step build/deploy/local run | Setup/deployment docs | VERIFIED | docs/DEPLOYMENT.md:3-58; .env.example; scripts/demo-reset.sh; agent/wait-http.sh; .agent/runs/20261006-221728-c003/verification.log; .agent/runs/20261006-221728-c003/compose-ps.txt |
 | DEMO-001 | P0 | Full candidate→assessment→employer→contact demo | Playwright + demo reset | TODO |  |
 | BONUS-001 | P2 | Fake-vacancy / bad-employer protection concept/MVP | Trust design | TODO |  |
 | BONUS-002 | P2 | ATS integration concept | Docs/contract | TODO |  |
