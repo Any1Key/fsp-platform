@@ -24,7 +24,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] parent/legal-representative consent-document flow
 - [x] PDF resume upload validation
 - [x] resume parser + review-before-save
-- [ ] standardized profile PDF
+- [x] standardized profile PDF
 - [ ] candidate dashboard
 
 ## M03 — Taxonomy and calibrated unique assessment

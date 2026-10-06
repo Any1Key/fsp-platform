@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile, status
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import text
@@ -30,6 +30,7 @@ from .db import get_db_session
 from .errors import ErrorResponse, error_response, normalize_http_error
 from .minor_consent import get_document_status, upload_document
 from .privacy import PrivacyState, get_privacy, request_export, update_privacy
+from .profile_pdf import render_profile_pdf
 from .protected_candidate import MinorState, get_protected_profile, update_protected_profile
 from .resume import get_resume, review_resume, upload_resume
 
@@ -516,6 +517,29 @@ def candidate_profile(
     db: Annotated[Session, Depends(get_db_session)],
 ) -> CandidateProfileResponse:
     return CandidateProfileResponse.model_validate(get_profile(db, principal))
+
+
+@app.get(
+    "/api/v1/candidate/profile/pdf",
+    tags=["candidate profile"],
+    response_class=Response,
+    responses={
+        200: {"content": {"application/pdf": {}}},
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+    },
+)
+def download_candidate_profile_pdf(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> Response:
+    """Generate a non-persisted standardized artifact from public profile fields."""
+
+    profile = get_profile(db, principal)
+    return Response(
+        content=render_profile_pdf(profile),
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="fsp-standardized-profile.pdf"'},
+    )
 
 
 @app.patch(

@@ -1,6 +1,8 @@
 from datetime import UTC, datetime, timedelta
+from io import BytesIO
 
 import jwt
+from pypdf import PdfReader
 
 
 def _token(private_key, settings, *, email="candidate@team.ru", role="candidate", **overrides):
@@ -132,6 +134,85 @@ def test_profile_validation_does_not_partially_update_and_other_candidate_has_em
     )
     assert other_candidate.status_code == 200
     assert other_candidate.json()["display_name"] is None
+
+
+def test_candidate_can_download_standardized_profile_pdf_without_protected_data(auth_context):
+    client, private_key, settings = auth_context
+    candidate_headers = _headers(private_key, settings)
+    _grant_processing_consent(client, candidate_headers)
+    saved = client.patch(
+        "/api/v1/candidate/profile",
+        headers=candidate_headers,
+        json={
+            "display_name": "Alex Иванов",
+            "headline": "Backend engineer",
+            "location": "Москва",
+            "summary": "Создаю надежные API для продуктовых команд.",
+            "skills": ["Python", "FastAPI", "PostgreSQL"],
+            "experience": [
+                {
+                    "role": "Backend engineer",
+                    "company": "Example Lab",
+                    "started_on": "2023-02",
+                    "ended_on": "present",
+                    "description": "Разрабатывал сервисы и интеграции.",
+                    "technologies": ["Python", "FastAPI"],
+                }
+            ],
+            "work_preferences": {"work_mode": "hybrid", "availability": "Через месяц"},
+        },
+    )
+    assert saved.status_code == 200
+
+    response = client.get("/api/v1/candidate/profile/pdf", headers=candidate_headers)
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.headers["content-disposition"] == 'attachment; filename="fsp-standardized-profile.pdf"'
+    assert response.content.startswith(b"%PDF-1.4")
+    reader = PdfReader(BytesIO(response.content))
+    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    assert "Alex Иванов" in text
+    assert "Backend engineer" in text
+    assert "Example Lab" in text
+    assert "Python" in text
+    assert "candidate@team.ru" not in text
+    assert "assessment" in text.lower()
+    assert "date of birth" not in text.lower()
+
+
+def test_profile_pdf_is_candidate_scoped_and_empty_profiles_still_have_artifact(auth_context):
+    client, private_key, settings = auth_context
+    first_headers = _headers(private_key, settings)
+    _grant_processing_consent(client, first_headers)
+    client.patch(
+        "/api/v1/candidate/profile",
+        headers=first_headers,
+        json={"display_name": "Private Candidate"},
+    )
+
+    other_headers = _headers(
+        private_key,
+        settings,
+        sub="kc-pdf-other-candidate",
+        email="other@team.ru",
+    )
+    other_response = client.get("/api/v1/candidate/profile/pdf", headers=other_headers)
+    assert other_response.status_code == 200
+    other_text = (PdfReader(BytesIO(other_response.content)).pages[0].extract_text() or "")
+    assert "Private Candidate" not in other_text
+    assert "Unnamed candidate" in other_text
+
+    employer_headers = _headers(
+        private_key,
+        settings,
+        sub="kc-pdf-employer",
+        email="employer@company.ru",
+        role="employer",
+    )
+    employer_response = client.get("/api/v1/candidate/profile/pdf", headers=employer_headers)
+    assert employer_response.status_code == 403
+    assert employer_response.json()["error"]["code"] == "ROLE_REQUIRED"
 
 
 def test_employer_cannot_read_or_update_candidate_profile(auth_context):

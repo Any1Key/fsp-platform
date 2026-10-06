@@ -78,6 +78,7 @@ export function CandidateProfile({ token }: { token: string }) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -172,6 +173,31 @@ export function CandidateProfile({ token }: { token: string }) {
     }
   }
 
+  async function downloadProfile() {
+    setDownloading(true);
+    setMessage(null);
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/candidate/profile/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error(await readError(response));
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "fsp-standardized-profile.pdf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setMessage("Стандартизированный профиль скачан.");
+    } catch (error) {
+      setMessage(`Не удалось скачать профиль: ${(error as Error).message}`);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   if (loading) return <section className="profilePanel muted">Загружаем профиль…</section>;
   if (!draft) return <section className="profilePanel error">{message ?? "Профиль недоступен"}</section>;
 
@@ -183,7 +209,12 @@ export function CandidateProfile({ token }: { token: string }) {
           <strong>Профессиональный профиль</strong>
           <small>Заполните основу — позже добавятся резюме и подтвержденные навыки.</small>
         </div>
-        <span className="profileStatus">SELF-SCOPED</span>
+        <div className="profileHeadingActions">
+          <button className="authButton secondaryButton" type="button" disabled={downloading} onClick={downloadProfile}>
+            {downloading ? "Готовим PDF…" : "Скачать профиль PDF"}
+          </button>
+          <span className="profileStatus">SELF-SCOPED</span>
+        </div>
       </div>
       <form className="profileForm" onSubmit={save}>
         <div className="profileGrid">
