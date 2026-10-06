@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -24,6 +24,7 @@ from .auth import (
     resolve_principal,
     sync_identity,
 )
+from .candidates import get_profile, update_profile
 from .config import get_settings
 from .db import get_db_session
 from .errors import ErrorResponse, error_response, normalize_http_error
@@ -89,6 +90,53 @@ class CandidatePrivacyUpdateRequest(BaseModel):
     processing_consent: bool | None = None
     publication_consent: bool | None = None
     discoverable: bool | None = None
+
+
+class CandidateExperience(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role: str = Field(min_length=1, max_length=120)
+    company: str = Field(min_length=1, max_length=120)
+    started_on: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
+    ended_on: str | None = Field(default=None, pattern=r"^(present|\d{4}-(0[1-9]|1[0-2]))$")
+    description: str | None = Field(default=None, max_length=1000)
+    technologies: list[Annotated[str, Field(min_length=1, max_length=80)]] = Field(
+        default_factory=list, max_length=20
+    )
+
+
+class CandidateWorkPreferences(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    work_mode: Literal["office", "hybrid", "remote"] | None = None
+    employment_type: Literal["full_time", "part_time", "project"] | None = None
+    availability: str | None = Field(default=None, max_length=120)
+
+
+class CandidateProfileUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    display_name: str | None = Field(default=None, max_length=120)
+    headline: str | None = Field(default=None, max_length=160)
+    location: str | None = Field(default=None, max_length=120)
+    summary: str | None = Field(default=None, max_length=2000)
+    experience: list[CandidateExperience] | None = Field(default=None, max_length=12)
+    skills: list[Annotated[str, Field(min_length=1, max_length=80)]] | None = Field(
+        default=None, max_length=30
+    )
+    work_preferences: CandidateWorkPreferences | None = None
+
+
+class CandidateProfileResponse(BaseModel):
+    id: str
+    display_name: str | None
+    headline: str | None
+    location: str | None
+    summary: str | None
+    experience: list[CandidateExperience]
+    skills: list[str]
+    work_preferences: CandidateWorkPreferences
+    updated_at: datetime
 
 
 class CandidatePrivacyResponse(BaseModel):
@@ -386,6 +434,39 @@ def request_candidate_export(
 ) -> PrivacyRequestResponse:
     request_id, request_status = request_export(db, principal)
     return PrivacyRequestResponse(request_id=request_id, request_type="export", status=request_status)
+
+
+@app.get(
+    "/api/v1/candidate/profile",
+    tags=["candidate profile"],
+    response_model=CandidateProfileResponse,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_profile(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CandidateProfileResponse:
+    return CandidateProfileResponse.model_validate(get_profile(db, principal))
+
+
+@app.patch(
+    "/api/v1/candidate/profile",
+    tags=["candidate profile"],
+    response_model=CandidateProfileResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        409: {"model": ErrorResponse, "description": "Processing consent is required"},
+    },
+)
+def update_candidate_profile(
+    request: CandidateProfileUpdateRequest,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CandidateProfileResponse:
+    changes = request.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(status_code=422, detail="profile_update_required")
+    return CandidateProfileResponse.model_validate(update_profile(db, principal, changes))
 
 
 @app.post(

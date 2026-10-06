@@ -39,6 +39,10 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
             "privacy_request",
             "alembic_version",
         } <= tables
+        assert {
+            column["name"]
+            for column in inspect(engine).get_columns("candidate_profile")
+        } >= {"display_name", "headline", "location"}
 
         foreign_keys = inspect(engine).get_foreign_keys("assessment_attempt_item")
         assert {key["referred_table"] for key in foreign_keys} == {

@@ -65,6 +65,33 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .privacyOption { display: flex; gap: 9px; align-items: flex-start; color: #d5d5dc; font-size: 11px; line-height: 1.5; }
 .privacyOption input { accent-color: var(--brand-primary); margin-top: 2px; }
 .privacyPanel > button { justify-self: start; margin-top: 4px; }
+.profilePanel {
+  flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14);
+  padding-top: 16px; color: #ededed;
+}
+.profilePanel.muted, .profilePanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.profilePanel.error { color: #ffb6bd; }
+.profileHeading, .experienceHeading, .profileFooter { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+.profileHeading > div { display: grid; gap: 5px; }
+.profileHeading small, .profileForm small, .profileFooter small { color: #b7b7c1; font-size: 10px; line-height: 1.5; }
+.profileStatus { border: 1px solid rgba(169,161,255,.42); border-radius: 999px; color: #c3bdff; padding: 5px 8px; font-size: 9px; letter-spacing: .08em; white-space: nowrap; }
+.profileForm { display: grid; gap: 13px; }
+.profileForm label { display: grid; gap: 6px; color: #d5d5dc; font-size: 10px; }
+.profileForm input, .profileForm textarea, .profileForm select {
+  width: 100%; border: 1px solid #555760; border-radius: 9px; padding: 10px 11px;
+  background: rgba(255,255,255,.06); color: white; font: inherit; font-size: 11px; outline: none;
+}
+.profileForm textarea { resize: vertical; line-height: 1.5; }
+.profileForm input:focus, .profileForm textarea:focus, .profileForm select:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
+.profileForm select option { color: var(--text); }
+.profileGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.experienceCard { position: relative; display: grid; gap: 11px; border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 18px 12px 12px; min-width: 0; }
+.experienceCard legend { padding: 0 5px; color: #a9a1ff; font-size: 10px; }
+.removeButton, .textButton { border: 0; background: transparent; color: #c3bdff; cursor: pointer; font: inherit; font-size: 10px; padding: 4px 0; }
+.removeButton { position: absolute; right: 12px; top: 8px; color: #ffb6bd; }
+.textButton:hover, .removeButton:hover { text-decoration: underline; }
+.profileFooter { align-items: flex-end; }
+.profileFooter small { max-width: 60%; }
 .proofCard {
   background: white; color: var(--text); border-radius: 24px; padding: 30px;
   box-shadow: 0 25px 90px rgba(0,0,0,.28); transform: rotate(-1deg);
@@ -97,6 +124,9 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .privacyHeading { align-items: flex-start; flex-direction: column; }
   .authActions { flex-direction: column; }
   .authButton { width: 100%; }
+  .profileHeading, .experienceHeading, .profileFooter { align-items: flex-start; flex-direction: column; }
+  .profileGrid { grid-template-columns: 1fr; }
+  .profileFooter small { max-width: none; }
   .principles { grid-template-columns: 1fr; padding: 32px 20px 60px; }
   .shell { background: linear-gradient(180deg, #1b1c21 0 50rem, var(--surface) 50rem); }
 }

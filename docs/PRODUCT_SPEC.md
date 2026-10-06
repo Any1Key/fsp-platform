@@ -61,6 +61,11 @@ Extended target:
 Candidate:
 `register .ru email → verify → consent/privacy → profile/resume → specialization → declared grade → unique assessment → verified/unconfirmed state → discoverability → employer invitation → candidate accepts → MATCH → chat/contact unlock → optional employer stages`
 
+The manual profile step stores a candidate-authored display name, professional
+headline, location, summary, structured work history, skills, and work
+preferences. It is private to the candidate until later publication/discovery
+features explicitly expose eligible professional evidence.
+
 Employer:
 `register .ru email → company profile → hiring need → Talent Radar/categories → ProofMatch ranking → explanation → profile → invitation + salary → accepted MATCH → chat → employer pipeline/tasks`
 

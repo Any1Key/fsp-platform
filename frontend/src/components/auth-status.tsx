@@ -3,6 +3,7 @@
 import Keycloak, { type KeycloakInstance } from "keycloak-js";
 import { useEffect, useRef, useState } from "react";
 import { PrivacySettings } from "./privacy-settings";
+import { CandidateProfile } from "./candidate-profile";
 
 type Session = {
   identity_id: string | null;
@@ -136,7 +137,12 @@ export function AuthStatus() {
         <button className="authButton secondaryButton" onClick={() => keycloak.current?.logout()}>
           Выйти
         </button>
-        {auth.session.role === "candidate" && <PrivacySettings token={keycloak.current?.token ?? ""} />}
+        {auth.session.role === "candidate" && (
+          <>
+            <PrivacySettings token={keycloak.current?.token ?? ""} />
+            <CandidateProfile token={keycloak.current?.token ?? ""} />
+          </>
+        )}
       </div>
     );
   }

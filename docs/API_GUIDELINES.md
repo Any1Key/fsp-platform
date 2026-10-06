@@ -47,3 +47,13 @@ settings.
 request and returns `202` with a request ID and `requested` status. It is an
 MVP request concept; fulfillment is intentionally delegated to a future
 privacy worker and legal-reviewed retention policy.
+
+## Candidate profile
+
+`GET /api/v1/candidate/profile` returns only the authenticated candidate's
+professional self-description. `PATCH` saves the editable display name,
+headline, location, summary, structured experience, skills, and work
+preferences after processing consent is granted. The profile endpoint never
+returns identity email, contacts, DOB/minor state, resume documents, consent
+metadata, or assessment results. Employers receive `ROLE_REQUIRED` and cannot
+use this self-scoped resource.
