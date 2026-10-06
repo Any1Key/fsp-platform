@@ -14,8 +14,8 @@ echo "=== FSP verification $rid ==="
 date
 git status --short || true
 
-echo "=== QA contract ==="
-"$ROOT/agent/test-qa-contract.sh"
+echo "=== CI and QA contracts ==="
+bash "$ROOT/agent/test-ci-contract.sh"
 
 echo "=== compose config ==="
 docker compose config -q

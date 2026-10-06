@@ -6,7 +6,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] dependency locks and migrations
 - [x] DB/session infrastructure
 - [x] API error envelope/request IDs
-- [ ] CI baseline
+- [x] CI baseline
 - [ ] CPU-only resource baseline
 
 ## M01 — Keycloak identity, .ru registration, roles, consent

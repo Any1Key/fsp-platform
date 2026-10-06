@@ -42,6 +42,25 @@ persistence work unit wires repositories to this schema; the database session
 boundary and migration establish the shared persistence foundation but do not
 claim that feature is complete.
 
+## Continuous integration
+
+`.github/workflows/ci.yml` is the repository CI baseline. It runs backend
+tests/Ruff, frontend typecheck/build, the locked QA toolchain, the QA/Playwright
+version contract, and `docker compose --profile test config -q`. Backend
+dependencies come from `backend/requirements.lock`; frontend and QA use
+`npm ci` with their committed lockfiles. Pull-request and push jobs use
+read-only repository permissions and cancel superseded runs.
+
+The local contract check is repeatable without starting services:
+
+```bash
+bash agent/test-ci-contract.sh
+```
+
+CI configuration and contract checks establish the automated gate only. The
+external supervisor remains responsible for running the full Compose startup,
+health checks and Playwright E2E flow before assigning `VERIFIED` status.
+
 Stop:
 ```bash
 docker compose down
