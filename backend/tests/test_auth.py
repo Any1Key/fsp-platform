@@ -126,6 +126,65 @@ def test_valid_keycloak_token_provisions_identity_once_and_returns_session(auth_
     assert first.json()["identity_id"] == second.json()["identity_id"]
 
 
+def test_verified_no_role_account_can_complete_one_time_role_onboarding(auth_context):
+    client, private_key, settings = auth_context
+    token = _token(
+        private_key,
+        settings,
+        sub="kc-onboarding-candidate",
+        email="new-candidate@team.ru",
+        realm_access={"roles": []},
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    pending = client.get("/api/v1/auth/me", headers=headers)
+    assert pending.status_code == 200
+    assert pending.json() == {
+        "identity_id": None,
+        "keycloak_sub": "kc-onboarding-candidate",
+        "email": "new-candidate@team.ru",
+        "role": "pending",
+        "email_verified": True,
+        "onboarding_required": True,
+    }
+    assert client.get("/api/v1/candidate/context", headers=headers).status_code == 403
+    assert client.get("/api/v1/employer/context", headers=headers).status_code == 403
+
+    completed = client.post("/api/v1/auth/onboarding/role", headers=headers, json={"role": "candidate"})
+    assert completed.status_code == 200
+    assert completed.json()["role"] == "candidate"
+    assert completed.json()["onboarding_required"] is False
+    identity_id = completed.json()["identity_id"]
+
+    # The same request is safe to replay, but switching the bound role is not.
+    replay = client.post("/api/v1/auth/onboarding/role", headers=headers, json={"role": "candidate"})
+    assert replay.status_code == 200
+    assert replay.json()["identity_id"] == identity_id
+    switched = client.post("/api/v1/auth/onboarding/role", headers=headers, json={"role": "employer"})
+    assert switched.status_code == 409
+    assert switched.json()["error"]["code"] == "IDENTITY_ROLE_CONFLICT"
+
+    resolved = client.get("/api/v1/auth/me", headers=headers)
+    assert resolved.status_code == 200
+    assert resolved.json()["role"] == "candidate"
+    assert client.get("/api/v1/candidate/context", headers=headers).status_code == 200
+    assert client.get("/api/v1/employer/context", headers=headers).status_code == 403
+
+    conflicting_keycloak_role = _token(
+        private_key,
+        settings,
+        sub="kc-onboarding-candidate",
+        email="new-candidate@team.ru",
+        role="employer",
+    )
+    conflict = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {conflicting_keycloak_role}"},
+    )
+    assert conflict.status_code == 403
+    assert conflict.json()["error"]["code"] == "IDENTITY_ROLE_CONFLICT"
+
+
 def test_missing_or_invalid_token_is_rejected_without_leaking_claims(auth_context):
     client, private_key, settings = auth_context
 

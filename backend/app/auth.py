@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Any, Protocol
 from uuid import uuid4
@@ -40,7 +40,7 @@ class Principal:
     subject: str
     email: str
     email_verified: bool
-    role: Role
+    role: Role | None
 
 
 def normalize_email(email: str) -> str:
@@ -110,18 +110,40 @@ class OIDCVerifier:
 
         roles = _claim_roles(claims, self.settings.keycloak_client_id)
         supported_roles = roles & ALL_ROLES
-        if len(supported_roles) != 1:
+        if roles and len(supported_roles) != 1:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="unsupported_or_ambiguous_role")
         return Principal(
             subject=subject,
             email=normalized_email,
             email_verified=email_verified,
-            role=Role(next(iter(supported_roles))),
+            role=Role(next(iter(supported_roles))) if supported_roles else None,
         )
+
+
+def resolve_principal(db: Session, principal: Principal) -> Principal:
+    """Resolve a previously selected local role for a no-role Keycloak token."""
+
+    identity = db.execute(
+        text("SELECT role FROM user_identity WHERE keycloak_sub = :subject"),
+        {"subject": principal.subject},
+    ).scalar_one_or_none()
+    if identity is None:
+        return principal
+
+    try:
+        local_role = Role(identity)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="identity_role_conflict") from exc
+    if principal.role is not None and principal.role != local_role:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="identity_role_conflict")
+    return replace(principal, role=local_role)
 
 
 def sync_identity(db: Session, principal: Principal) -> dict[str, Any]:
     """Provision or refresh the local identity from validated Keycloak claims."""
+
+    if principal.role is None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="role_onboarding_required")
 
     existing = db.execute(
         text(
@@ -182,6 +204,24 @@ def sync_identity(db: Session, principal: Principal) -> dict[str, Any]:
         "role": principal.role.value,
         "email_verified": principal.email_verified,
     }
+
+
+def bind_role(db: Session, principal: Principal, role: Role) -> dict[str, Any]:
+    """Bind one public platform role to a verified Keycloak subject once."""
+
+    if role not in PUBLIC_ROLES:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="unsupported_onboarding_role")
+    if principal.role is not None and principal.role != role:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="identity_role_conflict")
+
+    existing = db.execute(
+        text("SELECT role FROM user_identity WHERE keycloak_sub = :subject"),
+        {"subject": principal.subject},
+    ).scalar_one_or_none()
+    if existing is not None and existing != role.value:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="identity_role_conflict")
+
+    return sync_identity(db, replace(principal, role=role))
 
 
 def require_role(*required_roles: Role):

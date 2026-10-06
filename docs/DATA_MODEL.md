@@ -1,7 +1,11 @@
 # Data model — target
 
 ## Identity/profile
-- `user_identity`: id, keycloak_sub, email, role, timestamps.
+- `user_identity`: id, keycloak_sub, email, one-time-bound platform role, timestamps.
+- A verified Keycloak account without an application role is not persisted as a
+  partial identity; it remains `pending` until candidate/employer onboarding
+  completes. The selected role is then the local authorization binding and is
+  checked against any explicit Keycloak role claim.
 - `candidate_profile`: identity, protected contacts, summary, experience, role, preferences, privacy, consents, FSP link, private DOB/minor state.
 - `minor_consent_document`: candidate, version/status, protected file metadata, timestamps, reviewer/audit metadata.
 - `company`: owner, name, description, industry, public contacts, trust fields.

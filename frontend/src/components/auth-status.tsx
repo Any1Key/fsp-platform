@@ -4,8 +4,12 @@ import Keycloak, { type KeycloakInstance } from "keycloak-js";
 import { useEffect, useRef, useState } from "react";
 
 type Session = {
+  identity_id: string | null;
+  keycloak_sub: string;
   email: string;
   role: string;
+  email_verified: boolean;
+  onboarding_required: boolean;
 };
 
 type AuthState =
@@ -19,6 +23,8 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 export function AuthStatus() {
   const keycloak = useRef<KeycloakInstance | null>(null);
   const [auth, setAuth] = useState<AuthState>({ status: "loading" });
+  const [roleSaving, setRoleSaving] = useState(false);
+  const [roleError, setRoleError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -57,6 +63,33 @@ export function AuthStatus() {
     };
   }, []);
 
+  async function chooseRole(role: "candidate" | "employer") {
+    const token = keycloak.current?.token;
+    if (!token) return;
+    setRoleSaving(true);
+    setRoleError(null);
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/auth/onboarding/role`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ role }),
+      });
+      if (!response.ok) {
+        setRoleError("Не удалось закрепить роль. Обновите сессию и повторите.");
+        return;
+      }
+      const session = (await response.json()) as Session;
+      setAuth({ status: "signed-in", session });
+    } catch {
+      setRoleError("Сервис ролей пока недоступен.");
+    } finally {
+      setRoleSaving(false);
+    }
+  }
+
   if (auth.status === "loading") {
     return <div className="authPanel muted">Проверяем защищённую сессию…</div>;
   }
@@ -64,6 +97,34 @@ export function AuthStatus() {
     return <div className="authPanel error">{auth.message}</div>;
   }
   if (auth.status === "signed-in") {
+    if (auth.session.onboarding_required) {
+      return (
+        <div className="authPanel onboardingPanel">
+          <div>
+            <span className="authLabel">FIRST STEP</span>
+            <strong>Выберите рабочую роль</strong>
+            <small>{auth.session.email} · роль можно выбрать один раз</small>
+          </div>
+          <div className="authActions">
+            <button
+              className="authButton primaryButton"
+              disabled={roleSaving}
+              onClick={() => chooseRole("candidate")}
+            >
+              Я кандидат
+            </button>
+            <button
+              className="authButton secondaryButton"
+              disabled={roleSaving}
+              onClick={() => chooseRole("employer")}
+            >
+              Я работодатель
+            </button>
+            {roleError && <small className="onboardingError">{roleError}</small>}
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="authPanel">
         <div>

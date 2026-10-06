@@ -56,6 +56,18 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "IDENTITY_ALREADY_EXISTS",
         "The identity could not be provisioned safely.",
     ),
+    "identity_role_conflict": (
+        "IDENTITY_ROLE_CONFLICT",
+        "The account already has a different platform role.",
+    ),
+    "role_onboarding_required": (
+        "ROLE_ONBOARDING_REQUIRED",
+        "Choose a platform role before using this area.",
+    ),
+    "unsupported_onboarding_role": (
+        "UNSUPPORTED_ONBOARDING_ROLE",
+        "Choose either the candidate or employer role.",
+    ),
     "authorization_header_required": (
         "AUTHORIZATION_REQUIRED",
         "A Bearer access token is required.",

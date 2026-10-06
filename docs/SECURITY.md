@@ -16,6 +16,14 @@ persisted or written to logs. Candidate and employer context routes exercise
 the role checks server-side; a valid token for one role cannot access the other
 role's context.
 
+Verified accounts that have no application role claim enter a pending state.
+They can call only the role-onboarding endpoint, which accepts exactly one
+candidate/employer choice and binds it to the validated Keycloak subject.
+Repeated selection of the same role is idempotent; switching roles is rejected.
+The persisted role is used for later no-role tokens, and an explicit conflicting
+role claim is rejected. This permits the public Keycloak registration flow to
+finish without granting an unselected account either protected workspace.
+
 Keycloak owns registration, passwords, verification tokens and the verified
 email state. Mailpit is a local/demo SMTP sink only. The Compose QA profile
 proves that a new synthetic `.ru` account is unverified before the Mailpit link

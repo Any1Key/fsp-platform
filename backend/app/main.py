@@ -14,7 +14,15 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 
 from .assessments import AssessmentError, AssessmentService, public_attempt
-from .auth import Principal, Role, build_verifier, is_allowed_registration_email, sync_identity
+from .auth import (
+    Principal,
+    Role,
+    bind_role,
+    build_verifier,
+    is_allowed_registration_email,
+    resolve_principal,
+    sync_identity,
+)
 from .config import get_settings
 from .db import get_db_session
 from .errors import ErrorResponse, error_response, normalize_http_error
@@ -63,11 +71,16 @@ class RegistrationCheckResponse(BaseModel):
 
 
 class AuthSessionResponse(BaseModel):
-    identity_id: str
+    identity_id: str | None
     keycloak_sub: str
     email: str
     role: str
     email_verified: bool
+    onboarding_required: bool = False
+
+
+class RoleOnboardingRequest(BaseModel):
+    role: Literal["candidate", "employer"]
 
 
 def _request_id(value: str | None) -> str:
@@ -150,8 +163,15 @@ def get_current_principal(
     return auth_verifier.verify(credentials.credentials)
 
 
-def candidate_principal(
+def resolve_current_principal(
     principal: Annotated[Principal, Depends(get_current_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> Principal:
+    return resolve_principal(db, principal)
+
+
+def candidate_principal(
+    principal: Annotated[Principal, Depends(resolve_current_principal)],
 ) -> Principal:
     if principal.role != Role.CANDIDATE:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="role_required")
@@ -159,7 +179,7 @@ def candidate_principal(
 
 
 def employer_principal(
-    principal: Annotated[Principal, Depends(get_current_principal)],
+    principal: Annotated[Principal, Depends(resolve_current_principal)],
 ) -> Principal:
     if principal.role != Role.EMPLOYER:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="role_required")
@@ -188,9 +208,18 @@ def check_registration(request: RegistrationCheckRequest) -> RegistrationCheckRe
     responses={401: {"model": ErrorResponse, "description": "Authentication required"}},
 )
 def auth_me(
-    principal: Annotated[Principal, Depends(get_current_principal)],
+    principal: Annotated[Principal, Depends(resolve_current_principal)],
     db: Annotated[Session, Depends(get_db_session)],
 ) -> AuthSessionResponse:
+    if principal.role is None:
+        return AuthSessionResponse(
+            identity_id=None,
+            keycloak_sub=principal.subject,
+            email=principal.email,
+            role="pending",
+            email_verified=principal.email_verified,
+            onboarding_required=True,
+        )
     identity = sync_identity(db, principal)
     return AuthSessionResponse(
         identity_id=identity["id"],
@@ -198,6 +227,32 @@ def auth_me(
         email=identity["email"],
         role=identity["role"],
         email_verified=identity["email_verified"],
+        onboarding_required=False,
+    )
+
+
+@app.post(
+    "/api/v1/auth/onboarding/role",
+    tags=["auth"],
+    response_model=AuthSessionResponse,
+    responses={
+        409: {"model": ErrorResponse, "description": "Role is already bound"},
+        422: {"model": ErrorResponse, "description": "Unsupported onboarding role"},
+    },
+)
+def complete_role_onboarding(
+    request: RoleOnboardingRequest,
+    principal: Annotated[Principal, Depends(get_current_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> AuthSessionResponse:
+    identity = bind_role(db, principal, Role(request.role))
+    return AuthSessionResponse(
+        identity_id=identity["id"],
+        keycloak_sub=identity["keycloak_sub"],
+        email=identity["email"],
+        role=identity["role"],
+        email_verified=identity["email_verified"],
+        onboarding_required=False,
     )
 
 
@@ -212,6 +267,7 @@ def _role_context(
         email=identity["email"],
         role=identity["role"],
         email_verified=identity["email_verified"],
+        onboarding_required=False,
     )
 
 

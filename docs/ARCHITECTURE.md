@@ -100,6 +100,14 @@ verification message to the Compose Mailpit adapter. `qa/tests/auth-registration
 proves the unverified-to-verified transition through the local Mailpit and
 Keycloak admin APIs using synthetic test data only.
 
+After verification, a self-registered Keycloak user may have no application
+role claim. The API represents that session as `pending`; the landing page
+offers candidate/employer role onboarding, and
+`POST /api/v1/auth/onboarding/role` binds the selected role to the validated
+Keycloak subject exactly once. Subsequent no-role tokens resolve the persisted
+role, while explicit Keycloak role claims must agree with it. Until binding,
+neither role context is accessible.
+
 The identity boundary is implemented by `backend/app/auth.py` and
 `backend/app/main.py`. The API accepts only RS256 access tokens from the
 configured Keycloak issuer and `fsp-web` audience, resolves signing keys from

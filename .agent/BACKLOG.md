@@ -13,7 +13,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] working candidate/employer sign-in via Keycloak
 - [x] email verification via Mailpit
 - [x] reject non-`.ru` registration email
-- [ ] role onboarding
+- [x] role onboarding
 - [ ] consent/privacy
 - [x] Keycloak/JWT demo evidence
 - [x] authorization integration tests
