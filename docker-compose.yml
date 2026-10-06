@@ -111,6 +111,11 @@ services:
     environment:
       FRONTEND_BASE_URL: http://frontend:3000
       BACKEND_BASE_URL: http://backend:8000
+      AUTH_E2E_ENABLED: "true"
+      KEYCLOAK_E2E_BASE_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      MAILPIT_BASE_URL: http://mailpit:8025
       SCREENSHOT_OUTPUT: /workspace/screenshots
     volumes:
       - ./.agent/screenshots/latest:/workspace/screenshots

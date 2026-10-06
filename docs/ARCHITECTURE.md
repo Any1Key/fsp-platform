@@ -94,6 +94,12 @@ Backend: JWT issuer/audience/signature/role validation.
 Application stores no user passwords.
 Registration permits only email domains ending in `.ru`.
 
+Registration and email verification remain Keycloak-owned flows. The landing
+page exposes both login and registration actions; Keycloak sends the
+verification message to the Compose Mailpit adapter. `qa/tests/auth-registration.spec.ts`
+proves the unverified-to-verified transition through the local Mailpit and
+Keycloak admin APIs using synthetic test data only.
+
 The identity boundary is implemented by `backend/app/auth.py` and
 `backend/app/main.py`. The API accepts only RS256 access tokens from the
 configured Keycloak issuer and `fsp-web` audience, resolves signing keys from

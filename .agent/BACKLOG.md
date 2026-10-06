@@ -11,7 +11,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 
 ## M01 — Keycloak identity, .ru registration, roles, consent
 - [x] working candidate/employer sign-in via Keycloak
-- [ ] email verification via Mailpit
+- [x] email verification via Mailpit
 - [x] reject non-`.ru` registration email
 - [ ] role onboarding
 - [ ] consent/privacy

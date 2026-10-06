@@ -16,6 +16,12 @@ persisted or written to logs. Candidate and employer context routes exercise
 the role checks server-side; a valid token for one role cannot access the other
 role's context.
 
+Keycloak owns registration, passwords, verification tokens and the verified
+email state. Mailpit is a local/demo SMTP sink only. The Compose QA profile
+proves that a new synthetic `.ru` account is unverified before the Mailpit link
+is consumed and verified afterward; the QA admin password is injected from the
+environment and is not logged or committed.
+
 ## Data minimization
 Separate employer-visible professional profile from protected contacts, date of birth/minor status, consent documents and private interaction data.
 

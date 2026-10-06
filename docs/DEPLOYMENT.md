@@ -15,6 +15,25 @@ Default:
 - Keycloak `http://HOST:8081`
 - Mailpit `http://HOST:8025`
 
+## Email verification demo
+
+Select `Создать аккаунт` on the landing page. Keycloak hosts the registration
+form and accepts only the configured `.ru` email domain. After submitting the
+form, open Mailpit, open the Keycloak verification message, and follow its
+link. Keycloak owns the password and verification token; the application only
+accepts a verified email claim in an access token.
+
+The repeatable Compose-profile evidence is:
+
+```bash
+docker compose --profile test run --rm qa npm test
+```
+
+It uses a synthetic unique `.ru` address, asserts the newly-created account is
+initially unverified, reads the link from Mailpit's local API, follows it, and
+asserts Keycloak's user state becomes verified. Admin credentials are supplied
+from `.env` to the disposable QA container and are not stored in the repo.
+
 The backend container applies the committed Alembic migrations before starting
 the API. To apply or inspect the schema manually from the repository:
 

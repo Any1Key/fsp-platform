@@ -84,9 +84,14 @@ export function AuthStatus() {
         <strong>Войти как кандидат или работодатель</strong>
         <small>Keycloak · Authorization Code + PKCE · только подтверждённый .ru email</small>
       </div>
-      <button className="authButton primaryButton" onClick={() => keycloak.current?.login()}>
-        Войти через Keycloak
-      </button>
+      <div className="authActions">
+        <button className="authButton primaryButton" onClick={() => keycloak.current?.login()}>
+          Войти через Keycloak
+        </button>
+        <button className="authButton secondaryButton" onClick={() => keycloak.current?.register()}>
+          Создать аккаунт
+        </button>
+      </div>
     </div>
   );
 }

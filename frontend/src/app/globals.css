@@ -47,6 +47,7 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .authPanel small, .authPanel.muted { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
 .authLabel { color: #a9a1ff; font-size: 10px; letter-spacing: .1em; }
 .authPanel.error { color: #ffb6bd; font-size: 11px; }
+.authActions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .authButton { border: 0; border-radius: 10px; padding: 11px 13px; color: white; cursor: pointer; font: inherit; font-size: 11px; white-space: nowrap; }
 .primaryButton { background: var(--brand-primary); }
 .secondaryButton { background: #34353d; }
@@ -79,6 +80,7 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .hero { grid-template-columns: 1fr; padding: 40px 20px 52px; gap: 34px; }
   .proofCard { transform: none; }
   .authPanel { align-items: stretch; flex-direction: column; }
+  .authActions { flex-direction: column; }
   .authButton { width: 100%; }
   .principles { grid-template-columns: 1fr; padding: 32px 20px 60px; }
   .shell { background: linear-gradient(180deg, #1b1c21 0 50rem, var(--surface) 50rem); }
