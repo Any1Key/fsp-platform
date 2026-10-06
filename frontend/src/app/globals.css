@@ -54,6 +54,17 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .secondaryButton { background: #34353d; }
 .onboardingPanel { border-color: rgba(169,161,255,.48); }
 .onboardingError { color: #ffb6bd; }
+.signedInPanel { align-items: flex-start; flex-wrap: wrap; }
+.privacyPanel {
+  flex: 1 1 100%; display: grid; gap: 10px; border-top: 1px solid rgba(255,255,255,.14);
+  padding-top: 14px; color: #ededed;
+}
+.privacyHeading { display: flex; justify-content: space-between; gap: 14px; align-items: baseline; }
+.privacyHeading > div { display: grid; gap: 5px; }
+.privacyHeading small, .privacyMessage { color: #b7b7c1; font-size: 10px; line-height: 1.5; }
+.privacyOption { display: flex; gap: 9px; align-items: flex-start; color: #d5d5dc; font-size: 11px; line-height: 1.5; }
+.privacyOption input { accent-color: var(--brand-primary); margin-top: 2px; }
+.privacyPanel > button { justify-self: start; margin-top: 4px; }
 .proofCard {
   background: white; color: var(--text); border-radius: 24px; padding: 30px;
   box-shadow: 0 25px 90px rgba(0,0,0,.28); transform: rotate(-1deg);
@@ -83,6 +94,7 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .hero { grid-template-columns: 1fr; padding: 40px 20px 52px; gap: 34px; }
   .proofCard { transform: none; }
   .authPanel { align-items: stretch; flex-direction: column; }
+  .privacyHeading { align-items: flex-start; flex-direction: column; }
   .authActions { flex-direction: column; }
   .authButton { width: 100%; }
   .principles { grid-template-columns: 1fr; padding: 32px 20px 60px; }

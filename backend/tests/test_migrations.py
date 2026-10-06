@@ -35,6 +35,8 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
             "assessment_attempt_item",
             "assessment_answer",
             "assessment_result",
+            "audit_event",
+            "privacy_request",
             "alembic_version",
         } <= tables
 

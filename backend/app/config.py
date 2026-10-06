@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     keycloak_client_id: str = "fsp-web"
     keycloak_jwks_cache_seconds: int = 300
     require_verified_email: bool = True
+    privacy_policy_version: str = "2026-10-06"
     cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     @property

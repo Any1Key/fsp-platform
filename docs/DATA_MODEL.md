@@ -6,7 +6,7 @@
   partial identity; it remains `pending` until candidate/employer onboarding
   completes. The selected role is then the local authorization binding and is
   checked against any explicit Keycloak role claim.
-- `candidate_profile`: identity, protected contacts, summary, experience, role, preferences, privacy, consents, FSP link, private DOB/minor state.
+- `candidate_profile`: identity, protected contacts, summary, experience, role, preferences, privacy, consents, FSP link, private DOB/minor state. Processing and publication consent store policy version, timestamp and source; discoverability is separate and consent-dependent.
 - `minor_consent_document`: candidate, version/status, protected file metadata, timestamps, reviewer/audit metadata.
 - `company`: owner, name, description, industry, public contacts, trust fields.
 
@@ -117,5 +117,8 @@ Employer evaluation is employer-specific evidence by default.
 - evidence freshness effects
 
 ## Audit
+- `audit_event`: actor identity, event type, non-PII JSON details and timestamp. Audit consent grants/withdrawals, discoverability changes and privacy export requests alongside future domain transitions.
+- `privacy_request`: authenticated export/deletion request type and lifecycle status. The current MVP records export requests as `requested`; fulfillment and retention policy remain a later worker/legal-review concern.
+
 Audit consent changes, minor-document events, contact/chat unlocks, grade decisions, invitation transitions, FSP link changes and employer grading events.
 Never persist secret tokens in domain tables.

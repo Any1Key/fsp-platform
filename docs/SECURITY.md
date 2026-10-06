@@ -48,7 +48,18 @@ After valid match/unlock:
 Dedicated integration tests are mandatory.
 
 ## Consent
-Persist processing/publication consent version + timestamp + purpose/source. Discoverability off removes candidate from future search.
+The candidate privacy boundary is implemented by `GET/PATCH
+/api/v1/candidate/privacy`. It persists processing/publication consent version,
+timestamp and source, keeps discoverability separate, and records non-PII
+`audit_event` rows for grants, withdrawals and discoverability changes. The
+configured policy version is supplied by the server, not the browser.
+Publication requires processing consent; discoverability requires publication
+consent. Withdrawal cascades to dependent settings, so discoverability off
+removes a candidate from future search.
+
+`POST /api/v1/candidate/privacy/export` records an authenticated export
+request as `requested` and creates an audit event. This is an MVP concept until
+the fulfillment worker and legally reviewed retention/deletion policy exist.
 
 For a configured minor threshold, publication/discoverability requires required legal-representative document status. Employer never receives the document.
 

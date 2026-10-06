@@ -42,6 +42,7 @@ Supporting:
 - `hiring_pipeline`
 - `employer_tasks`
 - `documents`
+- `privacy`
 - `local_ai`
 - `audit`
 
@@ -120,6 +121,13 @@ profile applies the same `.ru` pattern during self-registration, while
 preflight. The API allows only the documented localhost/127.0.0.1 frontend
 origins for browser requests, with explicit Bearer-header preflight support;
 credentials are not enabled.
+
+Candidate privacy is a self-scoped boundary in `backend/app/privacy.py` and
+the candidate routes in `backend/app/main.py`. It lazily provisions the
+candidate profile, applies server-owned consent dependencies, stores only
+version/timestamp/source provenance, and writes non-PII audit events. Employer
+tokens cannot read or mutate the boundary. Export requests are persisted as a
+safe asynchronous-work concept and do not expose profile contents in the API.
 
 ## Match/chat authorization
 

@@ -270,3 +270,108 @@ def test_role_contexts_are_server_side_and_do_not_cross_access(auth_context):
         ("client-role@company.ru", "employer"),
         ("employer@company.ru", "employer"),
     ]
+
+
+def test_candidate_privacy_requires_consent_and_records_safe_audit(auth_context):
+    client, private_key, settings = auth_context
+    headers = {"Authorization": f"Bearer {_token(private_key, settings)}"}
+
+    initial = client.get("/api/v1/candidate/privacy", headers=headers)
+    assert initial.status_code == 200
+    assert initial.json() == {
+        "processing_consent": False,
+        "processing_consent_version": None,
+        "processing_consent_at": None,
+        "publication_consent": False,
+        "publication_consent_version": None,
+        "publication_consent_at": None,
+        "discoverable": False,
+    }
+
+    publication_without_processing = client.patch(
+        "/api/v1/candidate/privacy",
+        headers=headers,
+        json={"publication_consent": True},
+    )
+    assert publication_without_processing.status_code == 409
+    assert publication_without_processing.json()["error"]["code"] == "PROCESSING_CONSENT_REQUIRED"
+
+    granted = client.patch(
+        "/api/v1/candidate/privacy",
+        headers=headers,
+        json={"processing_consent": True, "publication_consent": True, "discoverable": True},
+    )
+    assert granted.status_code == 200
+    assert granted.json()["processing_consent"] is True
+    assert granted.json()["publication_consent"] is True
+    assert granted.json()["discoverable"] is True
+    assert granted.json()["processing_consent_version"] == "2026-10-06"
+    assert granted.json()["publication_consent_version"] == "2026-10-06"
+    assert granted.json()["processing_consent_at"]
+    assert granted.json()["publication_consent_at"]
+    unchanged_consent = client.patch(
+        "/api/v1/candidate/privacy",
+        headers=headers,
+        json={"discoverable": True},
+    )
+    assert unchanged_consent.status_code == 200
+    assert unchanged_consent.json()["processing_consent_at"] == granted.json()["processing_consent_at"]
+    assert unchanged_consent.json()["publication_consent_at"] == granted.json()["publication_consent_at"]
+
+    export = client.post("/api/v1/candidate/privacy/export", headers=headers)
+    assert export.status_code == 202
+    assert export.json()["request_type"] == "export"
+    assert export.json()["status"] == "requested"
+
+    withdrawn = client.patch(
+        "/api/v1/candidate/privacy",
+        headers=headers,
+        json={"processing_consent": False},
+    )
+    assert withdrawn.status_code == 200
+    assert withdrawn.json()["processing_consent"] is False
+    assert withdrawn.json()["publication_consent"] is False
+    assert withdrawn.json()["discoverable"] is False
+
+    engine = create_engine(settings.database_url)
+    try:
+        with engine.connect() as connection:
+            audit = connection.execute(
+                text("SELECT event_type, details FROM audit_event ORDER BY occurred_at, id")
+            ).all()
+            privacy_requests = connection.execute(
+                text("SELECT request_type, status FROM privacy_request")
+            ).all()
+    finally:
+        engine.dispose()
+    assert sorted(event[0] for event in audit) == sorted([
+        "processing_consent_granted",
+        "publication_consent_granted",
+        "discoverability_changed",
+        "privacy_export_requested",
+        "processing_consent_withdrawn",
+        "publication_consent_withdrawn",
+        "discoverability_changed",
+    ])
+    assert all("candidate@team.ru" not in event[1] for event in audit)
+    assert privacy_requests == [("export", "requested")]
+
+
+def test_employer_cannot_read_or_change_candidate_privacy(auth_context):
+    client, private_key, settings = auth_context
+    headers = {
+        "Authorization": f"Bearer {_token(private_key, settings, sub='kc-employer-privacy', email='employer@company.ru', role='employer')}"
+    }
+
+    for method, path in (("get", "/api/v1/candidate/privacy"), ("post", "/api/v1/candidate/privacy/export")):
+        response = getattr(client, method)(path, headers=headers)
+        assert response.status_code == 403
+        assert response.json()["error"]["code"] == "ROLE_REQUIRED"
+
+    response = client.patch(
+        "/api/v1/candidate/privacy",
+        headers=headers,
+        json={"discoverable": True},
+    )
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "ROLE_REQUIRED"

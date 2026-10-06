@@ -14,7 +14,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] email verification via Mailpit
 - [x] reject non-`.ru` registration email
 - [x] role onboarding
-- [ ] consent/privacy
+- [x] consent/privacy
 - [x] Keycloak/JWT demo evidence
 - [x] authorization integration tests
 

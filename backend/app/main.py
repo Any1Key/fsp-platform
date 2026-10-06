@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from typing import Annotated, Any, Literal
 from uuid import uuid4
 
@@ -26,6 +27,7 @@ from .auth import (
 from .config import get_settings
 from .db import get_db_session
 from .errors import ErrorResponse, error_response, normalize_http_error
+from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 
 app = FastAPI(
     title="FSP Talent Platform API",
@@ -36,7 +38,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
 
@@ -81,6 +83,28 @@ class AuthSessionResponse(BaseModel):
 
 class RoleOnboardingRequest(BaseModel):
     role: Literal["candidate", "employer"]
+
+
+class CandidatePrivacyUpdateRequest(BaseModel):
+    processing_consent: bool | None = None
+    publication_consent: bool | None = None
+    discoverable: bool | None = None
+
+
+class CandidatePrivacyResponse(BaseModel):
+    processing_consent: bool
+    processing_consent_version: str | None
+    processing_consent_at: datetime | None
+    publication_consent: bool
+    publication_consent_version: str | None
+    publication_consent_at: datetime | None
+    discoverable: bool
+
+
+class PrivacyRequestResponse(BaseModel):
+    request_id: str
+    request_type: Literal["export"]
+    status: Literal["requested"]
 
 
 def _request_id(value: str | None) -> str:
@@ -295,6 +319,73 @@ def employer_context(
     db: Annotated[Session, Depends(get_db_session)],
 ) -> AuthSessionResponse:
     return _role_context(principal, db)
+
+
+def _privacy_response(state: PrivacyState) -> CandidatePrivacyResponse:
+    return CandidatePrivacyResponse(
+        processing_consent=state.processing_consent,
+        processing_consent_version=state.processing_consent_version,
+        processing_consent_at=state.processing_consent_at,
+        publication_consent=state.publication_consent,
+        publication_consent_version=state.publication_consent_version,
+        publication_consent_at=state.publication_consent_at,
+        discoverable=state.discoverable,
+    )
+
+
+@app.get(
+    "/api/v1/candidate/privacy",
+    tags=["candidate privacy"],
+    response_model=CandidatePrivacyResponse,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_privacy(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CandidatePrivacyResponse:
+    return _privacy_response(get_privacy(db, principal))
+
+
+@app.patch(
+    "/api/v1/candidate/privacy",
+    tags=["candidate privacy"],
+    response_model=CandidatePrivacyResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        409: {"model": ErrorResponse, "description": "Consent dependency is not satisfied"},
+    },
+)
+def update_candidate_privacy(
+    request: CandidatePrivacyUpdateRequest,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CandidatePrivacyResponse:
+    if request.processing_consent is None and request.publication_consent is None and request.discoverable is None:
+        raise HTTPException(status_code=422, detail="privacy_update_required")
+    state = update_privacy(
+        db,
+        principal,
+        get_settings(),
+        processing_consent=request.processing_consent,
+        publication_consent=request.publication_consent,
+        discoverable=request.discoverable,
+    )
+    return _privacy_response(state)
+
+
+@app.post(
+    "/api/v1/candidate/privacy/export",
+    tags=["candidate privacy"],
+    response_model=PrivacyRequestResponse,
+    status_code=202,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def request_candidate_export(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> PrivacyRequestResponse:
+    request_id, request_status = request_export(db, principal)
+    return PrivacyRequestResponse(request_id=request_id, request_type="export", status=request_status)
 
 
 @app.post(

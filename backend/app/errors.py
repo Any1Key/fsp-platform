@@ -68,6 +68,14 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "UNSUPPORTED_ONBOARDING_ROLE",
         "Choose either the candidate or employer role.",
     ),
+    "processing_consent_required": (
+        "PROCESSING_CONSENT_REQUIRED",
+        "Processing consent is required before publication.",
+    ),
+    "publication_consent_required": (
+        "PUBLICATION_CONSENT_REQUIRED",
+        "Publication consent is required before discoverability.",
+    ),
     "authorization_header_required": (
         "AUTHORIZATION_REQUIRED",
         "A Bearer access token is required.",
