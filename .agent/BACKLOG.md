@@ -28,7 +28,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] candidate dashboard
 
 ## M03 — Taxonomy and calibrated unique assessment
-- [ ] taxonomy data/model
+- [x] taxonomy data/model
 - [x] competency blueprints
 - [x] template families + secure parameterized variants
 - [x] anchor surface variants

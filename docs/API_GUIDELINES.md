@@ -33,6 +33,15 @@ exception text is never returned.
 Document 400/401/403/404/409/422 cases where relevant.
 Do not leak protected resource existence across authorization boundaries.
 
+## Taxonomy catalog
+
+`GET /api/v1/taxonomy` returns active non-sensitive specialization, grade, and
+skill metadata for onboarding and future employer filters. It also returns
+explicit category keys formed as `specialization-slug:grade-slug`. The route
+is read-only and does not expose candidate profile data or assessment results;
+the assessment service remains responsible for deciding whether a candidate's
+declared grade is verified.
+
 ## Candidate privacy
 
 `GET /api/v1/candidate/privacy` returns only the authenticated candidate's

@@ -27,6 +27,8 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
             "candidate_profile",
             "specialization",
             "grade",
+            "skill",
+            "specialization_skill",
             "assessment_blueprint",
             "question_family",
             "question_template",
@@ -50,6 +52,11 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
             "question_family",
             "question_template",
             "question_variant",
+        }
+        taxonomy_foreign_keys = inspect(engine).get_foreign_keys("specialization_skill")
+        assert {key["referred_table"] for key in taxonomy_foreign_keys} == {
+            "specialization",
+            "skill",
         }
 
         with engine.begin() as connection:

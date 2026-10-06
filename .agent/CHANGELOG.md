@@ -1,5 +1,10 @@
 # Agent changelog
 
+- 2026-10-07: implemented the M03 data-driven taxonomy catalog slice with
+  seeded specializations/grades/skills, specialization-skill mappings,
+  typed read API, migration tests, and category-key documentation. Candidate
+  onboarding and assessment-to-category persistence remain separate units.
+
 Bootstrap repository created.
 
 - 2026-10-06: integrated live conference Q&A clarifications: unique assessments, anti-AI-by-design, employer tasks/pipeline, minor consent documents, CPU/no-GPU target, unconfirmed-grade discoverability, .ru-only registration, Keycloak demo, FSP ranking evidence, ProofMatch, 152-FZ-oriented controls, load testing, post-match chat.

@@ -39,6 +39,7 @@ from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 from .profile_pdf import render_profile_pdf
 from .protected_candidate import MinorState, get_protected_profile, update_protected_profile
 from .resume import get_resume, review_resume, upload_resume
+from .taxonomy import list_taxonomy
 
 app = FastAPI(
     title="FSP Talent Platform API",
@@ -179,6 +180,40 @@ class CandidateDashboardResponse(BaseModel):
     current_assessment: CandidateCurrentAssessmentResponse | None
     retest_available_at: datetime | None
     attempt_history: list[CandidateDashboardAttemptResponse]
+
+
+class TaxonomySkillResponse(BaseModel):
+    id: str
+    slug: str
+    name: str
+    is_core: bool
+
+
+class TaxonomySpecializationResponse(BaseModel):
+    id: str
+    slug: str
+    name: str
+    skills: list[TaxonomySkillResponse]
+
+
+class TaxonomyGradeResponse(BaseModel):
+    id: str
+    slug: str
+    name: str
+    rank: int
+
+
+class TaxonomyCategoryResponse(BaseModel):
+    key: str
+    specialization_slug: str
+    grade_slug: str
+    label: str
+
+
+class TaxonomyResponse(BaseModel):
+    specializations: list[TaxonomySpecializationResponse]
+    grades: list[TaxonomyGradeResponse]
+    categories: list[TaxonomyCategoryResponse]
 
 
 class ProtectedCandidateProfileUpdateRequest(BaseModel):
@@ -329,6 +364,21 @@ def system_info() -> dict[str, str]:
         "state": "bootstrap",
         "message": "Autonomous development workspace is ready.",
     }
+
+
+@app.get(
+    "/api/v1/taxonomy",
+    tags=["taxonomy"],
+    response_model=TaxonomyResponse,
+    responses={500: {"model": ErrorResponse, "description": "Taxonomy unavailable"}},
+)
+def taxonomy(db: Annotated[Session, Depends(get_db_session)]) -> TaxonomyResponse:
+    """Return the active, non-sensitive taxonomy catalog."""
+
+    # The route is intentionally read-only and public. It is used to render
+    # onboarding choices, while candidate results and profile data remain
+    # protected by their own authenticated boundaries.
+    return TaxonomyResponse.model_validate(list_taxonomy(db))
 
 
 def get_current_principal(

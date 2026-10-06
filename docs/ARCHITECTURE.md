@@ -27,6 +27,7 @@ Supporting:
 
 - `identity`
 - `candidates`
+- `taxonomy`
 - `companies`
 - `taxonomy`
 - `assessments`

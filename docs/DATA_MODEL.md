@@ -14,11 +14,18 @@
 - `company`: owner, name, description, industry, public contacts, trust fields.
 
 ## Taxonomy
-- specialization
-- grade
-- skill
-- specialization_skill
+- `specialization`: active, stable slug/name for a professional track.
+- `grade`: ordered `junior`/`middle`/`senior` vocabulary.
+- `skill`: active, stable slug/name for evidence and hiring needs.
+- `specialization_skill`: foreign-key mapping with an `is_core` flag; the
+  composite key prevents duplicate mappings.
 - assessment_blueprint
+
+`GET /api/v1/taxonomy` is the read-only catalog boundary. It returns active
+specializations with mapped skills, ordered grades, and explicit
+`specialization-slug:grade-slug` category keys. A category is only an
+employer-facing candidate category once the assessment boundary supplies a
+verified grade; this catalog does not infer or store candidate results.
 
 ## Resume
 - `resume_document`: candidate, safe original filename, PDF type/size/digest,
