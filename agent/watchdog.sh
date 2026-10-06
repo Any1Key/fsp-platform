@@ -36,7 +36,7 @@ Read:
 Diagnose the application/configuration root cause and implement the smallest safe repository fix.
 Do not perform destructive host operations. Add a regression test when relevant.
 PROMPT
-      args=(exec --sandbox workspace-write --ask-for-approval never)
+      args=(codex --ask-for-approval never exec --sandbox danger-full-access)
       [[ -n "${CODEX_MODEL:-}" ]] && args+=(--model "$CODEX_MODEL")
       [[ -n "${CODEX_REASONING_EFFORT:-}" ]] && args+=(--config "model_reasoning_effort=${CODEX_REASONING_EFFORT}")
 

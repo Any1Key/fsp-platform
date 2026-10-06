@@ -19,3 +19,8 @@ test-results/
 .DS_Store
 .idea/
 .vscode/
+
+# Autonomous agent runtime
+.agent/autopilot.out
+.agent/autopilot.pid
+.agent/autopilot.lock/

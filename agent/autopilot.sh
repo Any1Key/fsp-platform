@@ -23,7 +23,7 @@ Branch: $AGENT_BRANCH
 Max cycles: $MAX_AGENT_CYCLES
 Repair limit: $MAX_REPAIR_ATTEMPTS" || true
 
-codex_args=(exec --sandbox workspace-write --ask-for-approval never)
+codex_args=(codex --ask-for-approval never exec --sandbox danger-full-access)
 if [[ -n "${CODEX_MODEL:-}" ]]; then
   codex_args+=(--model "$CODEX_MODEL")
 fi
@@ -88,6 +88,15 @@ Run: $rid
 Exit: $codex_rc
 
 ${tailmsg:0:3000}" || true
+
+    {
+      echo
+      echo "## $(timestamp) — Codex execution failed $rid"
+      echo "Exit code: $codex_rc"
+      echo "See: .agent/runs/$rid/codex.stderr"
+    } >> "$ROOT/.agent/PROBLEMS.md"
+
+    exit "$codex_rc"
   fi
 
   verified=false

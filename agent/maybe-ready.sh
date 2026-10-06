@@ -31,7 +31,7 @@ rdir="$ROOT/.agent/runs/$rid"
 mkdir -p "$rdir"
 out="$rdir/final-readiness.json"
 
-args=(exec --sandbox read-only --ask-for-approval never \
+args=(codex --ask-for-approval never exec --sandbox danger-full-access \
   --output-schema "$ROOT/agent/final-readiness.schema.json" \
   --output-last-message "$out")
 if [[ -n "${CODEX_MODEL:-}" ]]; then args+=(--model "$CODEX_MODEL"); fi
