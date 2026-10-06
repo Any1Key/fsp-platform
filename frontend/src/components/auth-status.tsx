@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { PrivacySettings } from "./privacy-settings";
 import { CandidateProfile } from "./candidate-profile";
 import { CandidateProtectedProfile } from "./candidate-protected-profile";
+import { CandidateResume } from "./candidate-resume";
 
 type Session = {
   identity_id: string | null;
@@ -143,6 +144,7 @@ export function AuthStatus() {
             <PrivacySettings token={keycloak.current?.token ?? ""} />
             <CandidateProtectedProfile token={keycloak.current?.token ?? ""} />
             <CandidateProfile token={keycloak.current?.token ?? ""} />
+            <CandidateResume token={keycloak.current?.token ?? ""} />
           </>
         )}
       </div>

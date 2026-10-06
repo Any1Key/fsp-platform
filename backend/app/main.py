@@ -31,6 +31,7 @@ from .errors import ErrorResponse, error_response, normalize_http_error
 from .minor_consent import get_document_status, upload_document
 from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 from .protected_candidate import MinorState, get_protected_profile, update_protected_profile
+from .resume import get_resume, upload_resume
 
 app = FastAPI(
     title="FSP Talent Platform API",
@@ -168,6 +169,19 @@ class MinorConsentDocumentResponse(BaseModel):
     required: bool
     policy_version: str
     document: MinorConsentDocumentMetadata | None
+
+
+class ResumeDocumentMetadata(BaseModel):
+    id: str
+    original_filename: str
+    content_type: Literal["application/pdf"]
+    size_bytes: int
+    status: Literal["uploaded"]
+    uploaded_at: datetime
+
+
+class ResumeDocumentResponse(BaseModel):
+    document: ResumeDocumentMetadata | None
 
 
 class CandidatePrivacyResponse(BaseModel):
@@ -575,6 +589,40 @@ def upload_candidate_minor_consent_document(
 ) -> MinorConsentDocumentResponse:
     return MinorConsentDocumentResponse.model_validate(
         upload_document(db, principal, get_settings(), document)
+    )
+
+
+@app.get(
+    "/api/v1/candidate/resume",
+    tags=["candidate resume"],
+    response_model=ResumeDocumentResponse,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_resume(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> ResumeDocumentResponse:
+    return ResumeDocumentResponse.model_validate(get_resume(db, principal))
+
+
+@app.post(
+    "/api/v1/candidate/resume",
+    tags=["candidate resume"],
+    response_model=ResumeDocumentResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        409: {"model": ErrorResponse, "description": "Processing consent is required"},
+        422: {"model": ErrorResponse, "description": "Invalid PDF upload"},
+    },
+)
+def upload_candidate_resume(
+    resume: Annotated[UploadFile, File(description="Private candidate PDF resume")],
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> ResumeDocumentResponse:
+    return ResumeDocumentResponse.model_validate(
+        upload_resume(db, principal, get_settings(), resume)
     )
 
 

@@ -60,6 +60,19 @@ returns identity email, contacts, DOB/minor state, resume documents, consent
 metadata, or assessment results. Employers receive `ROLE_REQUIRED` and cannot
 use this self-scoped resource.
 
+## Candidate resume upload
+
+`GET /api/v1/candidate/resume` returns the authenticated candidate's latest
+private resume metadata or `document: null`. `POST /api/v1/candidate/resume`
+accepts one multipart `resume` part. Processing consent is required. The
+server validates the `.pdf` filename, `application/pdf` MIME type, `%PDF-`
+signature, and configured size limit before writing the bytes under a UUID
+storage key with private permissions. A successful replacement marks the
+previous current document `replaced` and returns `201` with safe metadata only:
+ID, display filename, type, size, status and upload time. Storage keys, hashes,
+file bytes and parsed resume text are never returned. Parser extraction and
+candidate review are a subsequent workflow.
+
 ## Protected candidate identity data
 
 `GET /api/v1/candidate/protected-profile` and

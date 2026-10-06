@@ -89,7 +89,12 @@ Never commit DB passwords, Keycloak admin password, AI tokens, Telegram bot toke
 No passwords/tokens. Avoid raw resume/chat text. Mask contact data where possible. Use request IDs and safe metadata.
 
 ## Uploads
-Validate PDF/document signature/MIME, size, page count and filename. Isolate parsing.
+Resume and minor-consent uploads are candidate-scoped and require processing
+consent. Validate the PDF filename, MIME, signature and configured size before
+writing. Use UUID storage keys below the configured private root with restrictive
+permissions; never return storage paths, hashes, raw bytes or resume text from
+the upload API. Isolate the later parser and require review before extracted
+fields become profile data. Failed writes must not leave a database row or file.
 
 ## Assessment integrity telemetry
 If focus/paste/timing events are collected, disclose the behavior, minimize the data, retain only what is necessary and use signals for review rather than automatic accusations.

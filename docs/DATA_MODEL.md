@@ -21,7 +21,9 @@
 - assessment_blueprint
 
 ## Resume
-- resume_document metadata
+- `resume_document`: candidate, safe original filename, PDF type/size/digest,
+  UUID storage key, status (`uploaded`, `replaced`, `withdrawn`) and timestamps;
+  bytes stay outside the database in private storage
 - parsed_resume fields + confidence/provenance
 - review status
 

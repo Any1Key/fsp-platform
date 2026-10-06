@@ -108,6 +108,22 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "MINOR_DOCUMENT_TOO_LARGE",
         "The representative document exceeds the configured size limit.",
     ),
+    "resume_invalid_filename": (
+        "RESUME_INVALID_FILENAME",
+        "Upload a PDF document with a valid filename.",
+    ),
+    "resume_invalid_type": (
+        "RESUME_INVALID_TYPE",
+        "The resume must be uploaded as a PDF.",
+    ),
+    "resume_invalid_pdf": (
+        "RESUME_INVALID_PDF",
+        "The uploaded file is not a valid PDF document.",
+    ),
+    "resume_too_large": (
+        "RESUME_TOO_LARGE",
+        "The resume exceeds the configured size limit.",
+    ),
     "authorization_header_required": (
         "AUTHORIZATION_REQUIRED",
         "A Bearer access token is required.",
