@@ -31,4 +31,5 @@ if grep -Fq 'npm install' "$WORKFLOW"; then
 fi
 
 bash "$ROOT/agent/test-qa-contract.sh"
+bash "$ROOT/agent/test-resource-baseline-contract.sh"
 echo 'CI contract OK (locked Python/Node installs, QA contract, Compose config)'

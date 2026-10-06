@@ -50,3 +50,25 @@ Prefer a reproducible scripted tool such as Locust or k6. Keep scenarios and thr
 - database slow-query observations.
 
 Write actual results to `docs/VALIDATION_RESULTS.md` and keep raw reports under `.agent/runs/<run-id>/performance/`.
+
+## Bootstrap CPU-only baseline
+
+Before the final authenticated target-load suite exists, run the core-profile
+baseline from the repository root:
+
+```sh
+BASELINE_ITERATIONS=20 ./scripts/resource-baseline.sh
+```
+
+The runner renders the effective Compose configuration and fails if a GPU
+runtime, GPU device request, or CUDA/NVIDIA device reservation is present. It
+then starts only the core services, probes real bootstrap API reads while
+Compose readiness checks exercise the database-backed path, and records host
+metadata, service health, request timings, and Docker CPU/RAM snapshots in
+`.agent/runs/<run-id>/performance/`.
+
+This bootstrap probe is resource evidence for NFR-011; it is deliberately not
+the NFR-010 release load test. The latter must wait until authenticated
+candidate/employer search, invitations, matching, and chat endpoints exist and
+must exercise those representative journeys at the smoke and target
+concurrency described above.

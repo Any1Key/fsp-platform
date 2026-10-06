@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.PHONY: up down build logs ps verify screenshots doctor autonomous demo-reset
+.PHONY: up down build logs ps verify screenshots doctor autonomous demo-reset resource-baseline
 
 up:
 	docker compose up -d
@@ -21,3 +21,5 @@ autonomous:
 	./agent/autopilot.sh
 demo-reset:
 	./scripts/demo-reset.sh
+resource-baseline:
+	./scripts/resource-baseline.sh

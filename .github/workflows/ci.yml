@@ -71,6 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: bash agent/test-ci-contract.sh
+      - run: bash agent/test-resource-baseline-contract.sh
 
   compose-config:
     runs-on: ubuntu-latest
