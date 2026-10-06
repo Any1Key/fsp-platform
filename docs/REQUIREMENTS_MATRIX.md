@@ -79,8 +79,8 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | VAL-002 | P0 | Own validation procedure + real results | Validation suite | TODO |  |
 | NFR-001 | P0 | Runs on ordinary machine with reasonable memory | Compose review | TODO |  |
 | NFR-002 | P0 | Open unobfuscated source | Repository | TODO |  |
-| NFR-003 | P0 | Clear frontend/backend/storage separation | Architecture review | TODO |  |
-| NFR-004 | P0 | Reproducible Docker Compose startup | Locked installs, startup migration, and empty-database migration test | VERIFIED | backend/tests/test_migrations.py:15-84; backend/Dockerfile:5-9; .agent/runs/20261006-213520-c001/verification.log:24-25,27-193,195-227; .agent/runs/20261006-213520-c001/compose-ps.txt:1-7 |
+| NFR-003 | P0 | Clear frontend/backend/storage separation | Architecture review + database session boundary tests | VERIFIED | docs/ARCHITECTURE.md; backend/app/db.py:14-74; backend/tests/test_database.py:13-51; .agent/runs/20261006-220702-c002/verification.log:167-175 |
+| NFR-004 | P0 | Reproducible Docker Compose startup | Locked installs, startup migration, and empty-database migration test | VERIFIED | backend/tests/test_migrations.py:15-84; backend/Dockerfile:1-12; .agent/runs/20261006-220702-c002/verification.log:16-175,181-212; .agent/runs/20261006-220702-c002/compose-ps.txt:1-7 |
 | NFR-005 | P0 | OpenAPI documents API/errors | OpenAPI audit | TODO |  |
 | NFR-006 | P0 | RBAC, secure tokens, consent/privacy | Security tests | TODO |  |
 | NFR-007 | P0 | Keycloak compatibility | OIDC implementation | TODO |  |
@@ -98,8 +98,8 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | DOC-004 | P0 | Validation procedure/results docs | Docs audit | TODO |  |
 | DOC-005 | P0 | FSP integration scheme docs | Docs audit | TODO |  |
 | DOC-006 | P0 | API description | OpenAPI/docs | TODO |  |
-| DOC-007 | P0 | Libraries/components with versions | COMPONENTS.md | VERIFIED | docs/COMPONENTS.md:3-17; backend/requirements.lock; backend/uv.lock; frontend/package-lock.json; qa/package-lock.json |
-| DOC-008 | P0 | Step-by-step build/deploy/local run | Setup/deployment docs | VERIFIED | docs/DEPLOYMENT.md:3-54; scripts/demo-reset.sh |
+| DOC-007 | P0 | Libraries/components with versions | COMPONENTS.md | VERIFIED | docs/COMPONENTS.md:3-17; backend/requirements.lock; backend/uv.lock; frontend/package-lock.json; qa/package-lock.json; docker-compose.yml |
+| DOC-008 | P0 | Step-by-step build/deploy/local run | Setup/deployment docs | VERIFIED | docs/DEPLOYMENT.md:3-58; .env.example; scripts/demo-reset.sh; .agent/runs/20261006-220702-c002/verification.log:16-166,218-227 |
 | DEMO-001 | P0 | Full candidate→assessment→employer→contact demo | Playwright + demo reset | TODO |  |
 | BONUS-001 | P2 | Fake-vacancy / bad-employer protection concept/MVP | Trust design | TODO |  |
 | BONUS-002 | P2 | ATS integration concept | Docs/contract | TODO |  |

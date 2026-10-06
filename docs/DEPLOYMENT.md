@@ -24,6 +24,12 @@ DATABASE_URL='postgresql+psycopg://fsp:REDACTED@app-db:5432/fsp' alembic upgrade
 alembic current
 ```
 
+The API creates one SQLAlchemy engine and request-scoped session factory from
+`DATABASE_URL`. `/health` is a dependency-free liveness probe; use
+`/health/ready` for readiness because it executes `SELECT 1` against the
+configured application database. Database failures return HTTP 503 without
+exposing connection details.
+
 For an isolated migration smoke test without PostgreSQL:
 
 ```bash
@@ -31,9 +37,10 @@ cd backend
 DATABASE_URL='sqlite:///./local-foundation.sqlite' alembic upgrade head
 ```
 
-The assessment service is still process-local until the separate M00 database
-session work unit wires repositories to this schema; the migration establishes
-its persistence boundary and does not claim that feature is complete.
+The assessment service is still process-local until a separate assessment
+persistence work unit wires repositories to this schema; the database session
+boundary and migration establish the shared persistence foundation but do not
+claim that feature is complete.
 
 Stop:
 ```bash

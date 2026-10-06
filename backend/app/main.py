@@ -1,9 +1,13 @@
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from .assessments import AssessmentError, AssessmentService, public_attempt
+from .db import get_db_session
 
 app = FastAPI(
     title="FSP Talent Platform API",
@@ -28,6 +32,17 @@ class SubmitAttemptRequest(BaseModel):
 @app.get("/health", tags=["system"])
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/health/ready", tags=["system"])
+def readiness(db: Annotated[Session, Depends(get_db_session)]) -> dict[str, str]:
+    """Report readiness only when the configured database accepts a probe."""
+
+    try:
+        db.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=503, detail="database_unavailable") from exc
+    return {"status": "ok", "database": "ok"}
 
 @app.get("/api/v1/system/info", tags=["system"])
 def system_info() -> dict[str, str]:
