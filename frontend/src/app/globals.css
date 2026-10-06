@@ -37,6 +37,19 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .actions span { border-radius: 12px; padding: 12px 15px; font-size: 12px; }
 .primary { background: var(--brand-primary); color: white; }
 .secondary { border: 1px solid #555760; color: #ededed; }
+.authPanel {
+  margin-top: 28px; padding: 16px; border: 1px solid rgba(255,255,255,.18);
+  border-radius: 16px; display: flex; align-items: center; justify-content: space-between;
+  gap: 18px; background: rgba(27,28,33,.64); backdrop-filter: blur(14px);
+}
+.authPanel > div { display: grid; gap: 5px; }
+.authPanel strong { font-size: 13px; }
+.authPanel small, .authPanel.muted { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.authLabel { color: #a9a1ff; font-size: 10px; letter-spacing: .1em; }
+.authPanel.error { color: #ffb6bd; font-size: 11px; }
+.authButton { border: 0; border-radius: 10px; padding: 11px 13px; color: white; cursor: pointer; font: inherit; font-size: 11px; white-space: nowrap; }
+.primaryButton { background: var(--brand-primary); }
+.secondaryButton { background: #34353d; }
 .proofCard {
   background: white; color: var(--text); border-radius: 24px; padding: 30px;
   box-shadow: 0 25px 90px rgba(0,0,0,.28); transform: rotate(-1deg);
@@ -65,6 +78,8 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .badge { display: none; }
   .hero { grid-template-columns: 1fr; padding: 40px 20px 52px; gap: 34px; }
   .proofCard { transform: none; }
+  .authPanel { align-items: stretch; flex-direction: column; }
+  .authButton { width: 100%; }
   .principles { grid-template-columns: 1fr; padding: 32px 20px 60px; }
   .shell { background: linear-gradient(180deg, #1b1c21 0 50rem, var(--surface) 50rem); }
 }

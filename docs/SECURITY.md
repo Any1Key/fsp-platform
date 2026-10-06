@@ -9,6 +9,13 @@ The project handles personal/employment data. Treat the 152-FZ requirement as a 
 - server-side JWT validation;
 - server-side role authorization.
 
+The backend identity boundary validates issuer, audience, RS256 signature,
+expiry, required claims, verified email and the candidate/employer role before
+creating or refreshing a local `user_identity`. Tokens and passwords are never
+persisted or written to logs. Candidate and employer context routes exercise
+the role checks server-side; a valid token for one role cannot access the other
+role's context.
+
 ## Data minimization
 Separate employer-visible professional profile from protected contacts, date of birth/minor status, consent documents and private interaction data.
 
@@ -55,6 +62,12 @@ If focus/paste/timing events are collected, disclose the behavior, minimize the 
 Never send real candidate PII, resumes, chat text, minor documents or tokens to Telegram. UI screenshots sent by the autonomous agent must use deterministic synthetic/demo accounts or redaction.
 
 ## Authorization tests
+
+`backend/tests/test_auth.py` covers the signed-token boundary, invalid or
+expired tokens, issuer/audience checks, verified email, exact `.ru` policy,
+identity provisioning, ambiguous roles and cross-role access. The tests use a
+generated in-memory RSA key and do not require real Keycloak credentials.
+
 At minimum:
 - candidate A cannot read candidate B private data;
 - employer cannot see contacts before unlock;

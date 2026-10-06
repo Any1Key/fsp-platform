@@ -2,6 +2,7 @@
 .agent/CHANGELOG.md
 .agent/DECISIONS.md
 .agent/MASTER_PLAN.md
+.agent/plans/M01-keycloak-identity-boundary.md
 .agent/PLANS.md
 .agent/PROBLEMS.md
 .agent/STATE.json
@@ -36,6 +37,7 @@ agent/wait-http.sh
 agent/watchdog.sh
 backend/Dockerfile
 backend/app/__init__.py
+backend/app/auth.py
 backend/app/__pycache__/__init__.cpython-313.pyc
 backend/app/__pycache__/main.cpython-313.pyc
 backend/app/__pycache__/seed_demo.cpython-313.pyc
@@ -44,6 +46,7 @@ backend/app/seed_demo.py
 backend/pyproject.toml
 backend/tests/__pycache__/test_health.cpython-313.pyc
 backend/tests/test_health.py
+backend/tests/test_auth.py
 docker-compose.yml
 docs/ACCEPTANCE_CRITERIA.md
 docs/AI_ASSESSMENT_INTEGRITY.md
@@ -95,6 +98,7 @@ frontend/src/app/api/health/route.ts
 frontend/src/app/globals.css
 frontend/src/app/layout.tsx
 frontend/src/app/page.tsx
+frontend/src/components/auth-status.tsx
 frontend/tsconfig.json
 infrastructure/keycloak/realm-fsp.json
 infrastructure/synology/README.md

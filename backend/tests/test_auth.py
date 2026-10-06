@@ -1,0 +1,213 @@
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from types import SimpleNamespace
+
+import jwt
+import pytest
+from alembic.config import Config
+from cryptography.hazmat.primitives.asymmetric import rsa
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
+
+from alembic import command
+from app import main
+from app.auth import OIDCVerifier
+from app.config import Settings
+from app.db import get_db_session
+
+
+class StaticJwksClient:
+    def __init__(self, public_key):
+        self.public_key = public_key
+
+    def get_signing_key_from_jwt(self, token: str):
+        del token
+        return SimpleNamespace(key=self.public_key)
+
+
+def _upgrade(database_url: str) -> None:
+    config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
+    config.set_main_option("sqlalchemy.url", database_url)
+    command.upgrade(config, "head")
+
+
+@pytest.fixture()
+def auth_context(tmp_path, monkeypatch):
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    database_url = f"sqlite:///{tmp_path / 'auth.sqlite'}"
+    _upgrade(database_url)
+    engine = create_engine(database_url)
+    factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    settings = Settings(
+        database_url=database_url,
+        keycloak_issuer="https://keycloak.test/realms/fsp",
+        keycloak_client_id="fsp-web",
+    )
+    monkeypatch.setattr(
+        main,
+        "auth_verifier",
+        OIDCVerifier(settings, jwks_client=StaticJwksClient(private_key.public_key())),
+    )
+
+    def override_get_db_session():
+        with factory() as session:
+            yield session
+
+    main.app.dependency_overrides[get_db_session] = override_get_db_session
+    with TestClient(main.app) as client:
+        yield client, private_key, settings
+    main.app.dependency_overrides.clear()
+    engine.dispose()
+
+
+def _token(private_key, settings: Settings, *, email="candidate@team.ru", role="candidate", **overrides):
+    now = datetime.now(UTC)
+    claims = {
+        "iss": settings.keycloak_issuer,
+        "aud": settings.keycloak_client_id,
+        "sub": "kc-candidate-1",
+        "email": email,
+        "email_verified": True,
+        "realm_access": {"roles": [role]},
+        "iat": int(now.timestamp()),
+        "exp": int((now + timedelta(minutes=5)).timestamp()),
+    }
+    claims.update(overrides)
+    return jwt.encode(claims, private_key, algorithm="RS256", headers={"kid": "static"})
+
+
+def test_registration_check_enforces_exact_ru_domain(auth_context):
+    client, _, _ = auth_context
+
+    allowed = client.post(
+        "/api/v1/auth/registration/check",
+        json={"email": " Person@Company.RU ", "role": "candidate"},
+    )
+    assert allowed.status_code == 200
+    assert allowed.json() == {"allowed": True, "email": "person@company.ru", "role": "candidate"}
+
+    for email in ("person@example.com", "person@ru", "person@company.ru.example", "@company.ru"):
+        rejected = client.post(
+            "/api/v1/auth/registration/check",
+            json={"email": email, "role": "employer"},
+        )
+        assert rejected.status_code == 403
+        assert rejected.json()["error"]["code"] == "REGISTRATION_DOMAIN_NOT_ALLOWED"
+
+
+def test_frontend_origin_can_preflight_bearer_session_request(auth_context):
+    client, _, _ = auth_context
+
+    response = client.options(
+        "/api/v1/auth/me",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "Authorization",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+    assert "authorization" in response.headers["access-control-allow-headers"].lower()
+
+
+def test_valid_keycloak_token_provisions_identity_once_and_returns_session(auth_context):
+    client, private_key, settings = auth_context
+    headers = {"Authorization": f"Bearer {_token(private_key, settings)}"}
+
+    first = client.get("/api/v1/auth/me", headers=headers)
+    second = client.get("/api/v1/auth/me", headers=headers)
+
+    assert first.status_code == second.status_code == 200
+    assert first.json()["email"] == "candidate@team.ru"
+    assert first.json()["role"] == "candidate"
+    assert first.json()["identity_id"] == second.json()["identity_id"]
+
+
+def test_missing_or_invalid_token_is_rejected_without_leaking_claims(auth_context):
+    client, private_key, settings = auth_context
+
+    missing = client.get("/api/v1/auth/me")
+    assert missing.status_code == 401
+    assert missing.headers["WWW-Authenticate"] == "Bearer"
+    assert missing.json()["error"]["code"] == "AUTHORIZATION_REQUIRED"
+
+    invalid = client.get("/api/v1/auth/me", headers={"Authorization": "Bearer not-a-jwt"})
+    assert invalid.status_code == 401
+    assert invalid.json()["error"]["code"] == "INVALID_ACCESS_TOKEN"
+
+    expired = _token(
+        private_key,
+        settings,
+        iat=int((datetime.now(UTC) - timedelta(minutes=10)).timestamp()),
+        exp=int((datetime.now(UTC) - timedelta(minutes=5)).timestamp()),
+    )
+    response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {expired}"})
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "INVALID_ACCESS_TOKEN"
+
+    wrong_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    bad_signature = _token(wrong_key, settings)
+    response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {bad_signature}"})
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "INVALID_ACCESS_TOKEN"
+
+
+def test_issuer_audience_email_and_role_claims_are_enforced(auth_context):
+    client, private_key, settings = auth_context
+
+    cases = (
+        ({"iss": "https://other.test/realms/fsp"}, "INVALID_ACCESS_TOKEN", 401),
+        ({"aud": "other-client"}, "INVALID_ACCESS_TOKEN", 401),
+        ({"email_verified": False}, "EMAIL_NOT_VERIFIED", 403),
+        ({"email": "candidate@example.com"}, "REGISTRATION_DOMAIN_NOT_ALLOWED", 403),
+        ({"realm_access": {"roles": ["candidate", "employer"]}}, "UNSUPPORTED_ROLE", 403),
+        ({"realm_access": {"roles": ["unknown"]}}, "UNSUPPORTED_ROLE", 403),
+    )
+    for overrides, code, status_code in cases:
+        token = _token(private_key, settings, **overrides)
+        response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == status_code
+        assert response.json()["error"]["code"] == code
+
+
+def test_role_contexts_are_server_side_and_do_not_cross_access(auth_context):
+    client, private_key, settings = auth_context
+    candidate_headers = {"Authorization": f"Bearer {_token(private_key, settings)}"}
+    employer_headers = {
+        "Authorization": f"Bearer {_token(private_key, settings, sub='kc-employer-1', email='employer@company.ru', role='employer')}"
+    }
+
+    assert client.get("/api/v1/candidate/context", headers=candidate_headers).status_code == 200
+    assert client.get("/api/v1/employer/context", headers=employer_headers).status_code == 200
+    denied = client.get("/api/v1/employer/context", headers=candidate_headers)
+    assert denied.status_code == 403
+    assert denied.json()["error"]["code"] == "ROLE_REQUIRED"
+
+    client_role_token = _token(
+        private_key,
+        settings,
+        sub="kc-client-role-1",
+        email="client-role@company.ru",
+        realm_access={"roles": []},
+        resource_access={"fsp-web": {"roles": ["employer"]}},
+    )
+    client_role = client.get(
+        "/api/v1/employer/context",
+        headers={"Authorization": f"Bearer {client_role_token}"},
+    )
+    assert client_role.status_code == 200
+
+    engine = create_engine(auth_context[2].database_url)
+    try:
+        with engine.connect() as connection:
+            identities = connection.execute(text("SELECT email, role FROM user_identity ORDER BY email")).all()
+    finally:
+        engine.dispose()
+    assert identities == [
+        ("candidate@team.ru", "candidate"),
+        ("client-role@company.ru", "employer"),
+        ("employer@company.ru", "employer"),
+    ]

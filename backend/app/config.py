@@ -17,6 +17,16 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+pysqlite:///:memory:"
     db_pool_size: int = 5
     db_max_overflow: int = 10
+    keycloak_issuer: str = "http://localhost:8081/realms/fsp"
+    keycloak_jwks_url: str = "http://keycloak:8080/realms/fsp/protocol/openid-connect/certs"
+    keycloak_client_id: str = "fsp-web"
+    keycloak_jwks_cache_seconds: int = 300
+    require_verified_email: bool = True
+    cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
 
     model_config = SettingsConfigDict(
         env_file=".env",

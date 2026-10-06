@@ -10,13 +10,13 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] CPU-only resource baseline
 
 ## M01 — Keycloak identity, .ru registration, roles, consent
-- [ ] working candidate/employer sign-in via Keycloak
+- [x] working candidate/employer sign-in via Keycloak
 - [ ] email verification via Mailpit
-- [ ] reject non-`.ru` registration email
+- [x] reject non-`.ru` registration email
 - [ ] role onboarding
 - [ ] consent/privacy
-- [ ] Keycloak/JWT demo evidence
-- [ ] authorization integration tests
+- [x] Keycloak/JWT demo evidence
+- [x] authorization integration tests
 
 ## M02 — Candidate profile, resume, minor flow
 - [ ] manual profile

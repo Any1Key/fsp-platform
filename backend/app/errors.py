@@ -28,6 +28,38 @@ class ErrorResponse(BaseModel):
 
 
 ERROR_MESSAGES: dict[str, tuple[str, str]] = {
+    "invalid_access_token": (
+        "INVALID_ACCESS_TOKEN",
+        "The access token is invalid or expired.",
+    ),
+    "email_not_verified": (
+        "EMAIL_NOT_VERIFIED",
+        "Email verification is required before using the platform.",
+    ),
+    "registration_domain_not_allowed": (
+        "REGISTRATION_DOMAIN_NOT_ALLOWED",
+        "Registration is available only for email domains ending in .ru.",
+    ),
+    "unsupported_or_ambiguous_role": (
+        "UNSUPPORTED_ROLE",
+        "The account must have exactly one supported platform role.",
+    ),
+    "role_required": (
+        "ROLE_REQUIRED",
+        "This area is restricted to the account role.",
+    ),
+    "identity_email_conflict": (
+        "IDENTITY_EMAIL_CONFLICT",
+        "The email is already linked to another identity.",
+    ),
+    "identity_already_exists": (
+        "IDENTITY_ALREADY_EXISTS",
+        "The identity could not be provisioned safely.",
+    ),
+    "authorization_header_required": (
+        "AUTHORIZATION_REQUIRED",
+        "A Bearer access token is required.",
+    ),
     "database_unavailable": (
         "DATABASE_UNAVAILABLE",
         "The application database is temporarily unavailable.",
@@ -71,10 +103,14 @@ def error_response(
     status_code: int,
     code: str,
     message: str,
+    headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     """Build the single response shape used by all API exception handlers."""
 
     request_id = request_id_for(request)
+    response_headers = {"X-Request-ID": request_id}
+    if headers:
+        response_headers.update(headers)
     return JSONResponse(
         status_code=status_code,
         content={
@@ -84,7 +120,7 @@ def error_response(
                 "request_id": request_id,
             }
         },
-        headers={"X-Request-ID": request_id},
+        headers=response_headers,
     )
 
 

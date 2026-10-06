@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { AuthStatus } from "../components/auth-status";
 
 export default function Home() {
   return (
@@ -23,6 +24,7 @@ export default function Home() {
             <span className="primary">Candidate → verified profile</span>
             <span className="secondary">Employer → talent discovery</span>
           </div>
+          <AuthStatus />
         </div>
         <div className="proofCard">
           <p className="cardLabel">VERIFIED PROFILE</p>

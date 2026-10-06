@@ -1,0 +1,92 @@
+"use client";
+
+import Keycloak, { type KeycloakInstance } from "keycloak-js";
+import { useEffect, useRef, useState } from "react";
+
+type Session = {
+  email: string;
+  role: string;
+};
+
+type AuthState =
+  | { status: "loading" }
+  | { status: "signed-out" }
+  | { status: "signed-in"; session: Session }
+  | { status: "error"; message: string };
+
+const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+export function AuthStatus() {
+  const keycloak = useRef<KeycloakInstance | null>(null);
+  const [auth, setAuth] = useState<AuthState>({ status: "loading" });
+
+  useEffect(() => {
+    let active = true;
+    const client = new Keycloak({
+      url: process.env.NEXT_PUBLIC_KEYCLOAK_URL ?? "http://localhost:8081",
+      realm: process.env.NEXT_PUBLIC_KEYCLOAK_REALM ?? "fsp",
+      clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID ?? "fsp-web",
+    });
+    keycloak.current = client;
+
+    client
+      .init({ onLoad: "check-sso", pkceMethod: "S256", checkLoginIframe: false })
+      .then(async (authenticated) => {
+        if (!active) return;
+        if (!authenticated || !client.token) {
+          setAuth({ status: "signed-out" });
+          return;
+        }
+
+        const response = await fetch(`${apiUrl}/api/v1/auth/me`, {
+          headers: { Authorization: `Bearer ${client.token}` },
+        });
+        if (!response.ok) {
+          setAuth({ status: "error", message: "API не принял сессию Keycloak" });
+          return;
+        }
+        const session = (await response.json()) as Session;
+        if (active) setAuth({ status: "signed-in", session });
+      })
+      .catch(() => {
+        if (active) setAuth({ status: "error", message: "Keycloak пока недоступен" });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (auth.status === "loading") {
+    return <div className="authPanel muted">Проверяем защищённую сессию…</div>;
+  }
+  if (auth.status === "error") {
+    return <div className="authPanel error">{auth.message}</div>;
+  }
+  if (auth.status === "signed-in") {
+    return (
+      <div className="authPanel">
+        <div>
+          <span className="authLabel">KEYCLOAK SESSION</span>
+          <strong>{auth.session.role === "employer" ? "Рабочее пространство работодателя" : "Профиль кандидата"}</strong>
+          <small>{auth.session.email}</small>
+        </div>
+        <button className="authButton secondaryButton" onClick={() => keycloak.current?.logout()}>
+          Выйти
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="authPanel">
+      <div>
+        <span className="authLabel">FSP IDENTITY</span>
+        <strong>Войти как кандидат или работодатель</strong>
+        <small>Keycloak · Authorization Code + PKCE · только подтверждённый .ru email</small>
+      </div>
+      <button className="authButton primaryButton" onClick={() => keycloak.current?.login()}>
+        Войти через Keycloak
+      </button>
+    </div>
+  );
+}

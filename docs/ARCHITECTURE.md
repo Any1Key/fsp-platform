@@ -88,10 +88,24 @@ Roles:
 - `employer`
 - future `admin/reviewer`
 
-Frontend: Authorization Code + PKCE.
+Frontend: Authorization Code + PKCE through `frontend/src/components/auth-status.tsx` and
+the `fsp-web` public client.
 Backend: JWT issuer/audience/signature/role validation.
 Application stores no user passwords.
 Registration permits only email domains ending in `.ru`.
+
+The identity boundary is implemented by `backend/app/auth.py` and
+`backend/app/main.py`. The API accepts only RS256 access tokens from the
+configured Keycloak issuer and `fsp-web` audience, resolves signing keys from
+the configured JWKS endpoint, requires `sub`/`exp`/`iat` and a verified email,
+and accepts exactly one supported role from realm or client role claims. The
+validated subject, normalized email, role and verification state are upserted
+into `user_identity`; no token or password is stored. Keycloak's imported user
+profile applies the same `.ru` pattern during self-registration, while
+`POST /api/v1/auth/registration/check` gives the frontend a deterministic
+preflight. The API allows only the documented localhost/127.0.0.1 frontend
+origins for browser requests, with explicit Bearer-header preflight support;
+credentials are not enabled.
 
 ## Match/chat authorization
 

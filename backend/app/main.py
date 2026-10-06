@@ -1,17 +1,21 @@
 import re
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.cors import CORSMiddleware
 
 from .assessments import AssessmentError, AssessmentService, public_attempt
+from .auth import Principal, Role, build_verifier, is_allowed_registration_email, sync_identity
+from .config import get_settings
 from .db import get_db_session
 from .errors import ErrorResponse, error_response, normalize_http_error
 
@@ -20,10 +24,19 @@ app = FastAPI(
     version="0.1.0",
     description="Bootstrap API. Codex implements the target domain from the requirements matrix.",
 )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_settings().cors_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+)
 
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
 
 assessment_service = AssessmentService()
+auth_verifier = build_verifier(get_settings())
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 class CreateAttemptRequest(BaseModel):
@@ -36,6 +49,25 @@ class SubmitAttemptRequest(BaseModel):
     answers: dict[str, int]
     followups: dict[str, str] = Field(default_factory=dict)
     telemetry: dict[str, Any] = Field(default_factory=dict)
+
+
+class RegistrationCheckRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+    role: Literal["candidate", "employer"]
+
+
+class RegistrationCheckResponse(BaseModel):
+    allowed: bool
+    email: str
+    role: Literal["candidate", "employer"]
+
+
+class AuthSessionResponse(BaseModel):
+    identity_id: str
+    keycloak_sub: str
+    email: str
+    role: str
+    email_verified: bool
 
 
 def _request_id(value: str | None) -> str:
@@ -55,7 +87,13 @@ async def request_id_middleware(request: Request, call_next):
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     code, message = normalize_http_error(exc.status_code, exc.detail)
-    return error_response(request, status_code=exc.status_code, code=code, message=message)
+    return error_response(
+        request,
+        status_code=exc.status_code,
+        code=code,
+        message=message,
+        headers=exc.headers,
+    )
 
 
 @app.exception_handler(RequestValidationError)
@@ -98,6 +136,109 @@ def system_info() -> dict[str, str]:
         "state": "bootstrap",
         "message": "Autonomous development workspace is ready.",
     }
+
+
+def get_current_principal(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+) -> Principal:
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="authorization_header_required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return auth_verifier.verify(credentials.credentials)
+
+
+def candidate_principal(
+    principal: Annotated[Principal, Depends(get_current_principal)],
+) -> Principal:
+    if principal.role != Role.CANDIDATE:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="role_required")
+    return principal
+
+
+def employer_principal(
+    principal: Annotated[Principal, Depends(get_current_principal)],
+) -> Principal:
+    if principal.role != Role.EMPLOYER:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="role_required")
+    return principal
+
+
+@app.post(
+    "/api/v1/auth/registration/check",
+    tags=["auth"],
+    response_model=RegistrationCheckResponse,
+    responses={403: {"model": ErrorResponse, "description": "Email domain is not allowed"}},
+)
+def check_registration(request: RegistrationCheckRequest) -> RegistrationCheckResponse:
+    """Preflight the same domain policy applied at the authenticated boundary."""
+
+    normalized_email = request.email.strip().lower()
+    if not is_allowed_registration_email(normalized_email):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="registration_domain_not_allowed")
+    return RegistrationCheckResponse(allowed=True, email=normalized_email, role=request.role)
+
+
+@app.get(
+    "/api/v1/auth/me",
+    tags=["auth"],
+    response_model=AuthSessionResponse,
+    responses={401: {"model": ErrorResponse, "description": "Authentication required"}},
+)
+def auth_me(
+    principal: Annotated[Principal, Depends(get_current_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> AuthSessionResponse:
+    identity = sync_identity(db, principal)
+    return AuthSessionResponse(
+        identity_id=identity["id"],
+        keycloak_sub=identity["keycloak_sub"],
+        email=identity["email"],
+        role=identity["role"],
+        email_verified=identity["email_verified"],
+    )
+
+
+def _role_context(
+    principal: Principal,
+    db: Session,
+) -> AuthSessionResponse:
+    identity = sync_identity(db, principal)
+    return AuthSessionResponse(
+        identity_id=identity["id"],
+        keycloak_sub=identity["keycloak_sub"],
+        email=identity["email"],
+        role=identity["role"],
+        email_verified=identity["email_verified"],
+    )
+
+
+@app.get(
+    "/api/v1/candidate/context",
+    tags=["auth"],
+    response_model=AuthSessionResponse,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_context(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> AuthSessionResponse:
+    return _role_context(principal, db)
+
+
+@app.get(
+    "/api/v1/employer/context",
+    tags=["auth"],
+    response_model=AuthSessionResponse,
+    responses={403: {"model": ErrorResponse, "description": "Employer role required"}},
+)
+def employer_context(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> AuthSessionResponse:
+    return _role_context(principal, db)
 
 
 @app.post(
