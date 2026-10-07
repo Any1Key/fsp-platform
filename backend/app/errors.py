@@ -120,6 +120,38 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "HIRING_NEED_REQUIRED_FOR_TALENT_RADAR",
         "Create a hiring need before opening Talent Radar.",
     ),
+    "invitation_salary_invalid": (
+        "INVITATION_SALARY_INVALID",
+        "Salary minimum and maximum must be positive and the minimum cannot exceed the maximum.",
+    ),
+    "invitation_offer_required": (
+        "INVITATION_OFFER_REQUIRED",
+        "An offer description is required for an invitation.",
+    ),
+    "invitation_company_contact_required": (
+        "INVITATION_COMPANY_CONTACT_REQUIRED",
+        "Complete the company name and public contact method before sending an invitation.",
+    ),
+    "invitation_candidate_not_available": (
+        "INVITATION_CANDIDATE_NOT_AVAILABLE",
+        "The candidate is not currently available for reverse recruitment.",
+    ),
+    "invitation_candidate_grade_not_confirmed": (
+        "INVITATION_CANDIDATE_GRADE_NOT_CONFIRMED",
+        "Only candidates with a confirmed platform grade can receive reverse-recruitment invitations.",
+    ),
+    "invitation_already_pending": (
+        "INVITATION_ALREADY_PENDING",
+        "A pending invitation already exists for this candidate.",
+    ),
+    "invitation_not_found": (
+        "INVITATION_NOT_FOUND",
+        "The invitation was not found.",
+    ),
+    "invitation_not_pending": (
+        "INVITATION_NOT_PENDING",
+        "Only a pending invitation can be changed.",
+    ),
     "talent_radar_limit_invalid": (
         "TALENT_RADAR_LIMIT_INVALID",
         "Talent Radar limit must be between 1 and 100.",

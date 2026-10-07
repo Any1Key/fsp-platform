@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 type SkillEvidence = { skill: string; present: boolean; edges: { source: string }[] };
 type RadarCandidate = {
@@ -60,12 +60,18 @@ function percent(value: number) {
   return `${Math.round(value * 100)}%`;
 }
 
-export function EmployerTalentRadar({ token, refreshKey = 0 }: { token: string; refreshKey?: number }) {
+export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated }: { token: string; refreshKey?: number; onInvitationCreated?: () => void }) {
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [draft, setDraft] = useState<Filters>(initialFilters);
   const [radar, setRadar] = useState<RadarResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
+  const [invitingCandidate, setInvitingCandidate] = useState<RadarCandidate | null>(null);
+  const [salaryMin, setSalaryMin] = useState("180000");
+  const [salaryMax, setSalaryMax] = useState("260000");
+  const [offer, setOffer] = useState("");
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
 
   async function load(nextFilters: Filters = filters) {
     setLoading(true);
@@ -113,6 +119,40 @@ export function EmployerTalentRadar({ token, refreshKey = 0 }: { token: string; 
 
   function update<K extends keyof Filters>(key: K, value: Filters[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  function openInvitation(candidate: RadarCandidate) {
+    setInvitingCandidate(candidate);
+    setOffer(`Приглашаем присоединиться к команде как ${candidate.category.label ?? "специалист"}.`);
+    setInviteMessage(null);
+  }
+
+  async function sendInvitation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!invitingCandidate) return;
+    setInviteBusy(true);
+    setInviteMessage(null);
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/employer/invitations`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidate_profile_id: invitingCandidate.candidate_id,
+          salary_min_rub: Number(salaryMin),
+          salary_max_rub: Number(salaryMax),
+          offer_description: offer,
+        }),
+      });
+      if (!response.ok) throw new Error(await readError(response));
+      setInvitingCandidate(null);
+      setMessage("Приглашение отправлено: кандидат увидит зарплату и offer во входящих.");
+      onInvitationCreated?.();
+    } catch (error) {
+      const code = (error as Error).message;
+      setInviteMessage(code === "INVITATION_COMPANY_CONTACT_REQUIRED" ? "Сначала заполните название компании и публичный способ связи." : code === "INVITATION_ALREADY_PENDING" ? "Для этого кандидата уже есть pending invitation." : "Не удалось отправить приглашение.");
+    } finally {
+      setInviteBusy(false);
+    }
   }
 
   if (loading && !radar) return <section className="radarPanel muted">Строим Talent Radar по проверенным свидетельствам…</section>;
@@ -165,7 +205,16 @@ export function EmployerTalentRadar({ token, refreshKey = 0 }: { token: string; 
               <div className="radarCategory"><span>{candidate.category.label ?? "Категория ещё не подтверждена"}</span><small>Уверенность {percent(candidate.confidence.overall)} · свежесть {percent(candidate.confidence.freshness)}</small></div>
               <div className="radarEvidenceChips">{candidate.evidence.required.filter((item) => item.present).map((item) => <span key={item.skill}>✓ {item.skill}</span>)}{candidate.fsp.score > 0 && <span>FSP +{candidate.fsp.score}</span>}</div>
               <ul className="radarReasons">{candidate.reasons.slice(0, 3).map((reason) => <li key={reason}>{reason}</li>)}</ul>
-              <div className="radarFooter"><span>{candidate.gaps[0]}</span><button className="authButton secondaryButton" type="button" disabled title="Salary-bearing invitations arrive in the next hiring-pipeline milestone">Пригласить — скоро</button></div>
+              <div className="radarFooter"><span>{candidate.gaps[0]}</span><button className="authButton secondaryButton" type="button" disabled={candidate.eligibility !== "verified"} title={candidate.eligibility === "verified" ? "Send a salary-bearing invitation" : "A confirmed platform grade is required"} onClick={() => openInvitation(candidate)}>{candidate.eligibility === "verified" ? "Пригласить" : "Нужен verified grade"}</button></div>
+              {invitingCandidate?.candidate_id === candidate.candidate_id && (
+                <form className="inviteForm" onSubmit={(event) => void sendInvitation(event)}>
+                  <strong>Salary-bearing invitation</strong>
+                  <div className="inviteFields"><label>От, ₽<input required min="1" type="number" value={salaryMin} onChange={(event) => setSalaryMin(event.target.value)} /></label><label>До, ₽<input required min="1" type="number" value={salaryMax} onChange={(event) => setSalaryMax(event.target.value)} /></label></div>
+                  <label>Offer<textarea required maxLength={4000} rows={3} value={offer} onChange={(event) => setOffer(event.target.value)} /></label>
+                  <div className="inviteActions"><button className="authButton primaryButton" type="submit" disabled={inviteBusy}>{inviteBusy ? "Отправляем…" : "Отправить invitation"}</button><button className="authButton secondaryButton" type="button" onClick={() => setInvitingCandidate(null)}>Отмена</button></div>
+                  {inviteMessage && <small className="inviteError">{inviteMessage}</small>}
+                </form>
+              )}
             </article>
           ))}
         </div>

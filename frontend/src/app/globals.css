@@ -96,6 +96,37 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .dashboardHistory li > div { display: grid; gap: 4px; min-width: 0; }
 .dashboardHistory li strong { font-size: 10px; overflow-wrap: anywhere; }
 .dashboardHistory li small { color: #b7b7c1; font-size: 9px; }
+.invitationPanel { display: grid; gap: 14px; border: 1px solid rgba(169,161,255,.3); border-radius: 16px; padding: 18px; background: rgba(20,21,26,.76); }
+.invitationPanel.muted, .invitationPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.invitationPanel.error { color: #ffb6bd; }
+.invitationHeading { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.invitationHeading > div { display: grid; gap: 5px; }
+.invitationHeading h2 { margin: 0; font-size: 15px; }
+.invitationHeading p { margin: 0; max-width: 680px; color: #b7b7c1; font-size: 10px; line-height: 1.5; }
+.invitationMessage { margin: 0; color: #8be0b2; font-size: 10px; line-height: 1.5; }
+.invitationList, .employerInvitationRows { display: grid; gap: 9px; }
+.invitationCard, .employerInvitationRow { display: grid; gap: 11px; border: 1px solid rgba(169,161,255,.25); border-radius: 13px; padding: 13px; background: rgba(27,28,33,.5); }
+.invitationCardTop, .employerInvitationRow { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.invitationCardTop h3 { margin: 4px 0; font-size: 13px; }
+.invitationCardTop small, .employerInvitationRow small { display: block; color: #b7b7c1; font-size: 9px; line-height: 1.5; }
+.invitationState { color: #ffd28a; font-size: 8px; letter-spacing: .06em; }
+.invitationState.accepted { color: #8be0b2; }
+.invitationState.declined { color: #ffb6bd; }
+.invitationSalary { color: #c3bdff; font-size: 13px; text-align: right; white-space: nowrap; }
+.invitationOffer { margin: 0; color: #d5d5dc; font-size: 10px; line-height: 1.55; }
+.invitationActions, .inviteActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.invitationActions .authButton, .inviteActions .authButton { font-size: 9px; }
+.invitationUnlocked { color: #8be0b2; font-size: 9px; }
+.invitationEmpty { display: grid; gap: 5px; border: 1px dashed rgba(169,161,255,.42); border-radius: 13px; padding: 18px; color: #d5d5dc; font-size: 11px; }
+.invitationEmpty span { color: #b7b7c1; font-size: 9px; line-height: 1.5; }
+.employerInvitationRow { display: flex; align-items: center; }
+.employerInvitationRow > div { display: grid; gap: 4px; min-width: 0; }
+.inviteForm { display: grid; gap: 9px; border-top: 1px solid rgba(255,255,255,.1); padding-top: 11px; }
+.inviteForm > label, .inviteFields label { display: grid; gap: 5px; color: #d5d5dc; font-size: 9px; }
+.inviteForm input, .inviteForm textarea { width: 100%; border: 1px solid #555760; border-radius: 9px; padding: 9px 10px; background: rgba(255,255,255,.06); color: white; font: inherit; font-size: 10px; outline: none; resize: vertical; }
+.inviteForm input:focus, .inviteForm textarea:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
+.inviteFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.inviteError { color: #ffb6bd; font-size: 9px; line-height: 1.5; }
 .assessmentPanel {
   flex: 1 1 100%; display: grid; gap: 16px; border-top: 1px solid rgba(255,255,255,.14);
   padding-top: 16px; color: #ededed; scroll-margin-top: 18px;
@@ -433,6 +464,11 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .authActions { flex-direction: column; }
   .authButton { width: 100%; }
   .dashboardHeading, .dashboardHistoryHeading { align-items: flex-start; flex-direction: column; }
+  .invitationHeading, .invitationCardTop, .employerInvitationRow { align-items: flex-start; flex-direction: column; }
+  .invitationSalary { text-align: left; }
+  .invitationActions, .inviteActions { flex-direction: column; }
+  .invitationActions .authButton, .inviteActions .authButton { width: 100%; }
+  .inviteFields { grid-template-columns: 1fr; }
   .dashboardCurrent { grid-template-columns: 1fr; }
   .dashboardCurrent > div { padding: 13px; }
   .dashboardCooldown { max-width: none; text-align: left; }

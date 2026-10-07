@@ -43,6 +43,13 @@ from .fsp import (
     unlink_fsp,
 )
 from .hiring_needs import create_hiring_need, get_hiring_need, update_hiring_need
+from .invitations import (
+    create_invitation,
+    get_invitation_for_employer,
+    list_candidate_invitations,
+    list_employer_invitations,
+    respond_to_invitation,
+)
 from .minor_consent import get_document_status, upload_document
 from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 from .profile_pdf import render_profile_pdf
@@ -184,6 +191,48 @@ class CompanyProfileResponse(BaseModel):
     public_contact_method: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class CreateInvitationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    candidate_profile_id: str = Field(min_length=1, max_length=36)
+    salary_min_rub: int = Field(gt=0)
+    salary_max_rub: int = Field(gt=0)
+    offer_description: str = Field(min_length=1, max_length=4000)
+
+
+class InvitationCompanyResponse(BaseModel):
+    id: str
+    name: str
+    contact_method: str
+
+
+class InvitationCandidateResponse(BaseModel):
+    id: str
+    display_name: str
+
+
+class InvitationResponse(BaseModel):
+    id: str
+    status: Literal["pending", "accepted", "declined"]
+    salary_min_rub: int
+    salary_max_rub: int
+    offer_description: str
+    company: InvitationCompanyResponse
+    candidate: InvitationCandidateResponse
+    created_at: datetime
+    updated_at: datetime
+    responded_at: datetime | None
+    matched_at: datetime | None
+    contact_unlocked_at: datetime | None
+    match_id: str | None
+
+
+class InvitationActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal["accepted", "declined"]
 
 
 class HiringNeedSkillResponse(BaseModel):
@@ -784,6 +833,100 @@ def employer_talent_radar(
             include_unconfirmed=include_unconfirmed,
             limit=limit,
         ),
+    )
+
+
+@app.post(
+    "/api/v1/employer/invitations",
+    tags=["employer invitations"],
+    response_model=InvitationResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Candidate is not available"},
+        409: {"model": ErrorResponse, "description": "Pending invitation already exists"},
+        422: {"model": ErrorResponse, "description": "Salary, offer, or company contact is invalid"},
+    },
+)
+def create_employer_invitation(
+    request: CreateInvitationRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> InvitationResponse:
+    return InvitationResponse.model_validate(
+        create_invitation(
+            db,
+            principal,
+            candidate_profile_id=request.candidate_profile_id,
+            salary_min_rub=request.salary_min_rub,
+            salary_max_rub=request.salary_max_rub,
+            offer_description=request.offer_description,
+            assessment_service=assessment_service,
+        )
+    )
+
+
+@app.get(
+    "/api/v1/employer/invitations",
+    tags=["employer invitations"],
+    response_model=list[InvitationResponse],
+    responses={403: {"model": ErrorResponse, "description": "Employer role required"}},
+)
+def employer_invitations(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[InvitationResponse]:
+    return [InvitationResponse.model_validate(item) for item in list_employer_invitations(db, principal)]
+
+
+@app.get(
+    "/api/v1/employer/invitations/{invitation_id}",
+    tags=["employer invitations"],
+    response_model=InvitationResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Invitation not found"},
+    },
+)
+def employer_invitation(
+    invitation_id: str,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> InvitationResponse:
+    return InvitationResponse.model_validate(get_invitation_for_employer(db, principal, invitation_id))
+
+
+@app.get(
+    "/api/v1/candidate/invitations",
+    tags=["candidate invitations"],
+    response_model=list[InvitationResponse],
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_invitations(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[InvitationResponse]:
+    return [InvitationResponse.model_validate(item) for item in list_candidate_invitations(db, principal)]
+
+
+@app.post(
+    "/api/v1/candidate/invitations/{invitation_id}/respond",
+    tags=["candidate invitations"],
+    response_model=InvitationResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        404: {"model": ErrorResponse, "description": "Invitation not found"},
+        409: {"model": ErrorResponse, "description": "Invitation is no longer pending"},
+    },
+)
+def respond_candidate_invitation(
+    invitation_id: str,
+    request: InvitationActionRequest,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> InvitationResponse:
+    return InvitationResponse.model_validate(
+        respond_to_invitation(db, principal, invitation_id, request.action)
     )
 
 

@@ -100,6 +100,9 @@ Snapshot preserves result context during refinement.
 - timestamps
 - match/contact-unlock timestamp
 - match relation
+- `talent_match` is created once per accepted invitation and stores the two authorized parties
+  plus contact-unlock time.
+- `domain_event` records `MATCH_CREATED` and `CONTACT_UNLOCKED` with non-PII aggregate payloads.
 
 ## Chat
 - conversation (bound to match)

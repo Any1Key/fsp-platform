@@ -69,13 +69,13 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] employer discovery UI
 
 ## M07 — Invitations, match, contact privacy
-- [ ] invitation create/status
-- [ ] mandatory salary validation
-- [ ] candidate inbox
-- [ ] accept/decline
-- [ ] accepted invitation → MATCH_CREATED
-- [ ] contact-unlock domain event
-- [ ] privacy regression tests
+- [x] invitation create/status
+- [x] mandatory salary validation
+- [x] candidate inbox
+- [x] accept/decline
+- [x] accepted invitation → MATCH_CREATED
+- [x] contact-unlock domain event
+- [x] privacy regression tests
 
 ## M08 — Internal post-match chat
 - [ ] no-chat-before-match authorization
