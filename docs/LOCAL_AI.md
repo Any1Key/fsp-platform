@@ -32,8 +32,12 @@ This gives organization-specific behavior without expensive fine-tuning and work
 
 ## Runtime architecture
 
-Expose a `LocalAiPort` in the backend. Possible adapters:
-- disabled deterministic adapter;
+The backend now exposes an async `LocalAiPort` in `backend/app/local_ai.py`.
+The current deployment constructs `DisabledLocalAiAdapter`, which returns the
+same explicit `disabled` result for every request and never emits a task draft.
+Employer task authoring probes this boundary through
+`POST /api/v1/employer/tasks/draft-suggestion`; the response is employer-scoped
+and manual authoring remains available. Possible future adapters:
 - local OpenAI-compatible HTTP endpoint;
 - llama.cpp/Ollama-style local runtime.
 

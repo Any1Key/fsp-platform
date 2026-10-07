@@ -22,6 +22,7 @@ type Task = {
   current_version: Version;
   versions: { version_number: number; status: string }[];
 };
+type LocalAiStatus = "loading" | "disabled" | "available" | "error";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const emptyRubric = (): Rubric[] => [
@@ -71,6 +72,7 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [localAiStatus, setLocalAiStatus] = useState<LocalAiStatus>("loading");
 
   const employerStages = useMemo(
     () => (pipeline?.stages ?? []).filter((stage) => stage.stage_type === "employer_task" && stage.id),
@@ -102,6 +104,7 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
         setForm(blankContent());
       }
       setState("ready");
+      void probeLocalAi();
     } catch (error) {
       setMessage((error as Error).message);
       setState("error");
@@ -109,6 +112,22 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
   }
 
   useEffect(() => { void load(); }, [token, refreshKey]);
+
+  async function probeLocalAi() {
+    setLocalAiStatus("loading");
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/employer/tasks/draft-suggestion`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error("local_ai_unavailable");
+      const result = (await response.json()) as { status: "disabled" | "completed" | "failed" };
+      setLocalAiStatus(result.status === "disabled" ? "disabled" : result.status === "completed" ? "available" : "error");
+    } catch {
+      // AI is optional: a probe failure must never disable manual authoring.
+      setLocalAiStatus("error");
+    }
+  }
 
   function selectTask(task: Task) {
     setSelectedId(task.id);
@@ -201,6 +220,10 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
           <p>Создайте черновик и опубликуйте его явно. Это задание не меняет глобальный Verified Grade.</p>
         </div>
         <span className="profileStatus">{tasks.length} TASKS</span>
+      </div>
+      <div className={`localAiStatus ${localAiStatus}`} aria-live="polite">
+        <span>{localAiStatus === "disabled" ? "LOCAL AI OFF" : localAiStatus === "available" ? "LOCAL AI READY" : localAiStatus === "loading" ? "CHECKING LOCAL AI…" : "LOCAL AI UNAVAILABLE"}</span>
+        <small>{localAiStatus === "disabled" ? "Создайте задание вручную — это не блокирует hiring pipeline." : "Подсказки не публикуются автоматически; работодатель всегда редактирует и публикует задание."}</small>
       </div>
       <div className="taskToolbar">
         <div className="taskList" aria-label="Задания работодателя">

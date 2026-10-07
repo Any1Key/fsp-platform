@@ -60,6 +60,7 @@ from .invitations import (
     list_employer_invitations,
     respond_to_invitation,
 )
+from .local_ai import LocalAiPort, build_local_ai_port, context_from_hiring_need
 from .minor_consent import get_document_status, upload_document
 from .pipelines import get_hiring_pipeline, update_hiring_pipeline
 from .privacy import PrivacyState, get_privacy, request_export, update_privacy
@@ -88,6 +89,7 @@ assessment_service = AssessmentService(
     canonical_exposure_window=timedelta(days=get_settings().canonical_exposure_window_days)
 )
 fsp_registry = SyntheticFspRegistryAdapter()
+local_ai_port: LocalAiPort = build_local_ai_port()
 auth_verifier = build_verifier(get_settings())
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -454,6 +456,13 @@ class EmployerTaskResponse(BaseModel):
     updated_at: datetime
     current_version: EmployerTaskVersionResponse
     versions: list[EmployerTaskVersionSummaryResponse]
+
+
+class LocalAiDraftSuggestionResponse(BaseModel):
+    status: Literal["disabled", "completed", "failed"]
+    source: Literal["disabled", "local"]
+    reason: str | None
+    draft: dict[str, Any] | None
 
 
 class TaskSubmissionResponse(BaseModel):
@@ -1146,6 +1155,33 @@ def employer_tasks(
     """Return task definitions owned by the current employer."""
 
     return [EmployerTaskResponse.model_validate(task) for task in list_tasks(db, principal)]
+
+
+@app.post(
+    "/api/v1/employer/tasks/draft-suggestion",
+    tags=["employer tasks"],
+    response_model=LocalAiDraftSuggestionResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Hiring need not found"},
+    },
+)
+async def employer_task_draft_suggestion(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> LocalAiDraftSuggestionResponse:
+    """Probe optional task assistance without persisting or blocking authoring."""
+
+    need = get_hiring_need(db, principal)
+    if need is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="hiring_need_not_found")
+    result = await local_ai_port.propose_task_draft(context_from_hiring_need(need))
+    return LocalAiDraftSuggestionResponse(
+        status=result.status,
+        source=result.source,
+        reason=result.reason,
+        draft=result.draft,
+    )
 
 
 @app.post(

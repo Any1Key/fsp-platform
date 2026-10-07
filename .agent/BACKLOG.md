@@ -95,7 +95,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] global-grade non-mutation regression
 
 ## M10 — Optional CPU-local AI task copilot
-- [ ] LocalAiPort + disabled adapter
+- [x] LocalAiPort + disabled adapter
 - [ ] approved employer-task memory/retrieval
 - [ ] constrained JSON task/rubric draft
 - [ ] employer approve/edit/reject feedback

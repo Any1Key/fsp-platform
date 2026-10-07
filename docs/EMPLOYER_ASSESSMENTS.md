@@ -39,6 +39,12 @@ Employer can:
 - request a local-AI draft based on the hiring need and previously approved employer tasks;
 - edit everything before publishing.
 
+The current M10 foundation exposes the optional adapter boundary and an explicit
+AI-off state in the authoring panel. When the adapter is disabled, no draft is
+pretended or persisted; the employer continues with the manual editor. Enabled
+generation, approved-task retrieval, and background jobs are separate follow-up
+units.
+
 The current authoring slice validates target skills against the active
 taxonomy, expected grade, estimated duration, deadline policy, and rubric
 dimensions/points. It records the authenticated employer identity on the task
