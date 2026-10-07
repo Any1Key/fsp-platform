@@ -96,6 +96,54 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .dashboardHistory li > div { display: grid; gap: 4px; min-width: 0; }
 .dashboardHistory li strong { font-size: 10px; overflow-wrap: anywhere; }
 .dashboardHistory li small { color: #b7b7c1; font-size: 9px; }
+.assessmentPanel {
+  flex: 1 1 100%; display: grid; gap: 16px; border-top: 1px solid rgba(255,255,255,.14);
+  padding-top: 16px; color: #ededed; scroll-margin-top: 18px;
+}
+.assessmentPanel.muted, .assessmentPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.assessmentPanel.error, .assessmentError { color: #ffb6bd; }
+.assessmentHeading { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.assessmentHeading > div { display: grid; gap: 5px; }
+.assessmentHeading h2 { margin: 0; font-size: 15px; }
+.assessmentHeading p, .assessmentHint { margin: 0; color: #b7b7c1; font-size: 10px; line-height: 1.5; }
+.assessmentStatus, .assessmentResult span { color: #a9a1ff; font-size: 9px; letter-spacing: .08em; }
+.assessmentSelection { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.assessmentSelection label, .assessmentFollowup { display: grid; gap: 6px; color: #d5d5dc; font-size: 10px; }
+.assessmentSelection select, .assessmentFollowup textarea {
+  width: 100%; border: 1px solid #555760; border-radius: 9px; padding: 10px 11px;
+  background: rgba(255,255,255,.06); color: white; font: inherit; font-size: 11px; outline: none;
+}
+.assessmentSelection select:focus, .assessmentFollowup textarea:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
+.assessmentSelection option { color: var(--text); }
+.assessmentButton { justify-self: start; }
+.assessmentResult {
+  display: grid; grid-template-columns: minmax(130px, .3fr) minmax(0, 1fr); gap: 16px;
+  align-items: center; border: 1px solid rgba(169,161,255,.35); border-radius: 14px; padding: 16px;
+  background: rgba(64,47,255,.08);
+}
+.assessmentResult.verified { border-color: rgba(139,224,178,.4); }
+.assessmentResult.not_confirmed { border-color: rgba(255,210,138,.42); }
+.assessmentResult div { display: grid; gap: 5px; }
+.assessmentResult strong { color: #a9a1ff; font-size: 28px; }
+.assessmentResult.verified strong { color: #8be0b2; }
+.assessmentResult.not_confirmed strong { color: #ffd28a; }
+.assessmentResult strong small { font-size: 11px; }
+.assessmentResult p { margin: 0; color: #d5d5dc; font-size: 10px; line-height: 1.6; }
+.assessmentForm { display: grid; gap: 13px; }
+.assessmentProgress { display: flex; justify-content: space-between; gap: 14px; color: #b7b7c1; font-size: 10px; }
+.assessmentProgress strong { color: #c3bdff; font-weight: 500; }
+.assessmentItem { display: grid; gap: 13px; min-width: 0; border: 1px solid rgba(169,161,255,.25); border-radius: 13px; padding: 14px; }
+.assessmentItem legend { max-width: 100%; padding: 0 4px; color: #ededed; font-size: 11px; line-height: 1.6; }
+.assessmentItem legend span { display: inline-block; margin-right: 9px; color: #a9a1ff; }
+.assessmentOptions { display: grid; gap: 7px; }
+.assessmentOption { display: flex; gap: 9px; align-items: flex-start; border: 1px solid rgba(255,255,255,.12); border-radius: 9px; padding: 10px; color: #d5d5dc; font-size: 10px; line-height: 1.5; cursor: pointer; }
+.assessmentOption:has(input:checked) { border-color: rgba(169,161,255,.75); background: rgba(64,47,255,.13); color: white; }
+.assessmentOption input { accent-color: var(--brand-primary); margin-top: 2px; }
+.assessmentFollowup textarea { resize: vertical; line-height: 1.5; }
+.assessmentSubmitRow { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.assessmentSubmitRow small { max-width: 520px; color: #b7b7c1; font-size: 9px; line-height: 1.5; }
+.assessmentButton:disabled { cursor: not-allowed; opacity: .48; }
+.assessmentError { margin: 0; font-size: 10px; line-height: 1.5; }
 .privacyPanel {
   flex: 1 1 100%; display: grid; gap: 10px; border-top: 1px solid rgba(255,255,255,.14);
   padding-top: 14px; color: #ededed;
@@ -238,6 +286,9 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .dashboardCurrent > div { padding: 13px; }
   .dashboardCooldown { max-width: none; text-align: left; }
   .dashboardHistory li { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .assessmentSelection, .assessmentResult { grid-template-columns: 1fr; }
+  .assessmentSubmitRow { align-items: stretch; flex-direction: column; }
+  .assessmentSubmitRow .assessmentButton, .assessmentButton { width: 100%; }
   .profileHeading, .experienceHeading, .profileFooter { align-items: flex-start; flex-direction: column; }
   .profileHeadingActions { justify-content: flex-start; }
   .minorConsentBody { align-items: stretch; flex-direction: column; }

@@ -1,10 +1,32 @@
 import uuid
+from datetime import UTC, datetime, timedelta
 
+import jwt
 from fastapi.testclient import TestClient
 
 from app.main import app
 
 client = TestClient(app)
+
+
+def _headers(private_key, settings):
+    now = datetime.now(UTC)
+    token = jwt.encode(
+        {
+            "iss": settings.keycloak_issuer,
+            "aud": settings.keycloak_client_id,
+            "sub": "error-test-candidate",
+            "email": "error-test@team.ru",
+            "email_verified": True,
+            "realm_access": {"roles": ["candidate"]},
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(minutes=5)).timestamp()),
+        },
+        private_key,
+        algorithm="RS256",
+        headers={"kid": "static"},
+    )
+    return {"Authorization": f"Bearer {token}"}
 
 
 def test_success_response_has_generated_request_id() -> None:
@@ -14,8 +36,10 @@ def test_success_response_has_generated_request_id() -> None:
     assert uuid.UUID(response.headers["X-Request-ID"])
 
 
-def test_safe_caller_request_id_is_preserved_on_error() -> None:
-    response = client.get("/api/v1/assessments/attempts/missing", headers={"X-Request-ID": "demo-42"})
+def test_safe_caller_request_id_is_preserved_on_error(auth_context) -> None:
+    request_headers = _headers(auth_context[1], auth_context[2])
+    request_headers["X-Request-ID"] = "demo-42"
+    response = auth_context[0].get("/api/v1/assessments/attempts/missing", headers=request_headers)
 
     assert response.status_code == 404
     assert response.headers["X-Request-ID"] == "demo-42"
@@ -28,8 +52,9 @@ def test_safe_caller_request_id_is_preserved_on_error() -> None:
     }
 
 
-def test_validation_and_unknown_route_use_the_same_envelope() -> None:
-    validation = client.post("/api/v1/assessments/attempts", json={})
+def test_validation_and_unknown_route_use_the_same_envelope(auth_context) -> None:
+    headers = _headers(auth_context[1], auth_context[2])
+    validation = auth_context[0].post("/api/v1/assessments/attempts", headers=headers, json={})
     unknown = client.get("/api/v1/does-not-exist")
 
     assert validation.status_code == 422

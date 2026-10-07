@@ -36,7 +36,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] per-attempt form uniqueness assertion
 - [x] system scoring/grade decision/cooldown
 - [x] unconfirmed-grade state remains discoverable
-- [ ] assessment UI/history
+- [x] assessment UI/history
 
 ## M04 — Assessment integrity / anti-AI-by-design
 - [x] session-specific artifacts

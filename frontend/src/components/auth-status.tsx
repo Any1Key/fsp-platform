@@ -7,6 +7,7 @@ import { CandidateProfile } from "./candidate-profile";
 import { CandidateProtectedProfile } from "./candidate-protected-profile";
 import { CandidateResume } from "./candidate-resume";
 import { CandidateDashboard } from "./candidate-dashboard";
+import { CandidateAssessment } from "./candidate-assessment";
 
 type Session = {
   identity_id: string | null;
@@ -30,6 +31,7 @@ export function AuthStatus() {
   const [auth, setAuth] = useState<AuthState>({ status: "loading" });
   const [roleSaving, setRoleSaving] = useState(false);
   const [roleError, setRoleError] = useState<string | null>(null);
+  const [assessmentRefreshKey, setAssessmentRefreshKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -142,7 +144,11 @@ export function AuthStatus() {
         </button>
         {auth.session.role === "candidate" && (
           <>
-            <CandidateDashboard token={keycloak.current?.token ?? ""} />
+            <CandidateDashboard token={keycloak.current?.token ?? ""} refreshKey={assessmentRefreshKey} />
+            <CandidateAssessment
+              token={keycloak.current?.token ?? ""}
+              onSubmitted={() => setAssessmentRefreshKey((value) => value + 1)}
+            />
             <PrivacySettings token={keycloak.current?.token ?? ""} />
             <CandidateProtectedProfile token={keycloak.current?.token ?? ""} />
             <CandidateProfile token={keycloak.current?.token ?? ""} />

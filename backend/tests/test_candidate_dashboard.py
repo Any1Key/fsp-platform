@@ -26,11 +26,14 @@ def _headers(private_key, settings, *, sub: str, role: str = "candidate"):
     return {"Authorization": f"Bearer {token}"}
 
 
-def _create_and_submit(client, candidate_id: str, *, correct: bool):
+def _create_and_submit(client, candidate_id: str, *, correct: bool, headers):
+    # The assessment repository is process-local during bootstrap. Keep this
+    # integration test isolated from exposure records created by other tests.
+    main.assessment_service.family_exposure.clear()
     created = client.post(
         "/api/v1/assessments/attempts",
+        headers=headers,
         json={
-            "candidate_id": candidate_id,
             "specialization": "Backend Engineering",
             "declared_grade": "Middle",
         },
@@ -42,9 +45,15 @@ def _create_and_submit(client, candidate_id: str, *, correct: bool):
         item.item_id: attempt.answer_keys[item.item_id] if correct else 9
         for item in attempt.items
     }
+    followups = {
+        item.item_id: "candidate rationale"
+        for item in attempt.items
+        if item.progressive and correct
+    }
     submitted = client.post(
         f"/api/v1/assessments/attempts/{attempt_id}/submit",
-        json={"answers": answers},
+        headers=headers,
+        json={"answers": answers, "followups": followups},
     )
     assert submitted.status_code == 200
     return submitted.json()
@@ -57,7 +66,7 @@ def test_candidate_dashboard_has_empty_state_and_is_self_scoped(auth_context):
     headers_a = _headers(private_key, settings, sub=candidate_a)
     headers_b = _headers(private_key, settings, sub=candidate_b)
 
-    _create_and_submit(client, candidate_a, correct=True)
+    _create_and_submit(client, candidate_a, correct=True, headers=headers_a)
 
     dashboard_a = client.get("/api/v1/candidate/dashboard", headers=headers_a)
     assert dashboard_a.status_code == 200
@@ -84,7 +93,7 @@ def test_candidate_dashboard_marks_unconfirmed_grade_without_downgrading_declara
     client, private_key, settings = auth_context
     candidate_id = f"dashboard-unconfirmed-{uuid4().hex}"
     headers = _headers(private_key, settings, sub=candidate_id)
-    _create_and_submit(client, candidate_id, correct=False)
+    _create_and_submit(client, candidate_id, correct=False, headers=headers)
 
     response = client.get("/api/v1/candidate/dashboard", headers=headers)
     assert response.status_code == 200

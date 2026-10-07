@@ -62,7 +62,8 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 
 class CreateAttemptRequest(BaseModel):
-    candidate_id: str = Field(min_length=1, max_length=128)
+    model_config = ConfigDict(extra="forbid")
+
     specialization: str
     declared_grade: str
 
@@ -845,29 +846,54 @@ def review_candidate_resume(
     "/api/v1/assessments/attempts",
     tags=["assessments"],
     responses={
+        401: {"model": ErrorResponse, "description": "Authentication required"},
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
         409: {"model": ErrorResponse, "description": "Assessment cannot be created"},
         422: {"model": ErrorResponse, "description": "Invalid request"},
     },
 )
-def create_assessment_attempt(request: CreateAttemptRequest) -> dict[str, Any]:
+def create_assessment_attempt(
+    request: CreateAttemptRequest,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+) -> dict[str, Any]:
     try:
-        attempt = assessment_service.create_attempt(request.candidate_id, request.specialization, request.declared_grade)
+        attempt = assessment_service.create_attempt(
+            principal.subject,
+            request.specialization,
+            request.declared_grade,
+        )
     except AssessmentError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return public_attempt(attempt)
+
+
+def _candidate_attempt(attempt_id: str, principal: Principal):
+    try:
+        attempt = assessment_service.get(attempt_id)
+    except AssessmentError as exc:
+        raise HTTPException(status_code=404, detail="attempt_not_found") from exc
+    if attempt.candidate_id != principal.subject:
+        # Do not reveal whether another candidate's attempt exists.
+        raise HTTPException(status_code=404, detail="attempt_not_found")
+    return attempt
 
 
 @app.get(
     "/api/v1/assessments/attempts/{attempt_id}",
     tags=["assessments"],
     responses={
+        401: {"model": ErrorResponse, "description": "Authentication required"},
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
         404: {"model": ErrorResponse, "description": "Assessment attempt not found"},
         422: {"model": ErrorResponse, "description": "Invalid request"},
     },
 )
-def get_assessment_attempt(attempt_id: str) -> dict[str, Any]:
+def get_assessment_attempt(
+    attempt_id: str,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+) -> dict[str, Any]:
     try:
-        return public_attempt(assessment_service.get(attempt_id))
+        return public_attempt(_candidate_attempt(attempt_id, principal))
     except AssessmentError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -876,13 +902,20 @@ def get_assessment_attempt(attempt_id: str) -> dict[str, Any]:
     "/api/v1/assessments/attempts/{attempt_id}/submit",
     tags=["assessments"],
     responses={
+        401: {"model": ErrorResponse, "description": "Authentication required"},
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
         404: {"model": ErrorResponse, "description": "Assessment attempt not found"},
         409: {"model": ErrorResponse, "description": "Assessment cannot be submitted"},
         422: {"model": ErrorResponse, "description": "Invalid request"},
     },
 )
-def submit_assessment_attempt(attempt_id: str, request: SubmitAttemptRequest) -> dict[str, Any]:
+def submit_assessment_attempt(
+    attempt_id: str,
+    request: SubmitAttemptRequest,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+) -> dict[str, Any]:
     try:
+        _candidate_attempt(attempt_id, principal)
         attempt = assessment_service.submit(attempt_id, request.answers, request.followups, request.telemetry)
     except AssessmentError as exc:
         status = 404 if str(exc) == "attempt_not_found" else 409

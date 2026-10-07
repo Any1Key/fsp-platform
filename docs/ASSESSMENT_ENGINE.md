@@ -154,3 +154,30 @@ Good uses:
 - explanation drafting from computed facts.
 
 Core grading and matching must work without external AI and without GPU.
+
+## Candidate flow
+
+The authenticated candidate starts the base assessment from the Skill Passport
+panel by choosing an administered specialization and declared grade. The
+server derives the candidate identity from the Keycloak subject; the client
+cannot submit a `candidate_id` for another person. The current administered
+blueprint is Backend Engineering; other taxonomy specializations are shown as
+planned until their calibrated blueprint is available.
+
+The generated form is returned without answer keys. The candidate must answer
+every item and provide the short rationale for progressive items before the
+server scores the attempt. After submission the UI shows the system score and
+the explicit `verified` or `not_confirmed` state, then refreshes the
+self-scoped assessment history. A failed declared-grade assessment does not
+rewrite the declaration or hide the candidate.
+
+Assessment attempt routes are authenticated candidate resources:
+
+- `POST /api/v1/assessments/attempts` — create from specialization and grade;
+- `GET /api/v1/assessments/attempts/{attempt_id}` — read only the caller's
+  attempt;
+- `POST /api/v1/assessments/attempts/{attempt_id}/submit` — score only the
+  caller's attempt.
+
+The process-local repository is still a bootstrap boundary; durable attempt
+storage is a separate persistence milestone.

@@ -40,7 +40,7 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export function CandidateDashboard({ token }: { token: string }) {
+export function CandidateDashboard({ token, refreshKey = 0 }: { token: string; refreshKey?: number }) {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
@@ -66,7 +66,7 @@ export function CandidateDashboard({ token }: { token: string }) {
     return () => {
       active = false;
     };
-  }, [token]);
+  }, [token, refreshKey]);
 
   if (state === "loading") {
     return <section className="dashboardPanel muted" aria-busy="true">Загружаем твой Skill Passport…</section>;

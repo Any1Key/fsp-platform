@@ -84,6 +84,24 @@ contacts, protected DOB/minor state or consent metadata. Employers receive
 `ROLE_REQUIRED`. See `docs/CANDIDATE_DASHBOARD.md` for the bootstrap storage
 boundary and UI states.
 
+## Candidate assessment attempts
+
+The base assessment routes require a candidate role. `POST
+/api/v1/assessments/attempts` accepts only `specialization` and
+`declared_grade`; the server derives ownership from the verified Keycloak
+subject. Supplying `candidate_id` is rejected as a validation error. The
+corresponding `GET` and `POST .../submit` routes return
+`ASSESSMENT_ATTEMPT_NOT_FOUND` for an unknown or another candidate's attempt,
+so attempt existence is not disclosed across ownership boundaries.
+
+The create response includes prompts, options, session artifacts, and item
+metadata, but never answer keys or correct options. Submission returns the
+system score, grade state, and advisory integrity signals. The client sends
+only disclosed minimal telemetry; integrity signals cannot automatically
+reject a candidate. The candidate UI uses the public taxonomy catalog to
+render specialization and grade choices and disables specializations without
+an administered blueprint.
+
 ## Candidate resume upload
 
 `GET /api/v1/candidate/resume` returns the authenticated candidate's latest

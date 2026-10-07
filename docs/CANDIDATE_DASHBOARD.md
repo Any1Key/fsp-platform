@@ -31,4 +31,10 @@ contract are kept independent of that repository choice.
 
 Evidence: `backend/tests/test_candidate_dashboard.py` covers empty, verified,
 unconfirmed, self-scope and employer-denial behavior. The responsive UI is
-mounted from `frontend/src/components/auth-status.tsx`.
+mounted from `frontend/src/components/auth-status.tsx`. The same candidate
+workspace includes the base assessment flow: specialization/declared-grade
+selection, unique generated form, progressive explanations, system scoring,
+and a history refresh after submission. See
+`frontend/src/components/candidate-assessment.tsx` and
+`backend/tests/test_assessments.py` for the authenticated lifecycle and
+ownership checks.
