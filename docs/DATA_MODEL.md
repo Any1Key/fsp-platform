@@ -78,9 +78,12 @@ Persist enough provenance to reproduce assembly and scoring.
 - skill/relevance mapping version
 
 ## Employer need / matching
-- hiring_need
-- required/preferred skills
-- specialization/grade target
+- `hiring_need`: one employer-company-owned current need with team, role,
+  specialization target, grade target, and timestamps. The company uniqueness
+  boundary keeps this bootstrap input separate from future multi-vacancy
+  publishing.
+- `hiring_need_skill`: normalized skill relation with `required` or `preferred`
+  preference; active taxonomy slugs are validated at the API boundary.
 - matching_snapshot
 - matching_result
 - score component version

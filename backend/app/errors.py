@@ -80,6 +80,42 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "COMPANY_PROFILE_UPDATE_REQUIRED",
         "At least one company profile field is required.",
     ),
+    "hiring_need_fields_required": (
+        "HIRING_NEED_FIELDS_REQUIRED",
+        "Team, role, specialization and target grade are required.",
+    ),
+    "hiring_need_skills_required": (
+        "HIRING_NEED_SKILLS_REQUIRED",
+        "Select at least one required or preferred skill.",
+    ),
+    "hiring_need_taxonomy_invalid": (
+        "HIRING_NEED_TAXONOMY_INVALID",
+        "The specialization or target grade is not available.",
+    ),
+    "hiring_need_skill_not_available": (
+        "HIRING_NEED_SKILL_NOT_AVAILABLE",
+        "A selected skill is not available in the active taxonomy.",
+    ),
+    "hiring_need_duplicate_skill": (
+        "HIRING_NEED_DUPLICATE_SKILL",
+        "A skill can be selected only once and in one preference group.",
+    ),
+    "hiring_need_too_many_skills": (
+        "HIRING_NEED_TOO_MANY_SKILLS",
+        "Select no more than 20 skills.",
+    ),
+    "hiring_need_already_exists": (
+        "HIRING_NEED_ALREADY_EXISTS",
+        "The current hiring need already exists; update it instead.",
+    ),
+    "hiring_need_not_found": (
+        "HIRING_NEED_NOT_FOUND",
+        "Create a hiring need before updating it.",
+    ),
+    "hiring_need_update_required": (
+        "HIRING_NEED_UPDATE_REQUIRED",
+        "At least one hiring need field is required.",
+    ),
     "fsp_participant_not_found": (
         "FSP_PARTICIPANT_NOT_FOUND",
         "The FSP participant was not found in the configured registry.",

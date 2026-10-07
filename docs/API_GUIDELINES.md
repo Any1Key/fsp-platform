@@ -42,6 +42,17 @@ is read-only and does not expose candidate profile data or assessment results;
 the assessment service remains responsible for deciding whether a candidate's
 declared grade is verified.
 
+## Employer hiring need
+
+The employer-only `GET`, `POST`, and `PATCH /api/v1/employer/hiring-need`
+routes store the current company-owned hiring context for later Talent Radar
+and ProofMatch work. The payload contains `team`, `role`, `specialization`,
+`grade`, `required_skills`, and `preferred_skills`. Skills are returned with
+their labels and slugs. A need must contain at least one skill, cannot repeat
+a skill across preference groups, and cannot use inactive or unknown taxonomy
+values. Ownership is derived from the validated principal; candidates and
+other employers cannot read or mutate the record.
+
 ## Candidate privacy
 
 `GET /api/v1/candidate/privacy` returns only the authenticated candidate's

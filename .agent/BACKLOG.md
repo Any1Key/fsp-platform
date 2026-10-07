@@ -60,7 +60,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 
 ## M06 — Employer discovery / ProofMatch
 - [x] company profile
-- [ ] hiring need required/preferred skills
+- [x] hiring need required/preferred skills
 - [ ] Talent Radar/category discovery
 - [ ] verified + unconfirmed grade eligibility states
 - [ ] evidence-graph ranking

@@ -74,6 +74,12 @@ Missing FSP = zero bonus, never a penalty. A strong non-FSP candidate must be ab
 to outrank an FSP candidate. M06 employer discovery is responsible for composing
 this contribution with the remaining ProofMatch components and rendering it.
 
+The employer need input boundary is implemented separately at
+`/api/v1/employer/hiring-need`. It persists the team/role context, target
+specialization and grade, and normalized required/preferred skill sets. This
+structured input is intentionally available before candidate ranking; the
+ranking and Talent Radar consumers remain later M06 work units.
+
 ## Employer-specific evidence
 
 After a match, employer tasks can add a separate `opportunity_fit` component visible for that employer/hiring need. By default it does not mutate the platform-wide verified grade.

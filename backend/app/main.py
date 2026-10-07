@@ -41,6 +41,7 @@ from .fsp import (
     link_fsp,
     unlink_fsp,
 )
+from .hiring_needs import create_hiring_need, get_hiring_need, update_hiring_need
 from .minor_consent import get_document_status, upload_document
 from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 from .profile_pdf import render_profile_pdf
@@ -180,6 +181,43 @@ class CompanyProfileResponse(BaseModel):
     website: str | None
     location: str | None
     public_contact_method: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class HiringNeedSkillResponse(BaseModel):
+    slug: str
+    name: str
+
+
+class HiringNeedCategoryResponse(BaseModel):
+    slug: str
+    name: str
+
+
+class HiringNeedRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    team: str | None = Field(default=None, max_length=160)
+    role: str | None = Field(default=None, max_length=160)
+    specialization: str | None = Field(default=None, max_length=100)
+    grade: str | None = Field(default=None, max_length=50)
+    required_skills: list[Annotated[str, Field(min_length=1, max_length=100)]] | None = Field(
+        default=None, max_length=20
+    )
+    preferred_skills: list[Annotated[str, Field(min_length=1, max_length=100)]] | None = Field(
+        default=None, max_length=20
+    )
+
+
+class HiringNeedResponse(BaseModel):
+    id: str
+    team: str
+    role: str
+    specialization: HiringNeedCategoryResponse
+    grade: HiringNeedCategoryResponse
+    required_skills: list[HiringNeedSkillResponse]
+    preferred_skills: list[HiringNeedSkillResponse]
     created_at: datetime
     updated_at: datetime
 
@@ -650,6 +688,63 @@ def update_employer_company(
     if not changes:
         raise HTTPException(status_code=422, detail="company_profile_update_required")
     return CompanyProfileResponse.model_validate(update_company(db, principal, changes))
+
+
+@app.get(
+    "/api/v1/employer/hiring-need",
+    tags=["employer hiring need"],
+    response_model=HiringNeedResponse | None,
+    responses={403: {"model": ErrorResponse, "description": "Employer role required"}},
+)
+def employer_hiring_need(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> HiringNeedResponse | None:
+    """Return the authenticated employer's current hiring need, if created."""
+
+    need = get_hiring_need(db, principal)
+    return HiringNeedResponse.model_validate(need) if need else None
+
+
+@app.post(
+    "/api/v1/employer/hiring-need",
+    tags=["employer hiring need"],
+    response_model=HiringNeedResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        409: {"model": ErrorResponse, "description": "Hiring need already exists"},
+        422: {"model": ErrorResponse, "description": "Hiring need is invalid"},
+    },
+)
+def create_employer_hiring_need(
+    request: HiringNeedRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> HiringNeedResponse:
+    payload = request.model_dump(exclude_unset=True)
+    return HiringNeedResponse.model_validate(create_hiring_need(db, principal, payload))
+
+
+@app.patch(
+    "/api/v1/employer/hiring-need",
+    tags=["employer hiring need"],
+    response_model=HiringNeedResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Hiring need not found"},
+        422: {"model": ErrorResponse, "description": "Hiring need is invalid"},
+    },
+)
+def update_employer_hiring_need(
+    request: HiringNeedRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> HiringNeedResponse:
+    payload = request.model_dump(exclude_unset=True)
+    if not payload:
+        raise HTTPException(status_code=422, detail="hiring_need_update_required")
+    return HiringNeedResponse.model_validate(update_hiring_need(db, principal, payload))
 
 
 def _privacy_response(state: PrivacyState) -> CandidatePrivacyResponse:
