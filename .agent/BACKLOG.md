@@ -55,7 +55,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] relevance/recency/result mapping
 - [x] bounded FSP ranking contribution
 - [x] no-history path
-- [ ] branded FSP UI
+- [x] branded FSP UI
 - [ ] future Keycloak/FSP integration demonstration/concept
 
 ## M06 — Employer discovery / ProofMatch

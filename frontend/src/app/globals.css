@@ -155,31 +155,50 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .fspPanel {
   flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14);
   padding-top: 16px; color: #ededed;
+  background: linear-gradient(135deg, rgba(64,47,255,.08), transparent 34%);
 }
 .fspPanel.muted, .fspPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
 .fspPanel.error { color: #ffb6bd; }
+.fspBrandBar { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.fspIdentity { display: flex; gap: 11px; align-items: flex-start; min-width: 0; }
+.fspLogoFrame { display: grid; place-items: center; flex: 0 0 38px; height: 42px; border-radius: 10px; background: var(--brand-primary); box-shadow: 4px 4px 0 rgba(236,29,53,.68); }
+.fspLogoFrame img { display: block; width: 19px; height: 28px; object-fit: contain; }
 .fspHeading { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
 .fspHeading > div { display: grid; gap: 5px; }
+.fspHeading h2 { margin: 0; font-size: 15px; }
 .fspHeading p, .fspMessage, .fspNoHistory p, .fspAchievement small { margin: 0; color: #b7b7c1; font-size: 10px; line-height: 1.5; }
-.fspProvider { border: 1px solid rgba(169,161,255,.42); border-radius: 999px; color: #c3bdff; padding: 5px 8px; font-size: 9px; letter-spacing: .08em; white-space: nowrap; }
-.fspLinkedRow { display: flex; justify-content: space-between; gap: 14px; align-items: center; border: 1px solid rgba(139,224,178,.28); border-radius: 12px; padding: 12px; }
+.fspProvider { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(169,161,255,.42); border-radius: 999px; color: #c3bdff; padding: 5px 8px; font-size: 9px; letter-spacing: .08em; white-space: nowrap; }
+.fspProvider i, .fspLinkState i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #8be0b2; box-shadow: 0 0 0 3px rgba(139,224,178,.12); }
+.fspLinkedRow { display: flex; justify-content: space-between; gap: 14px; align-items: center; border: 1px solid rgba(139,224,178,.28); border-radius: 12px; padding: 12px; background: linear-gradient(90deg, rgba(139,224,178,.08), transparent); }
 .fspLinkedRow div { display: grid; gap: 5px; }
-.fspLinkedRow span { color: #b7b7c1; font-size: 9px; }
+.fspLinkedRow .fspFieldLabel { color: #b7b7c1; font-size: 9px; letter-spacing: .08em; }
 .fspLinkedRow strong { color: #8be0b2; font-size: 12px; }
+.fspLinkState { display: inline-flex; align-items: center; gap: 7px; color: #8be0b2; font-size: 9px; }
+.fspEvidenceBlock { display: grid; gap: 10px; }
+.fspSectionHeading { display: flex; justify-content: space-between; gap: 12px; align-items: end; }
+.fspSectionHeading > div { display: grid; gap: 4px; }
+.fspSectionHeading > span { color: #b7b7c1; font-size: 9px; }
+.fspSectionKicker, .fspStateKicker { color: #a9a1ff; font-size: 9px; letter-spacing: .08em; }
 .fspAchievements { display: grid; gap: 8px; }
-.fspAchievement { display: grid; gap: 5px; border: 1px solid rgba(169,161,255,.25); border-radius: 12px; padding: 12px; }
+.fspAchievement { display: grid; gap: 8px; border: 1px solid rgba(169,161,255,.25); border-radius: 12px; padding: 12px; background: rgba(27,28,33,.32); }
 .fspAchievement > div { display: grid; gap: 4px; }
-.fspAchievement > span { color: #c3bdff; font-size: 10px; }
+.fspAchievementHeading { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.fspAchievementHeading > div { min-width: 0; }
+.fspAchievementIndex { color: #a9a1ff; font-size: 8px; letter-spacing: .08em; }
+.fspResultBadge { flex: 0 0 auto; border: 1px solid rgba(236,29,53,.55); border-radius: 999px; color: #ffb6bd; padding: 4px 7px; font-size: 9px; }
 .fspAchievement p { margin: 0; color: #d5d5dc; font-size: 10px; line-height: 1.5; }
 .fspEvidenceMeta { display: grid; gap: 3px; border-top: 1px solid rgba(255,255,255,.08); padding-top: 7px; color: #b7b7c1; font-size: 9px; line-height: 1.45; }
 .fspEvidenceMeta span:first-child { color: #8be0b2; }
-.fspNoHistory { display: grid; gap: 5px; border: 1px dashed rgba(255,210,138,.38); border-radius: 12px; padding: 13px; }
+.fspProvenance { color: #8f909a; font-size: 9px; line-height: 1.45; }
+.fspNoHistory { display: grid; gap: 5px; border: 1px dashed rgba(255,210,138,.38); border-radius: 12px; padding: 13px; background: rgba(255,210,138,.045); }
+.fspNoHistory .fspStateKicker { color: #ffd28a; }
 .fspNoHistory strong { color: #ffd28a; font-size: 11px; }
 .fspLinkForm { display: flex; align-items: end; gap: 10px; }
 .fspLinkForm label { display: grid; gap: 6px; flex: 1; color: #d5d5dc; font-size: 10px; }
 .fspLinkForm input { width: 100%; border: 1px solid #555760; border-radius: 9px; padding: 10px 11px; background: rgba(255,255,255,.06); color: white; font: inherit; font-size: 11px; outline: none; }
 .fspLinkForm input:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
 .fspLinkForm .authButton { flex: 0 0 auto; }
+.fspLinkForm .authButton:focus-visible, .fspLinkedRow .textButton:focus-visible { outline: 2px solid #ec1d35; outline-offset: 3px; }
 .privacyHeading { display: flex; justify-content: space-between; gap: 14px; align-items: baseline; }
 .privacyHeading > div { display: grid; gap: 5px; }
 .privacyHeading small, .privacyMessage { color: #b7b7c1; font-size: 10px; line-height: 1.5; }
@@ -311,7 +330,9 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .proofCard { transform: none; }
   .authPanel { align-items: stretch; flex-direction: column; }
   .privacyHeading { align-items: flex-start; flex-direction: column; }
-  .fspHeading, .fspLinkedRow, .fspLinkForm { align-items: stretch; flex-direction: column; }
+  .fspBrandBar, .fspHeading, .fspLinkedRow, .fspLinkForm, .fspAchievementHeading { align-items: stretch; flex-direction: column; }
+  .fspProvider { align-self: flex-start; }
+  .fspSectionHeading { align-items: flex-start; flex-direction: column; }
   .fspLinkForm .authButton { width: 100%; }
   .authActions { flex-direction: column; }
   .authButton { width: 100%; }

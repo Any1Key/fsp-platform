@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useEffect, useState } from "react";
 
 type Achievement = {
@@ -152,55 +153,87 @@ export function CandidateFsp({ token }: { token: string }) {
 
   return (
     <section className="fspPanel" aria-labelledby="fsp-title">
-      <div className="fspHeading">
-        <div>
-          <span className="authLabel">FSP EVIDENCE</span>
-          <h2 id="fsp-title">История FSP</h2>
-          <p>Дополнительный проверяемый сигнал. Отсутствие истории не ограничивает профиль.</p>
+      <div className="fspBrandBar">
+        <div className="fspIdentity">
+          <span className="fspLogoFrame" aria-hidden="true">
+            <Image src="/brand/logo_white1.png" alt="" width={22} height={31} />
+          </span>
+          <div className="fspHeading">
+            <span className="authLabel">FSP EVIDENCE · VERIFIED CONNECTION</span>
+            <h2 id="fsp-title">История FSP</h2>
+            <p>Дополнительный проверяемый сигнал. Отсутствие истории не ограничивает профиль.</p>
+          </div>
         </div>
-        {fsp.provider && <span className="fspProvider">{fsp.provider === "synthetic" ? "DEMO REGISTRY" : fsp.provider}</span>}
+        {fsp.provider && (
+          <span className="fspProvider">
+            <i aria-hidden="true" />
+            {fsp.provider === "synthetic" ? "DEMO REGISTRY" : fsp.provider}
+          </span>
+        )}
       </div>
 
       {fsp.status === "linked" ? (
         <>
           <div className="fspLinkedRow">
             <div>
-              <span>Привязанный ID</span>
+              <span className="fspFieldLabel">ПРИВЯЗАННЫЙ FSP ID</span>
               <strong>{fsp.participant_id}</strong>
             </div>
+            <span className="fspLinkState"><i aria-hidden="true" />{fsp.history_status === "has_history" ? "Связь подтверждена" : "ID подтверждён"}</span>
             <button className="textButton" type="button" onClick={unlink} disabled={saving}>Отвязать</button>
           </div>
           {fsp.history_status === "has_history" ? (
-            <div className="fspAchievements">
-              {fsp.achievements.map((achievement) => (
-                <article className="fspAchievement" key={achievement.id}>
-                  <div>
-                    <strong>{achievement.event_name}</strong>
-                    <small>{formatDate(achievement.event_date)} · {achievement.discipline}</small>
-                  </div>
-                  <span>{achievement.placement ? `Место ${achievement.placement}` : achievement.achievement_type}</span>
-                  {achievement.result && <p>{achievement.result}</p>}
-                  <div className="fspEvidenceMeta">
-                    <span>{resultLabel(achievement.result_label)} · {achievement.result_score}/100</span>
-                    <span>{achievement.mapped_skills.length ? `Навыки: ${achievement.mapped_skills.join(", ")}` : "Навыки пока не сопоставлены"}</span>
-                    <span>Актуальность: {recencyLabel(achievement.recency_label)}</span>
-                  </div>
-                </article>
-              ))}
+            <div className="fspEvidenceBlock">
+              <div className="fspSectionHeading">
+                <div>
+                  <span className="fspSectionKicker">VERIFIED EVIDENCE</span>
+                  <strong>Достижения и сопоставленные навыки</strong>
+                </div>
+                <span>{fsp.achievements.length} записи</span>
+              </div>
+              <div className="fspAchievements">
+                {fsp.achievements.map((achievement, index) => (
+                  <article className="fspAchievement" key={achievement.id}>
+                    <div className="fspAchievementHeading">
+                      <div>
+                        <span className="fspAchievementIndex">EVIDENCE {String(index + 1).padStart(2, "0")}</span>
+                        <strong>{achievement.event_name}</strong>
+                        <small>{formatDate(achievement.event_date)} · {achievement.discipline}</small>
+                      </div>
+                      <span className="fspResultBadge">{achievement.placement ? `Место ${achievement.placement}` : achievement.achievement_type}</span>
+                    </div>
+                    {achievement.result && <p>{achievement.result}</p>}
+                    <div className="fspEvidenceMeta">
+                      <span>{resultLabel(achievement.result_label)} · {achievement.result_score}/100</span>
+                      <span>{achievement.mapped_skills.length ? `Навыки: ${achievement.mapped_skills.join(", ")}` : "Навыки пока не сопоставлены"}</span>
+                      <span>Актуальность: {recencyLabel(achievement.recency_label)}</span>
+                    </div>
+                    <small className="fspProvenance">Источник: {achievement.verification} · mapping {achievement.mapping_version}</small>
+                  </article>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="fspNoHistory"><strong>В реестре нет достижений</strong><p>FSP ID подтверждён, но история пока пустая. Профиль остаётся доступным через другие evidence.</p></div>
+            <div className="fspNoHistory" role="status">
+              <span className="fspStateKicker">NO HISTORY · NOT A PENALTY</span>
+              <strong>В реестре нет достижений</strong>
+              <p>FSP ID подтверждён, но история пока пустая. Профиль остаётся доступным через оценки и другие evidence.</p>
+            </div>
           )}
         </>
       ) : (
-        <div className="fspNoHistory"><strong>FSP ID пока не привязан</strong><p>Это нормальное состояние: оценки платформы и профиль работают независимо от FSP.</p></div>
+        <div className="fspNoHistory" role="status">
+          <span className="fspStateKicker">OPTIONAL EVIDENCE</span>
+          <strong>FSP ID пока не привязан</strong>
+          <p>Это нормальное состояние: оценки платформы и профиль работают независимо от FSP.</p>
+        </div>
       )}
 
-      <form className="fspLinkForm" onSubmit={link}>
-        <label>FSP ID<input value={fspId} onChange={(event) => setFspId(event.target.value)} placeholder="Например, FSP-DEMO-001" required /></label>
+      <form className="fspLinkForm" onSubmit={link} aria-describedby="fsp-link-help">
+        <label htmlFor="fsp-link-id">FSP ID<input id="fsp-link-id" value={fspId} onChange={(event) => setFspId(event.target.value)} placeholder="Например, FSP-DEMO-001" required autoComplete="off" /></label>
         <button className="authButton secondaryButton" type="submit" disabled={saving}>{saving ? "Проверяем…" : "Привязать ID"}</button>
       </form>
-      <small className="fspMessage" aria-live="polite">{message ?? "Демо использует replaceable synthetic adapter; это не production API FSP."}</small>
+      <small id="fsp-link-help" className="fspMessage" aria-live="polite">{message ?? "Демо использует replaceable synthetic adapter; это не production API FSP."}</small>
     </section>
   );
 }

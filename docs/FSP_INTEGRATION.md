@@ -97,3 +97,22 @@ Candidate with no FSP ID or no achievements remains fully searchable/rankable th
 The current M05 slice stores/displays normalized evidence and calculates the bounded
 contribution contract. M06 will consume the same snapshot in employer discovery and
 render the contribution alongside the rest of the ProofMatch explanation.
+
+## Candidate UI
+
+The authenticated candidate view is rendered by `frontend/src/components/candidate-fsp.tsx`
+inside the candidate workspace. It uses the supplied FSP logo asset and official palette, and
+keeps the evidence hierarchy explicit:
+
+- a linked participant shows the connection state, achievement count, result strength, mapped
+  skills, freshness and source/mapping provenance;
+- a linked participant with an empty registry shows `NO HISTORY · NOT A PENALTY` and remains
+  available through platform assessment and profile evidence;
+- an unlinked participant shows optional-evidence guidance and the same link form;
+- synthetic/demo provenance is visible as `DEMO REGISTRY`, so it is not presented as a real
+  production FSP API contract.
+
+The panel is responsive down to the mobile layout, preserves keyboard focus on the link/unlink
+controls, and uses a live status region for link/unlink feedback. The public brand contract is
+covered by `qa/tests/fsp-brand.spec.ts`; candidate API state and authorization behavior remain
+covered by `backend/tests/test_fsp.py`.
