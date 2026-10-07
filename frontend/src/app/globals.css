@@ -152,6 +152,32 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   flex: 1 1 100%; display: grid; gap: 10px; border-top: 1px solid rgba(255,255,255,.14);
   padding-top: 14px; color: #ededed;
 }
+.fspPanel {
+  flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14);
+  padding-top: 16px; color: #ededed;
+}
+.fspPanel.muted, .fspPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.fspPanel.error { color: #ffb6bd; }
+.fspHeading { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.fspHeading > div { display: grid; gap: 5px; }
+.fspHeading p, .fspMessage, .fspNoHistory p, .fspAchievement small { margin: 0; color: #b7b7c1; font-size: 10px; line-height: 1.5; }
+.fspProvider { border: 1px solid rgba(169,161,255,.42); border-radius: 999px; color: #c3bdff; padding: 5px 8px; font-size: 9px; letter-spacing: .08em; white-space: nowrap; }
+.fspLinkedRow { display: flex; justify-content: space-between; gap: 14px; align-items: center; border: 1px solid rgba(139,224,178,.28); border-radius: 12px; padding: 12px; }
+.fspLinkedRow div { display: grid; gap: 5px; }
+.fspLinkedRow span { color: #b7b7c1; font-size: 9px; }
+.fspLinkedRow strong { color: #8be0b2; font-size: 12px; }
+.fspAchievements { display: grid; gap: 8px; }
+.fspAchievement { display: grid; gap: 5px; border: 1px solid rgba(169,161,255,.25); border-radius: 12px; padding: 12px; }
+.fspAchievement > div { display: grid; gap: 4px; }
+.fspAchievement > span { color: #c3bdff; font-size: 10px; }
+.fspAchievement p { margin: 0; color: #d5d5dc; font-size: 10px; line-height: 1.5; }
+.fspNoHistory { display: grid; gap: 5px; border: 1px dashed rgba(255,210,138,.38); border-radius: 12px; padding: 13px; }
+.fspNoHistory strong { color: #ffd28a; font-size: 11px; }
+.fspLinkForm { display: flex; align-items: end; gap: 10px; }
+.fspLinkForm label { display: grid; gap: 6px; flex: 1; color: #d5d5dc; font-size: 10px; }
+.fspLinkForm input { width: 100%; border: 1px solid #555760; border-radius: 9px; padding: 10px 11px; background: rgba(255,255,255,.06); color: white; font: inherit; font-size: 11px; outline: none; }
+.fspLinkForm input:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
+.fspLinkForm .authButton { flex: 0 0 auto; }
 .privacyHeading { display: flex; justify-content: space-between; gap: 14px; align-items: baseline; }
 .privacyHeading > div { display: grid; gap: 5px; }
 .privacyHeading small, .privacyMessage { color: #b7b7c1; font-size: 10px; line-height: 1.5; }
@@ -283,6 +309,8 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .proofCard { transform: none; }
   .authPanel { align-items: stretch; flex-direction: column; }
   .privacyHeading { align-items: flex-start; flex-direction: column; }
+  .fspHeading, .fspLinkedRow, .fspLinkForm { align-items: stretch; flex-direction: column; }
+  .fspLinkForm .authButton { width: 100%; }
   .authActions { flex-direction: column; }
   .authButton { width: 100%; }
   .dashboardHeading, .dashboardHistoryHeading { align-items: flex-start; flex-direction: column; }

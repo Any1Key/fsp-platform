@@ -33,6 +33,7 @@ from .candidates import get_profile, update_profile
 from .config import get_settings
 from .db import get_db_session
 from .errors import ErrorResponse, error_response, normalize_http_error
+from .fsp import SyntheticFspRegistryAdapter, get_fsp, link_fsp, unlink_fsp
 from .minor_consent import get_document_status, upload_document
 from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 from .profile_pdf import render_profile_pdf
@@ -58,6 +59,7 @@ REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
 assessment_service = AssessmentService(
     canonical_exposure_window=timedelta(days=get_settings().canonical_exposure_window_days)
 )
+fsp_registry = SyntheticFspRegistryAdapter()
 auth_verifier = build_verifier(get_settings())
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -298,6 +300,35 @@ class PrivacyRequestResponse(BaseModel):
     request_id: str
     request_type: Literal["export"]
     status: Literal["requested"]
+
+
+class FspLinkRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    fsp_id: str = Field(min_length=3, max_length=120)
+
+
+class FspAchievementResponse(BaseModel):
+    id: str
+    event_name: str
+    event_date: date
+    discipline: str
+    level: str
+    achievement_type: str
+    placement: str | None
+    result: str | None
+    verification: str
+    mapping_version: str
+
+
+class CandidateFspResponse(BaseModel):
+    status: Literal["not_linked", "linked"]
+    provider: str | None
+    participant_id: str | None
+    linked_at: datetime | None
+    updated_at: datetime | None
+    history_status: Literal["no_history", "has_history"]
+    achievements: list[FspAchievementResponse]
 
 
 def _request_id(value: str | None) -> str:
@@ -702,6 +733,54 @@ def update_candidate_profile(
     if not changes:
         raise HTTPException(status_code=422, detail="profile_update_required")
     return CandidateProfileResponse.model_validate(update_profile(db, principal, changes))
+
+
+@app.get(
+    "/api/v1/candidate/fsp",
+    tags=["candidate FSP"],
+    response_model=CandidateFspResponse,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_fsp(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CandidateFspResponse:
+    """Return the candidate's FSP link and safe synthetic evidence snapshot."""
+
+    return CandidateFspResponse.model_validate(get_fsp(db, principal))
+
+
+@app.post(
+    "/api/v1/candidate/fsp-link",
+    tags=["candidate FSP"],
+    response_model=CandidateFspResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        404: {"model": ErrorResponse, "description": "FSP participant not found"},
+        409: {"model": ErrorResponse, "description": "Processing consent is required"},
+    },
+)
+def link_candidate_fsp(
+    request: FspLinkRequest,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CandidateFspResponse:
+    return CandidateFspResponse.model_validate(link_fsp(db, principal, request.fsp_id, fsp_registry))
+
+
+@app.delete(
+    "/api/v1/candidate/fsp-link",
+    tags=["candidate FSP"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def unlink_candidate_fsp(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> Response:
+    unlink_fsp(db, principal)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.get(

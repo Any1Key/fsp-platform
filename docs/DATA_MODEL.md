@@ -62,8 +62,11 @@ Persist enough provenance to reproduce assembly and scoring.
 - provenance
 
 ## FSP
-- fsp_link
-- fsp_achievement
+- `fsp_link`: candidate profile, provider, participant ID and link/update timestamps;
+  one candidate-owned link is allowed.
+- `fsp_achievement`: link-scoped external achievement ID, event/date/discipline,
+  level/result, verification provenance and mapping version. The current synthetic
+  adapter snapshots these fields so later matching can use a stable evidence graph.
 - sync/provenance
 - skill/relevance mapping version
 

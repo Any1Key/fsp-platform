@@ -49,12 +49,12 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] synthetic grade/discrimination validation scaffolding
 
 ## M05 — FSP evidence + Keycloak integration concept
-- [ ] registry port + synthetic adapter
-- [ ] link FSP ID
-- [ ] synthetic achievements
+- [x] registry port + synthetic adapter
+- [x] link FSP ID
+- [x] synthetic achievements
 - [ ] relevance/recency/result mapping
 - [ ] bounded FSP ranking contribution
-- [ ] no-history path
+- [x] no-history path
 - [ ] branded FSP UI
 - [ ] future Keycloak/FSP integration demonstration/concept
 

@@ -8,6 +8,7 @@ import { CandidateProtectedProfile } from "./candidate-protected-profile";
 import { CandidateResume } from "./candidate-resume";
 import { CandidateDashboard } from "./candidate-dashboard";
 import { CandidateAssessment } from "./candidate-assessment";
+import { CandidateFsp } from "./candidate-fsp";
 
 type Session = {
   identity_id: string | null;
@@ -149,6 +150,7 @@ export function AuthStatus() {
               token={keycloak.current?.token ?? ""}
               onSubmitted={() => setAssessmentRefreshKey((value) => value + 1)}
             />
+            <CandidateFsp token={keycloak.current?.token ?? ""} />
             <PrivacySettings token={keycloak.current?.token ?? ""} />
             <CandidateProtectedProfile token={keycloak.current?.token ?? ""} />
             <CandidateProfile token={keycloak.current?.token ?? ""} />

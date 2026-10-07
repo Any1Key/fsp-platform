@@ -15,6 +15,19 @@ Implementations:
 - `SyntheticFspRegistryAdapter` for demo/tests;
 - future Keycloak/HTTP adapter.
 
+The current implementation is in `backend/app/fsp.py`. It exposes candidate-owned
+endpoints:
+
+- `GET /api/v1/candidate/fsp` — returns `not_linked` or `linked`, the history state,
+  and safe achievement fields;
+- `POST /api/v1/candidate/fsp-link` — verifies and snapshots a synthetic participant
+  after processing consent, using a replaceable `FspRegistryPort`;
+- `DELETE /api/v1/candidate/fsp-link` — removes the candidate-owned link and snapshot.
+
+The deterministic demo IDs are `FSP-DEMO-001` (two synthetic achievements) and
+`FSP-DEMO-NONE` (a valid participant with no history). Unknown IDs are rejected.
+These fixtures are demo data and are labelled as synthetic in the candidate UI.
+
 ## Synthetic canonical achievement
 
 Use replaceable internal fields such as:
@@ -51,3 +64,7 @@ Keep application auth identity and FSP participant link separate. Demonstrate li
 ## No-history path
 
 Candidate with no FSP ID or no achievements remains fully searchable/rankable through platform assessment and other evidence.
+
+The current M05 slice stores and displays the evidence but does not calculate a
+ranking score. Matching will consume this snapshot through the same port and add
+the separately tested, bounded positive contribution in the employer-discovery slice.

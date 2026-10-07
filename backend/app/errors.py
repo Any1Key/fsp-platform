@@ -72,6 +72,10 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "PROCESSING_CONSENT_REQUIRED",
         "Processing consent is required before publication.",
     ),
+    "fsp_participant_not_found": (
+        "FSP_PARTICIPANT_NOT_FOUND",
+        "The FSP participant was not found in the configured registry.",
+    ),
     "date_of_birth_in_future": (
         "DATE_OF_BIRTH_IN_FUTURE",
         "Date of birth cannot be in the future.",
