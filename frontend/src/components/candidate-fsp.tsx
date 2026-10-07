@@ -13,6 +13,12 @@ type Achievement = {
   result: string | null;
   verification: string;
   mapping_version: string;
+  mapped_specialization: string | null;
+  mapped_skills: string[];
+  result_score: number;
+  result_label: string;
+  recency_score: number;
+  recency_label: string;
 };
 
 type FspState = {
@@ -33,6 +39,14 @@ function formatDate(value: string) {
     month: "short",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function resultLabel(value: string) {
+  return ({ winner: "Победа", prize: "Призовое место", finalist: "Финалист", placed: "Место", participant: "Участник", recorded: "Результат" } as Record<string, string>)[value] ?? value;
+}
+
+function recencyLabel(value: string) {
+  return ({ recent: "свежее", aging: "актуальность снижается", old: "старше года", stale: "устаревшее, не удалено", future: "дата требует проверки" } as Record<string, string>)[value] ?? value;
 }
 
 export function CandidateFsp({ token }: { token: string }) {
@@ -166,6 +180,11 @@ export function CandidateFsp({ token }: { token: string }) {
                   </div>
                   <span>{achievement.placement ? `Место ${achievement.placement}` : achievement.achievement_type}</span>
                   {achievement.result && <p>{achievement.result}</p>}
+                  <div className="fspEvidenceMeta">
+                    <span>{resultLabel(achievement.result_label)} · {achievement.result_score}/100</span>
+                    <span>{achievement.mapped_skills.length ? `Навыки: ${achievement.mapped_skills.join(", ")}` : "Навыки пока не сопоставлены"}</span>
+                    <span>Актуальность: {recencyLabel(achievement.recency_label)}</span>
+                  </div>
                 </article>
               ))}
             </div>

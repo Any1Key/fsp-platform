@@ -52,7 +52,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] registry port + synthetic adapter
 - [x] link FSP ID
 - [x] synthetic achievements
-- [ ] relevance/recency/result mapping
+- [x] relevance/recency/result mapping
 - [ ] bounded FSP ranking contribution
 - [x] no-history path
 - [ ] branded FSP UI

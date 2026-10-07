@@ -44,6 +44,22 @@ Use replaceable internal fields such as:
 
 Do not present synthetic labels as the real future FSP API contract.
 
+## Evidence mapping
+
+When an achievement is linked, the synthetic adapter snapshot is normalized to
+the platform taxonomy without changing the source fields:
+
+- a known discipline maps to a canonical specialization and skill slugs;
+- achievement type and numeric placement become an explainable `result_score`
+  from 0 to 100 and a `result_label`;
+- `recency_score` and `recency_label` are derived from the event date when the
+  response is read, so a record can age without rewriting the source snapshot;
+- an unknown discipline remains unmapped and is still retained/displayed.
+
+The mapping is deterministic and versioned. It is evidence normalization, not a
+ranking decision: no employer need, protected attribute, or candidate exclusion
+is involved here.
+
 ## Ranking contribution
 
 Convert achievements to a bounded `fsp_evidence_score` using:
@@ -65,6 +81,7 @@ Keep application auth identity and FSP participant link separate. Demonstrate li
 
 Candidate with no FSP ID or no achievements remains fully searchable/rankable through platform assessment and other evidence.
 
-The current M05 slice stores and displays the evidence but does not calculate a
-ranking score. Matching will consume this snapshot through the same port and add
-the separately tested, bounded positive contribution in the employer-discovery slice.
+The current M05 slice stores/displays the normalized evidence but does not
+calculate a ranking score. Matching will consume this snapshot through the same
+port and add the separately tested, bounded positive contribution in the
+employer-discovery slice.

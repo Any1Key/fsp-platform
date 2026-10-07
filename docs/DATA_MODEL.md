@@ -66,7 +66,10 @@ Persist enough provenance to reproduce assembly and scoring.
   one candidate-owned link is allowed.
 - `fsp_achievement`: link-scoped external achievement ID, event/date/discipline,
   level/result, verification provenance and mapping version. The current synthetic
-  adapter snapshots these fields so later matching can use a stable evidence graph.
+  adapter also snapshots canonical specialization/skill mapping and normalized
+  result score/label; recency is derived from event date at read time so evidence
+  can age without mutating the source snapshot. Later matching can consume this
+  stable evidence graph.
 - sync/provenance
 - skill/relevance mapping version
 

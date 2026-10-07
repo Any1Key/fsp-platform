@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import jwt
 
-from app.fsp import SyntheticFspRegistryAdapter
+from app.fsp import FspAchievement, SyntheticFspRegistryAdapter, map_achievement, map_recency
 
 
 def _headers(private_key, settings, *, sub: str, role: str = "candidate"):
@@ -51,6 +51,57 @@ def test_synthetic_adapter_is_deterministic_and_supports_no_history():
     assert registry.verify_link("unknown") is None
 
 
+def test_fsp_mapping_normalizes_taxonomy_result_and_unknown_disciplines():
+    mapped = map_achievement(
+        FspAchievement(
+            achievement_id="achievement",
+            event_name="Backend event",
+            event_date=datetime(2026, 1, 1, tzinfo=UTC).date(),
+            discipline=" Backend Engineering ",
+            level="national",
+            achievement_type="finalist",
+            placement="2",
+            result="Finalist",
+            verification="fixture",
+            mapping_version="fixture-1",
+        )
+    )
+    assert mapped.specialization_slug == "backend-engineering"
+    assert mapped.skill_slugs == ("python", "sql", "rest-apis", "git")
+    assert mapped.result_score == 90
+    assert mapped.result_label == "prize"
+
+    unknown = map_achievement(
+        FspAchievement(
+            achievement_id="unknown",
+            event_name="Unknown event",
+            event_date=datetime(2026, 1, 1, tzinfo=UTC).date(),
+            discipline="Unmapped discipline",
+            level="local",
+            achievement_type="participation",
+            placement=None,
+            result=None,
+            verification="fixture",
+            mapping_version="fixture-1",
+        )
+    )
+    assert unknown.specialization_slug is None
+    assert unknown.skill_slugs == ()
+    assert unknown.result_score == 40
+    assert unknown.result_label == "participant"
+
+
+def test_fsp_recency_is_bounded_and_future_dates_are_not_rewarded():
+    as_of = datetime(2026, 10, 7, tzinfo=UTC).date()
+    assert map_recency(as_of, as_of=as_of).score == 100
+    assert map_recency(as_of, as_of=as_of).label == "recent"
+    assert map_recency(as_of - timedelta(days=366), as_of=as_of).label == "aging"
+    assert map_recency(as_of - timedelta(days=1096), as_of=as_of).label == "stale"
+    future = map_recency(as_of + timedelta(days=1), as_of=as_of)
+    assert future.score == 0
+    assert future.label == "future"
+
+
 def test_candidate_fsp_link_requires_consent_and_exposes_achievements(auth_context):
     client, private_key, settings = auth_context
     headers = _headers(private_key, settings, sub=f"fsp-{uuid4().hex}")
@@ -91,6 +142,11 @@ def test_candidate_fsp_link_requires_consent_and_exposes_achievements(auth_conte
     assert body["history_status"] == "has_history"
     assert len(body["achievements"]) == 2
     assert body["achievements"][0]["verification"] == "synthetic registry fixture"
+    assert body["achievements"][0]["mapped_specialization"] == "backend-engineering"
+    assert body["achievements"][0]["mapped_skills"] == ["python", "sql", "rest-apis", "git"]
+    assert body["achievements"][0]["result_score"] == 90
+    assert body["achievements"][0]["result_label"] == "prize"
+    assert body["achievements"][0]["recency_label"] in {"recent", "aging", "old", "stale"}
 
     reloaded = client.get("/api/v1/candidate/fsp", headers=headers)
     assert reloaded.status_code == 200

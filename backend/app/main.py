@@ -319,6 +319,12 @@ class FspAchievementResponse(BaseModel):
     result: str | None
     verification: str
     mapping_version: str
+    mapped_specialization: str | None
+    mapped_skills: list[str]
+    result_score: int = Field(ge=0, le=100)
+    result_label: str
+    recency_score: int = Field(ge=0, le=100)
+    recency_label: str
 
 
 class CandidateFspResponse(BaseModel):

@@ -39,6 +39,8 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
             "assessment_result",
             "audit_event",
             "privacy_request",
+            "fsp_link",
+            "fsp_achievement",
             "alembic_version",
         } <= tables
         assert {
@@ -57,6 +59,15 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
         assert {key["referred_table"] for key in taxonomy_foreign_keys} == {
             "specialization",
             "skill",
+        }
+        assert {
+            column["name"]
+            for column in inspect(engine).get_columns("fsp_achievement")
+        } >= {
+            "canonical_specialization_slug",
+            "canonical_skill_slugs",
+            "result_score",
+            "result_label",
         }
 
         with engine.begin() as connection:

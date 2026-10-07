@@ -20,6 +20,29 @@ from .auth import Principal, sync_identity
 
 SYNTHETIC_PROVIDER = "synthetic"
 
+_DISCIPLINE_MAPPINGS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "backend engineering": ("backend-engineering", ("python", "sql", "rest-apis", "git")),
+    "frontend engineering": ("frontend-engineering", ("typescript", "automated-testing", "git")),
+    "full-stack engineering": (
+        "full-stack-engineering",
+        ("python", "typescript", "sql", "rest-apis", "git"),
+    ),
+    "qa / test automation": ("qa-test-automation", ("automated-testing", "python", "sql", "git")),
+    "devops / sre": ("devops-sre", ("docker", "kubernetes", "python", "git")),
+    "data engineering": ("data-engineering", ("python", "sql", "data-modeling", "docker")),
+    "data science / ml": ("data-science-ml", ("python", "sql", "machine-learning", "data-modeling")),
+    "mobile engineering": ("mobile-engineering", ("swift", "automated-testing", "git")),
+}
+
+_RESULT_TYPE_SCORES = {
+    "win": (100, "winner"),
+    "prize": (90, "prize"),
+    "finalist": (80, "finalist"),
+    "participation": (40, "participant"),
+}
+
+_RECENCY_BANDS = ((365, 100, "recent"), (730, 70, "aging"), (1095, 40, "old"))
+
 
 @dataclass(frozen=True)
 class FspParticipant:
@@ -38,6 +61,20 @@ class FspAchievement:
     result: str | None
     verification: str
     mapping_version: str
+
+
+@dataclass(frozen=True)
+class FspEvidenceMapping:
+    specialization_slug: str | None
+    skill_slugs: tuple[str, ...]
+    result_score: int
+    result_label: str
+
+
+@dataclass(frozen=True)
+class FspRecency:
+    score: int
+    label: str
 
 
 class FspRegistryPort(Protocol):
@@ -103,6 +140,62 @@ class SyntheticFspRegistryAdapter:
         return participant
 
 
+def _placement_score(placement: str | None) -> tuple[int, str] | None:
+    if not placement:
+        return None
+    try:
+        position = int(placement.strip())
+    except (TypeError, ValueError):
+        return None
+    if position <= 0:
+        return None
+    if position == 1:
+        return 100, "winner"
+    if position == 2:
+        return 90, "prize"
+    if position == 3:
+        return 85, "prize"
+    if position <= 10:
+        return 75, "finalist"
+    return 60, "placed"
+
+
+def map_achievement(achievement: FspAchievement) -> FspEvidenceMapping:
+    """Normalize registry fields without guessing unknown taxonomy mappings."""
+
+    specialization, skills = _DISCIPLINE_MAPPINGS.get(
+        achievement.discipline.strip().casefold(), (None, ())
+    )
+    type_score, type_label = _RESULT_TYPE_SCORES.get(
+        achievement.achievement_type.strip().casefold(), (50, "recorded")
+    )
+    placement = _placement_score(achievement.placement)
+    result_score, result_label = placement or (type_score, type_label)
+    if placement and type_score > placement[0]:
+        result_score, result_label = type_score, type_label
+    return FspEvidenceMapping(
+        specialization_slug=specialization,
+        skill_slugs=skills,
+        result_score=result_score,
+        result_label=result_label,
+    )
+
+
+def map_recency(event_date: date | str, *, as_of: date | None = None) -> FspRecency:
+    """Return a non-excluding freshness signal for a dated achievement."""
+
+    if isinstance(event_date, str):
+        event_date = date.fromisoformat(event_date)
+    reference_date = as_of or datetime.now(UTC).date()
+    age_days = (reference_date - event_date).days
+    if age_days < 0:
+        return FspRecency(score=0, label="future")
+    for limit, score, label in _RECENCY_BANDS:
+        if age_days <= limit:
+            return FspRecency(score=score, label=label)
+    return FspRecency(score=10, label="stale")
+
+
 def _ensure_candidate_profile(db: Session, principal: Principal) -> tuple[str, str]:
     identity = sync_identity(db, principal)
     profile_id = db.execute(
@@ -128,7 +221,14 @@ def _require_processing_consent(db: Session, profile_id: str) -> None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="processing_consent_required")
 
 
-def _achievement_response(row) -> dict[str, object]:
+def _achievement_response(row, *, as_of: date | None = None) -> dict[str, object]:
+    try:
+        mapped_skills = json.loads(row["canonical_skill_slugs"] or "[]")
+    except (TypeError, json.JSONDecodeError):
+        mapped_skills = []
+    if not isinstance(mapped_skills, list) or not all(isinstance(item, str) for item in mapped_skills):
+        mapped_skills = []
+    recency = map_recency(row["event_date"], as_of=as_of)
     return {
         "id": row["external_achievement_id"],
         "event_name": row["event_name"],
@@ -140,6 +240,12 @@ def _achievement_response(row) -> dict[str, object]:
         "result": row["result"],
         "verification": row["verification"],
         "mapping_version": row["mapping_version"],
+        "mapped_specialization": row["canonical_specialization_slug"],
+        "mapped_skills": mapped_skills,
+        "result_score": row["result_score"],
+        "result_label": row["result_label"],
+        "recency_score": recency.score,
+        "recency_label": recency.label,
     }
 
 
@@ -166,7 +272,8 @@ def get_fsp(db: Session, principal: Principal) -> dict[str, object]:
     rows = db.execute(
         text(
             "SELECT external_achievement_id, event_name, event_date, discipline, level, "
-            "achievement_type, placement, result, verification, mapping_version "
+            "achievement_type, placement, result, verification, mapping_version, "
+            "canonical_specialization_slug, canonical_skill_slugs, result_score, result_label "
             "FROM fsp_achievement WHERE fsp_link_id = :link_id ORDER BY event_date DESC, id"
         ),
         {"link_id": link["id"]},
@@ -228,13 +335,16 @@ def link_fsp(db: Session, principal: Principal, fsp_id: str, registry: FspRegist
         )
 
     for achievement in registry.list_achievements(participant.participant_id):
+        mapping = map_achievement(achievement)
         db.execute(
             text(
                 "INSERT INTO fsp_achievement "
                 "(id, fsp_link_id, external_achievement_id, event_name, event_date, discipline, "
-                "level, achievement_type, placement, result, verification, mapping_version) "
+                "level, achievement_type, placement, result, verification, mapping_version, "
+                "canonical_specialization_slug, canonical_skill_slugs, result_score, result_label) "
                 "VALUES (:id, :link_id, :external_id, :event_name, :event_date, :discipline, "
-                ":level, :achievement_type, :placement, :result, :verification, :mapping_version)"
+                ":level, :achievement_type, :placement, :result, :verification, :mapping_version, "
+                ":canonical_specialization_slug, :canonical_skill_slugs, :result_score, :result_label)"
             ),
             {
                 "id": str(uuid4()),
@@ -249,6 +359,10 @@ def link_fsp(db: Session, principal: Principal, fsp_id: str, registry: FspRegist
                 "result": achievement.result,
                 "verification": achievement.verification,
                 "mapping_version": achievement.mapping_version,
+                "canonical_specialization_slug": mapping.specialization_slug,
+                "canonical_skill_slugs": json.dumps(mapping.skill_slugs, separators=(",", ":")),
+                "result_score": mapping.result_score,
+                "result_label": mapping.result_label,
             },
         )
     db.execute(
