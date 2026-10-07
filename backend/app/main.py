@@ -42,6 +42,7 @@ from .companies import get_company, update_company
 from .config import get_settings
 from .db import get_db_session
 from .discovery import RadarFilters, get_talent_radar
+from .employer_tasks import create_task, create_version, list_tasks, publish_task, update_draft
 from .errors import ErrorResponse, error_response, normalize_http_error
 from .fsp import (
     SyntheticFspRegistryAdapter,
@@ -402,6 +403,55 @@ class HiringPipelineResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     stages: list[PipelineStageResponse]
+
+
+class EmployerTaskRubricDimensionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=120)
+    points: int = Field(gt=0, le=1000)
+    description: str | None = Field(default=None, max_length=500)
+
+
+class EmployerTaskContentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1, max_length=160)
+    instructions: str = Field(min_length=1, max_length=12000)
+    target_skills: list[Annotated[str, Field(min_length=1, max_length=100)]] = Field(
+        min_length=1, max_length=20
+    )
+    expected_grade: Literal["junior", "middle", "senior"]
+    estimated_minutes: int = Field(ge=5, le=480)
+    deadline_hours: int = Field(ge=1, le=720)
+    rubric: list[EmployerTaskRubricDimensionRequest] = Field(min_length=1, max_length=12)
+
+
+class CreateEmployerTaskRequest(EmployerTaskContentRequest):
+    pipeline_stage_id: str = Field(min_length=1, max_length=36)
+
+
+class EmployerTaskVersionSummaryResponse(BaseModel):
+    id: str
+    version_number: int
+    status: Literal["draft", "published", "retired"]
+    created_at: datetime
+    published_at: datetime | None
+
+
+class EmployerTaskVersionResponse(EmployerTaskVersionSummaryResponse, EmployerTaskContentRequest):
+    pass
+
+
+class EmployerTaskResponse(BaseModel):
+    id: str
+    hiring_need_id: str
+    pipeline_stage_id: str | None
+    status: Literal["draft", "published", "retired"]
+    created_at: datetime
+    updated_at: datetime
+    current_version: EmployerTaskVersionResponse
+    versions: list[EmployerTaskVersionSummaryResponse]
 
 
 class CandidateDashboardProfileResponse(BaseModel):
@@ -977,6 +1027,111 @@ def update_employer_hiring_pipeline(
             [stage.model_dump() for stage in request.stages],
         )
     )
+
+
+@app.get(
+    "/api/v1/employer/tasks",
+    tags=["employer tasks"],
+    response_model=list[EmployerTaskResponse],
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Hiring need not found"},
+    },
+)
+def employer_tasks(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[EmployerTaskResponse]:
+    """Return task definitions owned by the current employer."""
+
+    return [EmployerTaskResponse.model_validate(task) for task in list_tasks(db, principal)]
+
+
+@app.post(
+    "/api/v1/employer/tasks",
+    tags=["employer tasks"],
+    response_model=EmployerTaskResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Hiring need not found"},
+        422: {"model": ErrorResponse, "description": "Task definition is invalid"},
+    },
+)
+def create_employer_task(
+    request: CreateEmployerTaskRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> EmployerTaskResponse:
+    return EmployerTaskResponse.model_validate(
+        create_task(
+            db,
+            principal,
+            request.pipeline_stage_id,
+            request.model_dump(exclude={"pipeline_stage_id"}),
+        )
+    )
+
+
+@app.post(
+    "/api/v1/employer/tasks/{task_id}/versions",
+    tags=["employer tasks"],
+    response_model=EmployerTaskResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Task not found"},
+        409: {"model": ErrorResponse, "description": "A draft version already exists"},
+        422: {"model": ErrorResponse, "description": "Task definition is invalid"},
+    },
+)
+def create_employer_task_version(
+    task_id: str,
+    request: EmployerTaskContentRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> EmployerTaskResponse:
+    return EmployerTaskResponse.model_validate(
+        create_version(db, principal, task_id, request.model_dump())
+    )
+
+
+@app.patch(
+    "/api/v1/employer/tasks/{task_id}/draft",
+    tags=["employer tasks"],
+    response_model=EmployerTaskResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Task not found"},
+        422: {"model": ErrorResponse, "description": "Task definition is invalid"},
+    },
+)
+def update_employer_task_draft(
+    task_id: str,
+    request: EmployerTaskContentRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> EmployerTaskResponse:
+    return EmployerTaskResponse.model_validate(
+        update_draft(db, principal, task_id, request.model_dump())
+    )
+
+
+@app.post(
+    "/api/v1/employer/tasks/{task_id}/publish",
+    tags=["employer tasks"],
+    response_model=EmployerTaskResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Task not found"},
+        409: {"model": ErrorResponse, "description": "A draft version is required"},
+    },
+)
+def publish_employer_task(
+    task_id: str,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> EmployerTaskResponse:
+    return EmployerTaskResponse.model_validate(publish_task(db, principal, task_id))
 
 
 @app.get(

@@ -158,6 +158,28 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .pipelineIconButton.danger { color: #ffb6bd; border-color: rgba(236,29,53,.32); }
 .pipelineFooter { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .pipelineFooter small { flex: 1 1 300px; color: #b7b7c1; font-size: 9px; line-height: 1.5; }
+.taskPanel { flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14); padding-top: 16px; color: #ededed; }
+.taskPanel.muted, .taskPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.taskPanel.error { color: #ffb6bd; }
+.taskPanel.error small { color: #b7b7c1; }
+.taskToolbar { display: grid; grid-template-columns: minmax(170px, .35fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.taskList { display: grid; gap: 7px; align-content: start; }
+.taskListItem, .taskNewButton { display: grid; gap: 4px; text-align: left; border: 1px solid rgba(169,161,255,.23); border-radius: 10px; padding: 10px; background: rgba(255,255,255,.04); color: #ededed; font: inherit; cursor: pointer; }
+.taskListItem:hover, .taskListItem:focus-visible, .taskListItem.active { border-color: #a9a1ff; background: rgba(64,47,255,.17); }
+.taskListItem strong { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.taskListItem small, .taskNewButton { color: #b7b7c1; font-size: 9px; }
+.taskNewButton { display: block; text-align: center; border-style: dashed; }
+.taskForm { display: grid; gap: 10px; }
+.taskForm label { display: grid; gap: 4px; color: #b7b7c1; font-size: 8px; }
+.taskForm input, .taskForm textarea, .taskForm select { width: 100%; border: 1px solid #555760; border-radius: 8px; padding: 9px 10px; background: rgba(255,255,255,.06); color: white; font: inherit; font-size: 10px; outline: none; resize: vertical; }
+.taskForm select option { color: var(--text); }
+.taskForm input:focus, .taskForm textarea:focus, .taskForm select:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
+.taskFields { display: grid; grid-template-columns: minmax(130px, 1.5fr) repeat(3, minmax(90px, 1fr)); gap: 8px; }
+.taskRubric { display: grid; gap: 7px; }
+.taskRubric > strong { color: #ededed; font-size: 10px; }
+.taskRubricRow { display: grid; grid-template-columns: minmax(110px, .8fr) 70px minmax(130px, 1.4fr); gap: 7px; }
+.taskFooter { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.taskFooter small { flex: 1 1 260px; color: #b7b7c1; font-size: 9px; line-height: 1.5; }
 .chatPanel { flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14); padding-top: 16px; color: #ededed; }
 .chatPanel.muted, .chatPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
 .chatPanel.error { color: #ffb6bd; }
@@ -527,6 +549,8 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .pipelineStageActions { grid-column: 2; }
   .pipelineStageFields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pipelineRequired { min-height: 34px; }
+  .taskToolbar { grid-template-columns: 1fr; }
+  .taskFields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .authActions { flex-direction: column; }
   .authButton { width: 100%; }
   .dashboardHeading, .dashboardHistoryHeading { align-items: flex-start; flex-direction: column; }

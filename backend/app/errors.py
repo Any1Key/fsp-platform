@@ -140,6 +140,50 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "HIRING_PIPELINE_DURATION_INVALID",
         "Stage duration must be between five and 480 minutes.",
     ),
+    "employer_task_not_found": (
+        "EMPLOYER_TASK_NOT_FOUND",
+        "The employer task was not found.",
+    ),
+    "employer_task_stage_not_found": (
+        "EMPLOYER_TASK_STAGE_NOT_FOUND",
+        "Choose an employer-task stage from the current hiring pipeline.",
+    ),
+    "employer_task_stage_required": (
+        "EMPLOYER_TASK_STAGE_REQUIRED",
+        "A task can be attached only to an employer-task stage.",
+    ),
+    "employer_task_duplicate_skill": (
+        "EMPLOYER_TASK_DUPLICATE_SKILL",
+        "A target skill can be selected only once.",
+    ),
+    "employer_task_skill_required": (
+        "EMPLOYER_TASK_SKILL_REQUIRED",
+        "Every target skill must have a value.",
+    ),
+    "employer_task_grade_invalid": (
+        "EMPLOYER_TASK_GRADE_INVALID",
+        "The expected grade is not available.",
+    ),
+    "employer_task_skill_not_available": (
+        "EMPLOYER_TASK_SKILL_NOT_AVAILABLE",
+        "A target skill is not available in the active taxonomy.",
+    ),
+    "employer_task_rubric_name_required": (
+        "EMPLOYER_TASK_RUBRIC_NAME_REQUIRED",
+        "Every rubric dimension needs a name.",
+    ),
+    "employer_task_rubric_points_required": (
+        "EMPLOYER_TASK_RUBRIC_POINTS_REQUIRED",
+        "The rubric must contain positive points.",
+    ),
+    "employer_task_draft_exists": (
+        "EMPLOYER_TASK_DRAFT_EXISTS",
+        "Finish or publish the existing draft before creating another version.",
+    ),
+    "employer_task_draft_required": (
+        "EMPLOYER_TASK_DRAFT_REQUIRED",
+        "Create or edit a draft before publishing the task.",
+    ),
     "hiring_need_required_for_talent_radar": (
         "HIRING_NEED_REQUIRED_FOR_TALENT_RADAR",
         "Create a hiring need before opening Talent Radar.",

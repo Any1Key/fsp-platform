@@ -110,6 +110,27 @@ of only stage type/title/required/duration captured when the invitation is
 created. This lets a candidate understand the expected process before
 accepting; task content, answers and contacts are not included.
 
+### Employer task authoring
+
+Employer-only task routes are scoped to the current employer's hiring need:
+
+- `GET /api/v1/employer/tasks` lists task definitions and version metadata;
+- `POST /api/v1/employer/tasks` creates version 1 as a draft and requires an
+  `employer_task` pipeline stage;
+- `PATCH /api/v1/employer/tasks/{task_id}/draft` edits the current draft, or
+  starts the next draft version when the current version is published;
+- `POST /api/v1/employer/tasks/{task_id}/versions` creates a complete next
+  draft when no draft exists;
+- `POST /api/v1/employer/tasks/{task_id}/publish` explicitly publishes the
+  draft and retires the prior published version.
+
+Task content contains instructions, active taxonomy skill slugs, expected
+grade, time/deadline policy, and rubric dimensions/points. Published versions
+are immutable. Ownership is checked through the authenticated employer's
+company and hiring need; candidate and other-employer requests receive no task
+content. This contract does not yet assign tasks to candidates or grade
+submissions.
+
 ## Internal chat
 
 The `/api/v1/chat/conversations` endpoints are available only to candidate and

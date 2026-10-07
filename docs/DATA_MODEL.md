@@ -133,7 +133,10 @@ membership-scoped. Report audit metadata excludes message and contact contents.
   stores position, employer-facing title, required/optional state and estimated
   duration. The platform-review and final-decision boundary stages are required
   by the domain service.
-- employer_task_template/version
+- employer_task (employer-owned hiring-need/stage binding)
+- employer_task_version (draft/published/retired content, immutable after publish)
+- target skill and rubric dimensions are version-scoped JSON validated against
+  the active taxonomy; published versions never alter the platform grade
 - task_assignment
 - task_submission
 - employer_evaluation
