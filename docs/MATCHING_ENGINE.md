@@ -62,14 +62,17 @@ For unconfirmed-grade candidates, calculate fit but expose lower grade-confidenc
 
 ## FSP evidence score
 
-FSP is a **bounded positive bonus** only. Suggested components:
-- relevance of achievement discipline/event to the need;
-- event level/importance from synthetic registry data;
-- placement/result;
-- recency;
-- verification provenance.
+FSP is a **bounded positive bonus** only. The M05 service in
+`backend/app/fsp.py` calculates relevance from specialization/skill overlap, then
+weights result strength (40%), event level (20%), recency (20%) and verification
+provenance (20%). The three strongest relevant achievements are aggregated at
+70%/20%/10% and capped at the configured 10-point ranking weight. It returns the
+contributing achievement IDs, matched skills, component scores and reasons for
+explainability.
 
-Cap the total FSP contribution at the configured ranking weight. Missing FSP = zero bonus, never a penalty. A strong non-FSP candidate must be able to outrank an FSP candidate.
+Missing FSP = zero bonus, never a penalty. A strong non-FSP candidate must be able
+to outrank an FSP candidate. M06 employer discovery is responsible for composing
+this contribution with the remaining ProofMatch components and rendering it.
 
 ## Employer-specific evidence
 

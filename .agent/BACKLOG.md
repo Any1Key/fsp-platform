@@ -53,7 +53,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] link FSP ID
 - [x] synthetic achievements
 - [x] relevance/recency/result mapping
-- [ ] bounded FSP ranking contribution
+- [x] bounded FSP ranking contribution
 - [x] no-history path
 - [ ] branded FSP UI
 - [ ] future Keycloak/FSP integration demonstration/concept

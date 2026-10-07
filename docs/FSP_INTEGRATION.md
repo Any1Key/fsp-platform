@@ -62,16 +62,29 @@ is involved here.
 
 ## Ranking contribution
 
-Convert achievements to a bounded `fsp_evidence_score` using:
-- relevance to the employer need/skills;
-- result strength;
-- event level;
-- recency;
-- verification confidence.
+`backend/app/fsp.py` now provides the reusable `calculate_fsp_contribution` service
+and its persistence-backed `calculate_fsp_contribution_for_candidate` loader. The
+future ProofMatch service supplies a `FspRankingNeed` containing canonical
+specialization, required skills and preferred skills.
 
-Keep the score explainable and capped. Missing FSP history = zero bonus, never a penalty or exclusion.
+For each relevant achievement, the service calculates:
 
-Employer UI should show the exact achievement reasons contributing to the score.
+- relevance from specialization match or required/preferred canonical skill overlap;
+- result strength (40% of evidence strength);
+- event level (20%);
+- recency (20%);
+- non-empty registry verification provenance (20%).
+
+The three strongest relevant achievements are aggregated with diminishing weights of
+70%, 20% and 10%, then multiplied by the configured FSP ranking weight (10 points by
+default). The final contribution is always capped at that weight. The result includes
+the ranking version, score components, matching skills, contributing achievement IDs
+and human-readable reasons so employer UI can show the exact evidence later.
+
+Missing FSP history returns `score: 0` with `history_status: no_history`; unrelated
+history also returns zero. Neither state is a penalty or an eligibility exclusion.
+The service is intentionally internal until the M06 employer-discovery endpoint
+consumes it; candidate FSP HTTP responses continue to expose the evidence snapshot.
 
 ## Linking / Keycloak demo
 
@@ -81,7 +94,6 @@ Keep application auth identity and FSP participant link separate. Demonstrate li
 
 Candidate with no FSP ID or no achievements remains fully searchable/rankable through platform assessment and other evidence.
 
-The current M05 slice stores/displays the normalized evidence but does not
-calculate a ranking score. Matching will consume this snapshot through the same
-port and add the separately tested, bounded positive contribution in the
-employer-discovery slice.
+The current M05 slice stores/displays normalized evidence and calculates the bounded
+contribution contract. M06 will consume the same snapshot in employer discovery and
+render the contribution alongside the rest of the ProofMatch explanation.

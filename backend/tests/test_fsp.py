@@ -2,8 +2,19 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import jwt
+from sqlalchemy import text
 
-from app.fsp import FspAchievement, SyntheticFspRegistryAdapter, map_achievement, map_recency
+from app import main
+from app.db import get_db_session
+from app.fsp import (
+    FspAchievement,
+    FspRankingNeed,
+    SyntheticFspRegistryAdapter,
+    calculate_fsp_contribution,
+    calculate_fsp_contribution_for_candidate,
+    map_achievement,
+    map_recency,
+)
 
 
 def _headers(private_key, settings, *, sub: str, role: str = "candidate"):
@@ -100,6 +111,110 @@ def test_fsp_recency_is_bounded_and_future_dates_are_not_rewarded():
     future = map_recency(as_of + timedelta(days=1), as_of=as_of)
     assert future.score == 0
     assert future.label == "future"
+
+
+def test_fsp_contribution_is_relevant_explainable_and_bounded():
+    registry = SyntheticFspRegistryAdapter()
+    achievements = registry.list_achievements("FSP-DEMO-001")
+    need = FspRankingNeed(
+        specialization_slug="backend-engineering",
+        required_skill_slugs=("python", "rest-apis"),
+        preferred_skill_slugs=("docker",),
+    )
+
+    contribution = calculate_fsp_contribution(
+        achievements,
+        need,
+        as_of=datetime(2026, 10, 7, tzinfo=UTC).date(),
+    )
+
+    assert 0 < contribution.score <= contribution.max_score == 10.0
+    assert contribution.history_status == "has_history"
+    assert contribution.relevant_achievement_count == 2
+    assert contribution.contributing_achievement_ids == (
+        "synthetic-achievement-001",
+        "synthetic-achievement-002",
+    )
+    assert contribution.matched_specialization is True
+    assert contribution.matched_skill_slugs == ("python", "rest-apis")
+    assert contribution.component_scores["uncapped_normalized"] > 0
+    assert any("relevant FSP achievement" in reason for reason in contribution.reasons)
+
+    unrelated = calculate_fsp_contribution(
+        achievements,
+        FspRankingNeed(specialization_slug="mobile-engineering", required_skill_slugs=("swift",)),
+        as_of=datetime(2026, 10, 7, tzinfo=UTC).date(),
+    )
+    assert unrelated.score == 0
+    assert unrelated.history_status == "has_history"
+    assert unrelated.relevant_achievement_count == 0
+
+
+def test_fsp_no_history_is_zero_and_many_achievements_cannot_exceed_cap():
+    need = FspRankingNeed(specialization_slug="backend-engineering")
+    empty = calculate_fsp_contribution((), need)
+    assert empty.score == 0
+    assert empty.max_score == 10.0
+    assert empty.history_status == "no_history"
+    assert empty.reasons == ("No FSP history; no bonus or penalty.",)
+
+    achievement = FspAchievement(
+        achievement_id="perfect",
+        event_name="Perfect event",
+        event_date=datetime(2026, 10, 1, tzinfo=UTC).date(),
+        discipline="Backend Engineering",
+        level="national",
+        achievement_type="win",
+        placement="1",
+        result="Winner",
+        verification="verified registry record",
+        mapping_version="fixture-1",
+    )
+    capped = calculate_fsp_contribution(
+        (achievement,) * 20,
+        need,
+        as_of=datetime(2026, 10, 7, tzinfo=UTC).date(),
+    )
+    assert capped.score <= 10.0
+    assert capped.component_scores["uncapped_normalized"] == 1.0
+
+
+def test_persisted_fsp_snapshot_can_be_scored_for_a_candidate(auth_context):
+    client, private_key, settings = auth_context
+    subject = f"fsp-ranking-{uuid4().hex}"
+    headers = _headers(private_key, settings, sub=subject)
+    _grant_processing_consent(client, headers)
+    linked = client.post(
+        "/api/v1/candidate/fsp-link",
+        headers=headers,
+        json={"fsp_id": "FSP-DEMO-001"},
+    )
+    assert linked.status_code == 201
+
+    db_dependency = main.app.dependency_overrides[get_db_session]
+    db_generator = db_dependency()
+    db = next(db_generator)
+    try:
+        profile_id = db.execute(
+            text(
+                "SELECT cp.id FROM candidate_profile cp "
+                "JOIN user_identity ui ON ui.id = cp.identity_id "
+                "WHERE ui.keycloak_sub = :subject"
+            ),
+            {"subject": subject},
+        ).scalar_one()
+        contribution = calculate_fsp_contribution_for_candidate(
+            db,
+            profile_id,
+            FspRankingNeed(specialization_slug="backend-engineering", required_skill_slugs=("python",)),
+            as_of=datetime(2026, 10, 7, tzinfo=UTC).date(),
+        )
+    finally:
+        db_generator.close()
+
+    assert contribution.score > 0
+    assert contribution.history_status == "has_history"
+    assert contribution.contributing_achievement_ids
 
 
 def test_candidate_fsp_link_requires_consent_and_exposes_achievements(auth_context):

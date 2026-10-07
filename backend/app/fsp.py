@@ -7,6 +7,7 @@ not a claim about a production FSP API or an external identity schema.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import ClassVar, Protocol
@@ -43,6 +44,16 @@ _RESULT_TYPE_SCORES = {
 
 _RECENCY_BANDS = ((365, 100, "recent"), (730, 70, "aging"), (1095, 40, "old"))
 
+FSP_RANKING_WEIGHT = 10.0
+FSP_RANKING_VERSION = "fsp-evidence-2026-10"
+_FSP_RANKING_COMPONENT_WEIGHTS = {
+    "result_strength": 0.40,
+    "event_level": 0.20,
+    "recency": 0.20,
+    "verification": 0.20,
+}
+_FSP_ACHIEVEMENT_AGGREGATION_WEIGHTS = (0.70, 0.20, 0.10)
+
 
 @dataclass(frozen=True)
 class FspParticipant:
@@ -75,6 +86,47 @@ class FspEvidenceMapping:
 class FspRecency:
     score: int
     label: str
+
+
+@dataclass(frozen=True)
+class FspRankingNeed:
+    """The employer-need evidence needed to evaluate an FSP bonus."""
+
+    specialization_slug: str | None = None
+    required_skill_slugs: tuple[str, ...] = ()
+    preferred_skill_slugs: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class FspRankingContribution:
+    """Explainable, capped FSP contribution for a single candidate and need."""
+
+    score: float
+    max_score: float
+    ranking_version: str
+    history_status: str
+    relevant_achievement_count: int
+    contributing_achievement_ids: tuple[str, ...]
+    matched_specialization: bool
+    matched_skill_slugs: tuple[str, ...]
+    component_scores: dict[str, float]
+    reasons: tuple[str, ...]
+
+    def as_dict(self) -> dict[str, object]:
+        """Return the stable shape consumed by a future matching result."""
+
+        return {
+            "score": self.score,
+            "max_score": self.max_score,
+            "ranking_version": self.ranking_version,
+            "history_status": self.history_status,
+            "relevant_achievement_count": self.relevant_achievement_count,
+            "contributing_achievement_ids": list(self.contributing_achievement_ids),
+            "matched_specialization": self.matched_specialization,
+            "matched_skill_slugs": list(self.matched_skill_slugs),
+            "component_scores": self.component_scores.copy(),
+            "reasons": list(self.reasons),
+        }
 
 
 class FspRegistryPort(Protocol):
@@ -194,6 +246,210 @@ def map_recency(event_date: date | str, *, as_of: date | None = None) -> FspRece
         if age_days <= limit:
             return FspRecency(score=score, label=label)
     return FspRecency(score=10, label="stale")
+
+
+def _normalize_slug(value: str | None) -> str:
+    return value.strip().casefold() if value else ""
+
+
+def _level_score(level: str) -> float:
+    normalized = level.strip().casefold()
+    if normalized in {"international", "national", "federal", "all-russian"}:
+        return 1.0
+    if normalized == "regional":
+        return 0.75
+    if normalized == "local":
+        return 0.50
+    return 0.25 if normalized else 0.0
+
+
+def _verification_score(verification: str) -> float:
+    """Translate provenance presence into a deliberately simple confidence signal."""
+
+    normalized = verification.strip().casefold()
+    if not normalized or "unverified" in normalized:
+        return 0.0
+    if any(marker in normalized for marker in ("verified", "registry", "synthetic")):
+        return 1.0
+    return 0.75
+
+
+def _achievement_relevance(
+    achievement: FspAchievement,
+    need: FspRankingNeed,
+) -> tuple[float, bool, tuple[str, ...]]:
+    required = {_normalize_slug(skill) for skill in need.required_skill_slugs if _normalize_slug(skill)}
+    preferred = {_normalize_slug(skill) for skill in need.preferred_skill_slugs if _normalize_slug(skill)}
+    achievement_skills = {
+        _normalize_slug(skill) for skill in map_achievement(achievement).skill_slugs if _normalize_slug(skill)
+    }
+    matched_required = required & achievement_skills
+    matched_preferred = preferred & achievement_skills
+    skill_relevance = max(
+        (len(matched_required) / len(required)) if required else 0.0,
+        (0.80 * len(matched_preferred) / len(preferred)) if preferred else 0.0,
+    )
+    mapped_specialization = _normalize_slug(map_achievement(achievement).specialization_slug)
+    specialization_match = bool(
+        need.specialization_slug
+        and mapped_specialization == _normalize_slug(need.specialization_slug)
+    )
+    matched_skills = tuple(sorted(matched_required | matched_preferred))
+    return max(1.0 if specialization_match else 0.0, skill_relevance), specialization_match, matched_skills
+
+
+def _achievement_strength(
+    achievement: FspAchievement,
+    *,
+    as_of: date | None,
+) -> tuple[float, dict[str, float]]:
+    mapping = map_achievement(achievement)
+    component_scores = {
+        "result_strength": max(0.0, min(mapping.result_score / 100.0, 1.0)),
+        "event_level": _level_score(achievement.level),
+        "recency": map_recency(achievement.event_date, as_of=as_of).score / 100.0,
+        "verification": _verification_score(achievement.verification),
+    }
+    strength = sum(
+        component_scores[name] * weight
+        for name, weight in _FSP_RANKING_COMPONENT_WEIGHTS.items()
+    )
+    return strength, component_scores
+
+
+def calculate_fsp_contribution(
+    achievements: Iterable[FspAchievement],
+    need: FspRankingNeed,
+    *,
+    as_of: date | None = None,
+    max_bonus: float = FSP_RANKING_WEIGHT,
+) -> FspRankingContribution:
+    """Calculate a positive, need-specific FSP bonus without creating an eligibility gate.
+
+    The strongest three relevant achievements are aggregated with diminishing weights
+    (70/20/10 percent), then multiplied by ``max_bonus``. This makes the configured
+    FSP weight a hard upper bound while preserving useful evidence plurality.
+    """
+
+    if max_bonus <= 0:
+        raise ValueError("max_bonus must be positive")
+
+    scored: list[
+        tuple[float, float, FspAchievement, bool, tuple[str, ...], dict[str, float]]
+    ] = []
+    has_history = False
+    for achievement in achievements:
+        has_history = True
+        relevance, specialization_match, matched_skills = _achievement_relevance(achievement, need)
+        if relevance <= 0:
+            continue
+        strength, components = _achievement_strength(achievement, as_of=as_of)
+        scored.append(
+            (
+                relevance * strength,
+                relevance,
+                achievement,
+                specialization_match,
+                matched_skills,
+                components,
+            )
+        )
+
+    scored.sort(key=lambda item: (-item[0], item[2].achievement_id))
+    selected = scored[: len(_FSP_ACHIEVEMENT_AGGREGATION_WEIGHTS)]
+    normalized_score = sum(item[0] * weight for item, weight in zip(selected, _FSP_ACHIEVEMENT_AGGREGATION_WEIGHTS))
+    normalized_score = max(0.0, min(normalized_score, 1.0))
+    score = round(max_bonus * normalized_score, 2)
+
+    matched_specialization = any(item[3] for item in selected)
+    matched_skills = tuple(sorted({skill for item in selected for skill in item[4]}))
+    component_scores: dict[str, float] = {
+        "relevance": round(max((item[1] for item in selected), default=0.0), 4),
+        "result_strength": round(
+            max((item[5]["result_strength"] for item in selected), default=0.0), 4
+        ),
+        "event_level": round(max((item[5]["event_level"] for item in selected), default=0.0), 4),
+        "recency": round(max((item[5]["recency"] for item in selected), default=0.0), 4),
+        "verification": round(max((item[5]["verification"] for item in selected), default=0.0), 4),
+        "uncapped_normalized": round(normalized_score, 4),
+    }
+
+    if not has_history:
+        reasons = ("No FSP history; no bonus or penalty.",)
+        history_status = "no_history"
+    elif not scored:
+        reasons = ("FSP history is present but has no evidence relevant to this need.",)
+        history_status = "has_history"
+    else:
+        reason_parts = [f"{len(scored)} relevant FSP achievement(s) contribute to this bonus."]
+        if matched_specialization:
+            reason_parts.append("At least one achievement matches the requested specialization.")
+        if matched_skills:
+            reason_parts.append(f"Matched FSP skills: {', '.join(matched_skills)}.")
+        history_status = "has_history"
+        reasons = tuple(reason_parts)
+
+    return FspRankingContribution(
+        score=score,
+        max_score=round(max_bonus, 2),
+        ranking_version=FSP_RANKING_VERSION,
+        history_status=history_status,
+        relevant_achievement_count=len(scored),
+        contributing_achievement_ids=tuple(item[2].achievement_id for item in selected),
+        matched_specialization=matched_specialization,
+        matched_skill_slugs=matched_skills,
+        component_scores=component_scores,
+        reasons=reasons,
+    )
+
+
+def _snapshot_achievement(row) -> FspAchievement:
+    event_date = row["event_date"]
+    if isinstance(event_date, datetime):
+        event_date = event_date.date()
+    elif isinstance(event_date, str):
+        event_date = date.fromisoformat(event_date)
+    return FspAchievement(
+        achievement_id=row["external_achievement_id"],
+        event_name=row["event_name"],
+        event_date=event_date,
+        discipline=row["discipline"],
+        level=row["level"],
+        achievement_type=row["achievement_type"],
+        placement=row["placement"],
+        result=row["result"],
+        verification=row["verification"],
+        mapping_version=row["mapping_version"],
+    )
+
+
+def calculate_fsp_contribution_for_candidate(
+    db: Session,
+    candidate_profile_id: str,
+    need: FspRankingNeed,
+    *,
+    as_of: date | None = None,
+    max_bonus: float = FSP_RANKING_WEIGHT,
+) -> FspRankingContribution:
+    """Load one candidate's persisted FSP snapshot and calculate its contribution."""
+
+    rows = db.execute(
+        text(
+            "SELECT a.external_achievement_id, a.event_name, a.event_date, a.discipline, "
+            "a.level, a.achievement_type, a.placement, a.result, a.verification, "
+            "a.mapping_version FROM fsp_achievement a "
+            "JOIN fsp_link l ON l.id = a.fsp_link_id "
+            "WHERE l.candidate_profile_id = :candidate_profile_id "
+            "ORDER BY a.event_date DESC, a.id"
+        ),
+        {"candidate_profile_id": candidate_profile_id},
+    ).mappings().all()
+    return calculate_fsp_contribution(
+        (_snapshot_achievement(row) for row in rows),
+        need,
+        as_of=as_of,
+        max_bonus=max_bonus,
+    )
 
 
 def _ensure_candidate_profile(db: Session, principal: Principal) -> tuple[str, str]:
