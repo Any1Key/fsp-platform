@@ -116,6 +116,30 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "HIRING_NEED_UPDATE_REQUIRED",
         "At least one hiring need field is required.",
     ),
+    "hiring_need_required_for_talent_radar": (
+        "HIRING_NEED_REQUIRED_FOR_TALENT_RADAR",
+        "Create a hiring need before opening Talent Radar.",
+    ),
+    "talent_radar_limit_invalid": (
+        "TALENT_RADAR_LIMIT_INVALID",
+        "Talent Radar limit must be between 1 and 100.",
+    ),
+    "talent_radar_specialization_invalid": (
+        "TALENT_RADAR_SPECIALIZATION_INVALID",
+        "The Talent Radar specialization filter is not available.",
+    ),
+    "talent_radar_grade_invalid": (
+        "TALENT_RADAR_GRADE_INVALID",
+        "The Talent Radar grade filter is not available.",
+    ),
+    "talent_radar_skill_invalid": (
+        "TALENT_RADAR_SKILL_INVALID",
+        "The Talent Radar skill filter is not available.",
+    ),
+    "talent_radar_fsp_invalid": (
+        "TALENT_RADAR_FSP_INVALID",
+        "The Talent Radar FSP filter is not available.",
+    ),
     "fsp_participant_not_found": (
         "FSP_PARTICIPANT_NOT_FOUND",
         "The FSP participant was not found in the configured registry.",

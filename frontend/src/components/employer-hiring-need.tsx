@@ -45,7 +45,7 @@ async function readError(response: Response): Promise<string> {
   }
 }
 
-export function EmployerHiringNeed({ token }: { token: string }) {
+export function EmployerHiringNeed({ token, onSaved }: { token: string; onSaved?: () => void }) {
   const [taxonomy, setTaxonomy] = useState<Taxonomy | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [exists, setExists] = useState(false);
@@ -126,6 +126,7 @@ export function EmployerHiringNeed({ token }: { token: string }) {
       setDraft(draftFromNeed(saved, taxonomy as Taxonomy));
       setExists(true);
       setMessage("Потребность сохранена — это основа Talent Radar.");
+      onSaved?.();
     } catch (error) {
       setMessage(`Не удалось сохранить: ${(error as Error).message}`);
     } finally {

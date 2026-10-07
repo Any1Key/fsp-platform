@@ -94,6 +94,25 @@ employer account email, tokens, candidate data, or protected attributes. A
 candidate receives `ROLE_REQUIRED`; invalid input uses `VALIDATION_ERROR`,
 `COMPANY_NAME_REQUIRED`, or `COMPANY_PROFILE_UPDATE_REQUIRED` as applicable.
 
+## Employer Talent Radar
+
+`GET /api/v1/employer/talent-radar` is employer-only and requires the current
+company hiring need. It returns a read-only ProofMatch snapshot with category
+aggregates, ranked candidate cards, score components, evidence edges, reasons,
+confidence/freshness, gaps, and the bounded FSP contribution. Optional filters
+are `q`, `specialization`, `grade`, `skill`, `fsp` (`all`, `with_history`, or
+`without_history`), `include_unconfirmed`, and `limit`.
+
+The candidate projection includes only profiles with publication and
+discoverability consent. It exposes professional display fields only; email,
+OIDC subjects, date of birth/minor state, resumes, FSP participant IDs, and
+contacts are excluded. `include_unconfirmed=false` is an explicit verified-only
+view; unconfirmed and unassessed candidates are otherwise retained with a
+visible grade-state marker. Missing FSP history contributes zero and does not
+exclude a candidate. The snapshot carries candidate IDs plus scoring, evidence,
+and need-version identifiers so a later filter can be audited against the
+same selection.
+
 ## Candidate dashboard
 
 `GET /api/v1/candidate/dashboard` returns the authenticated candidate's safe

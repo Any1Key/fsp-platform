@@ -61,12 +61,12 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 ## M06 — Employer discovery / ProofMatch
 - [x] company profile
 - [x] hiring need required/preferred skills
-- [ ] Talent Radar/category discovery
-- [ ] verified + unconfirmed grade eligibility states
-- [ ] evidence-graph ranking
-- [ ] confidence/freshness/gaps explanation
-- [ ] filters/snapshots
-- [ ] employer discovery UI
+- [x] Talent Radar/category discovery
+- [x] verified + unconfirmed grade eligibility states
+- [x] evidence-graph ranking
+- [x] confidence/freshness/gaps explanation
+- [x] filters/snapshots
+- [x] employer discovery UI
 
 ## M07 — Invitations, match, contact privacy
 - [ ] invitation create/status

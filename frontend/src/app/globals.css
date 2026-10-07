@@ -349,6 +349,51 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .skillPreference legend { padding: 0 4px; color: #c3bdff; font-size: 10px; }
 .skillChoice { display: flex !important; grid-template-columns: auto 1fr; grid-template-columns: none; gap: 8px !important; align-items: center; }
 .skillChoice input { width: auto; accent-color: var(--brand-primary); }
+.radarPanel {
+  flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14);
+  padding-top: 16px; color: #ededed;
+}
+.radarPanel.muted, .radarPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.radarPanel.error { color: #ffb6bd; }
+.radarHeading { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.radarHeading > div { display: grid; gap: 5px; }
+.radarHeading h2 { margin: 0; font-size: 15px; }
+.radarHeading p { margin: 0; color: #b7b7c1; font-size: 10px; line-height: 1.5; }
+.radarFilters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: end; }
+.radarFilters label { display: grid; gap: 6px; color: #d5d5dc; font-size: 10px; }
+.radarFilters input, .radarFilters select { width: 100%; border: 1px solid #555760; border-radius: 9px; padding: 10px 11px; background: rgba(255,255,255,.06); color: white; font: inherit; font-size: 10px; outline: none; }
+.radarFilters input:focus, .radarFilters select:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
+.radarFilters select option { color: var(--text); }
+.radarFilters .radarCheckbox { display: flex; align-items: center; gap: 7px; grid-column: span 3; }
+.radarCheckbox input { width: auto; accent-color: var(--brand-primary); }
+.radarSummary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; overflow: hidden; border: 1px solid rgba(169,161,255,.3); border-radius: 12px; background: rgba(169,161,255,.2); }
+.radarSummary div { display: grid; gap: 5px; padding: 11px 13px; background: rgba(27,28,33,.74); min-width: 0; }
+.radarSummary span { color: #a9a1ff; font-size: 8px; letter-spacing: .08em; }
+.radarSummary strong { overflow-wrap: anywhere; font-size: 10px; }
+.radarEmpty { display: grid; gap: 5px; border: 1px dashed rgba(169,161,255,.42); border-radius: 13px; padding: 18px; color: #d5d5dc; font-size: 11px; }
+.radarEmpty span, .radarPrivacyNote { color: #b7b7c1; font-size: 9px; line-height: 1.5; }
+.radarCandidates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.radarCandidate { display: grid; gap: 11px; min-width: 0; border: 1px solid rgba(169,161,255,.28); border-radius: 13px; padding: 13px; background: rgba(27,28,33,.38); }
+.radarCandidateTop, .radarFooter { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.radarCandidateTop > div:first-child { min-width: 0; }
+.radarCandidate h3 { margin: 4px 0; font-size: 13px; overflow-wrap: anywhere; }
+.radarCandidate p { margin: 0; color: #b7b7c1; font-size: 9px; line-height: 1.5; }
+.radarCandidateState { color: #8be0b2; font-size: 8px; letter-spacing: .06em; }
+.radarCandidateState:has(+ h3) { }
+.radarScore { display: grid; justify-items: end; flex: 0 0 auto; }
+.radarScore strong { color: #a9a1ff; font-size: 25px; line-height: 1; }
+.radarScore span { color: #b7b7c1; font-size: 8px; }
+.radarCategory { display: flex; justify-content: space-between; gap: 10px; align-items: center; border-top: 1px solid rgba(255,255,255,.08); border-bottom: 1px solid rgba(255,255,255,.08); padding: 9px 0; }
+.radarCategory span { color: #c3bdff; font-size: 10px; }
+.radarCategory small { color: #b7b7c1; font-size: 8px; text-align: right; }
+.radarEvidenceChips { display: flex; flex-wrap: wrap; gap: 6px; }
+.radarEvidenceChips span { border: 1px solid rgba(139,224,178,.3); border-radius: 999px; padding: 5px 7px; color: #8be0b2; font-size: 8px; }
+.radarReasons { display: grid; gap: 4px; margin: 0; padding-left: 15px; color: #d5d5dc; font-size: 9px; line-height: 1.45; }
+.radarFooter { align-items: end; border-top: 1px solid rgba(255,255,255,.08); padding-top: 9px; }
+.radarFooter > span { color: #ffd28a; font-size: 8px; line-height: 1.45; }
+.radarFooter .authButton { padding: 8px 9px; font-size: 9px; }
+.radarFooter .authButton:disabled { cursor: not-allowed; }
+.radarPrivacyNote { border-top: 1px solid rgba(255,255,255,.08); padding-top: 9px; }
 .proofCard {
   background: white; color: var(--text); border-radius: 24px; padding: 30px;
   box-shadow: 0 25px 90px rgba(0,0,0,.28); transform: rotate(-1deg);
@@ -408,6 +453,14 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .companyHeading, .companyFooter { align-items: flex-start; flex-direction: column; }
   .companyFooter small { max-width: none; }
   .skillPreferenceGrid { grid-template-columns: 1fr; }
+  .radarHeading, .radarFooter { align-items: flex-start; flex-direction: column; }
+  .radarFilters { grid-template-columns: 1fr; }
+  .radarFilters .radarCheckbox { grid-column: auto; }
+  .radarFilters .authButton { width: 100%; }
+  .radarSummary, .radarCandidates { grid-template-columns: 1fr; }
+  .radarCategory { align-items: flex-start; flex-direction: column; }
+  .radarCategory small { text-align: left; }
+  .radarFooter .authButton { width: 100%; }
   .principles { grid-template-columns: 1fr; padding: 32px 20px 60px; }
   .shell { background: linear-gradient(180deg, #1b1c21 0 50rem, var(--surface) 50rem); }
 }

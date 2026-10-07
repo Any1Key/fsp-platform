@@ -11,6 +11,7 @@ import { CandidateAssessment } from "./candidate-assessment";
 import { CandidateFsp } from "./candidate-fsp";
 import { EmployerCompanyProfile } from "./employer-company-profile";
 import { EmployerHiringNeed } from "./employer-hiring-need";
+import { EmployerTalentRadar } from "./employer-talent-radar";
 
 type Session = {
   identity_id: string | null;
@@ -35,6 +36,7 @@ export function AuthStatus() {
   const [roleSaving, setRoleSaving] = useState(false);
   const [roleError, setRoleError] = useState<string | null>(null);
   const [assessmentRefreshKey, setAssessmentRefreshKey] = useState(0);
+  const [talentRadarRefreshKey, setTalentRadarRefreshKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -162,7 +164,8 @@ export function AuthStatus() {
         {auth.session.role === "employer" && (
           <>
             <EmployerCompanyProfile token={keycloak.current?.token ?? ""} />
-            <EmployerHiringNeed token={keycloak.current?.token ?? ""} />
+            <EmployerHiringNeed token={keycloak.current?.token ?? ""} onSaved={() => setTalentRadarRefreshKey((value) => value + 1)} />
+            <EmployerTalentRadar token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} />
           </>
         )}
       </div>

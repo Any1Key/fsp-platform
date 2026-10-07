@@ -77,8 +77,32 @@ this contribution with the remaining ProofMatch components and rendering it.
 The employer need input boundary is implemented separately at
 `/api/v1/employer/hiring-need`. It persists the team/role context, target
 specialization and grade, and normalized required/preferred skill sets. This
-structured input is intentionally available before candidate ranking; the
-ranking and Talent Radar consumers remain later M06 work units.
+structured input is consumed by the M06 Talent Radar projection below.
+
+## Implemented M06 Talent Radar projection
+
+`GET /api/v1/employer/talent-radar` composes the current need with candidates
+who have both publication consent and discoverability enabled. It projects the
+latest submitted assessment from the existing assessment boundary, so a
+verified category is specialization plus confirmed grade. A failed or missing
+submission remains visible as `not_confirmed` or `not_assessed` rather than
+being silently removed. The route never reads protected age/minor data or
+exposes contact data.
+
+The implemented score uses the documented weights: specialization (20), grade
+fit (15), required skill coverage (25), preferred skill coverage (10),
+assessment strength (15), evidence confidence/freshness (5), and the bounded
+FSP bonus (10). Every component is returned in `score_breakdown`. Profile
+declarations and FSP achievements are separate evidence edges; the response
+also returns category state, assessment state, confidence dimensions, reasons,
+and missing required skills. No-FSP candidates receive a zero bonus and remain
+eligible.
+
+The response includes category-level verified/unconfirmed counts and supports
+search, specialization/grade/skill/FSP filters, explicit unconfirmed inclusion,
+and a snapshot containing selected candidate IDs, filter values, scoring and
+evidence versions, and the hiring-need version. This is the read-only discovery
+slice; salary-bearing invitations and contact unlock remain M07.
 
 ## Employer-specific evidence
 

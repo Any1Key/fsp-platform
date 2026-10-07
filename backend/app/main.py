@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 from typing import Annotated, Any, Literal
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile, status
+from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -33,6 +33,7 @@ from .candidates import get_profile, update_profile
 from .companies import get_company, update_company
 from .config import get_settings
 from .db import get_db_session
+from .discovery import RadarFilters, get_talent_radar
 from .errors import ErrorResponse, error_response, normalize_http_error
 from .fsp import (
     SyntheticFspRegistryAdapter,
@@ -745,6 +746,45 @@ def update_employer_hiring_need(
     if not payload:
         raise HTTPException(status_code=422, detail="hiring_need_update_required")
     return HiringNeedResponse.model_validate(update_hiring_need(db, principal, payload))
+
+
+@app.get(
+    "/api/v1/employer/talent-radar",
+    tags=["employer discovery"],
+    response_model=dict[str, Any],
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        409: {"model": ErrorResponse, "description": "A hiring need is required"},
+        422: {"model": ErrorResponse, "description": "Talent Radar filter is invalid"},
+    },
+)
+def employer_talent_radar(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+    q: str | None = Query(default=None, max_length=120),
+    specialization: str | None = Query(default=None, max_length=100),
+    grade: str | None = Query(default=None, max_length=50),
+    skill: str | None = Query(default=None, max_length=100),
+    fsp: Literal["all", "with_history", "without_history"] = Query(default="all"),
+    include_unconfirmed: bool = Query(default=True),
+    limit: int = Query(default=30, ge=1, le=100),
+) -> dict[str, Any]:
+    """Return a consent-gated, explainable candidate discovery snapshot."""
+
+    return get_talent_radar(
+        db,
+        principal,
+        assessment_service,
+        RadarFilters(
+            query=(q or "").strip(),
+            specialization=(specialization or "").strip() or None,
+            grade=(grade or "").strip() or None,
+            skill=(skill or "").strip() or None,
+            fsp=fsp,
+            include_unconfirmed=include_unconfirmed,
+            limit=limit,
+        ),
+    )
 
 
 def _privacy_response(state: PrivacyState) -> CandidatePrivacyResponse:
