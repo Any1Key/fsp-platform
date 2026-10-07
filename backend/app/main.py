@@ -61,10 +61,13 @@ from .invitations import (
     respond_to_invitation,
 )
 from .local_ai import (
+    DraftValidationError,
+    LocalAiDraftResult,
     LocalAiPort,
     build_local_ai_port,
     context_from_hiring_need,
     retrieve_approved_task_examples,
+    validate_task_draft,
 )
 from .minor_consent import get_document_status, upload_document
 from .pipelines import get_hiring_pipeline, update_hiring_pipeline
@@ -1186,6 +1189,23 @@ async def employer_task_draft_suggestion(
     examples = retrieve_approved_task_examples(db, principal, context)
     context = context_from_hiring_need(need, tuple(examples))
     result = await local_ai_port.propose_task_draft(context)
+    if result.status == "completed":
+        try:
+            validated_draft = validate_task_draft(result.draft, context)
+        except DraftValidationError:
+            result = LocalAiDraftResult(
+                status="failed",
+                source=result.source,
+                reason="local_ai_invalid_draft",
+                draft=None,
+            )
+        else:
+            result = LocalAiDraftResult(
+                status=result.status,
+                source=result.source,
+                reason=result.reason,
+                draft=validated_draft,
+            )
     return LocalAiDraftSuggestionResponse(
         status=result.status,
         source=result.source,

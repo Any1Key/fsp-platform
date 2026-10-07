@@ -45,12 +45,33 @@ explainable: matching specialization, grade, required skills and preferred
 skills contribute to the ranking, with approval time and ID as stable
 tie-breakers. The response exposes only the employer's own metadata and
 relevance matches, while the replaceable `LocalAiPort` receives the sanitized
-full examples for a future constrained adapter.
+full examples as bounded generation context.
 
 The current deployment still uses `DisabledLocalAiAdapter`, so retrieval does
-not pretend to generate a draft and manual authoring remains available. Draft
-generation, feedback memory, and background jobs remain separate follow-up
-units.
+not pretend to generate a draft and manual authoring remains available. An
+explicit opt-in local runtime can now generate a constrained JSON draft from
+that context. The server validates the returned title, instructions, current
+grade, current-need skills, time limits, rubric and difficulty rationale before
+returning it. The employer can apply the suggestion to the editable form, but
+the draft is never persisted or published automatically.
+
+### Constrained draft generation
+
+Set `LOCAL_AI_ENABLED=true` and provide `LOCAL_AI_MODEL` to enable the
+OpenAI-compatible adapter. `LOCAL_AI_BASE_URL` defaults to
+`http://local-ai:11434` and the adapter calls `/v1/chat/completions` with JSON
+mode and a bounded timeout from `LOCAL_AI_TIMEOUT_SECONDS`. The default remains
+AI-off. A missing model, transport/timeout error, malformed JSON or schema/
+constraint violation returns an explicit failed suggestion and leaves manual
+authoring available.
+
+The generated contract is intentionally narrower than the task-version model:
+it includes `title`, `instructions`, `target_skills`, `expected_grade`,
+`estimated_minutes`, `deadline_hours`, `rubric`, and advisory
+`difficulty_rationale`. Required skills must be included, target skills must
+come from the current need, and the grade must match the need. Human review and
+explicit publication remain mandatory. Feedback memory and background jobs
+remain separate follow-up units.
 
 ## Runtime architecture
 

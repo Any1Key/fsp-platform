@@ -31,6 +31,7 @@ type ApprovedExample = {
   target_skills: string[];
   relevance_score: number;
 };
+type GeneratedDraft = Content & { difficulty_rationale: string };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const emptyRubric = (): Rubric[] => [
@@ -82,6 +83,7 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
   const [message, setMessage] = useState<string | null>(null);
   const [localAiStatus, setLocalAiStatus] = useState<LocalAiStatus>("loading");
   const [approvedExamples, setApprovedExamples] = useState<ApprovedExample[]>([]);
+  const [suggestedDraft, setSuggestedDraft] = useState<GeneratedDraft | null>(null);
 
   const employerStages = useMemo(
     () => (pipeline?.stages ?? []).filter((stage) => stage.stage_type === "employer_task" && stage.id),
@@ -133,14 +135,27 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
       const result = (await response.json()) as {
         status: "disabled" | "completed" | "failed";
         approved_examples: ApprovedExample[];
+        draft: GeneratedDraft | null;
       };
       setApprovedExamples(result.approved_examples ?? []);
+      setSuggestedDraft(result.status === "completed" ? result.draft : null);
       setLocalAiStatus(result.status === "disabled" ? "disabled" : result.status === "completed" ? "available" : "error");
     } catch {
       // AI is optional: a probe failure must never disable manual authoring.
       setApprovedExamples([]);
+      setSuggestedDraft(null);
       setLocalAiStatus("error");
     }
+  }
+
+  function applySuggestedDraft() {
+    if (!suggestedDraft) return;
+    const { difficulty_rationale: rationale, ...content } = suggestedDraft;
+    setForm({
+      ...content,
+      rubric: content.rubric.map((item) => ({ ...item, description: item.description ?? "" })),
+    });
+    setMessage(`Черновик применён для проверки. Обоснование сложности: ${rationale}`);
   }
 
   function selectTask(task: Task) {
@@ -239,6 +254,14 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
       <div className={`localAiStatus ${localAiStatus}`} aria-live="polite">
         <span>{localAiStatus === "disabled" ? "LOCAL AI OFF" : localAiStatus === "available" ? "LOCAL AI READY" : localAiStatus === "loading" ? "CHECKING LOCAL AI…" : "LOCAL AI UNAVAILABLE"}</span>
         <small>{localAiStatus === "disabled" ? "Создайте задание вручную — это не блокирует hiring pipeline." : "Подсказки не публикуются автоматически; работодатель всегда редактирует и публикует задание."}</small>
+        {localAiStatus !== "disabled" && (
+          <div className="taskAiActions">
+            <button className="authButton secondaryButton" type="button" disabled={localAiStatus === "loading"} onClick={() => void probeLocalAi()}>
+              {suggestedDraft ? "Обновить черновик" : "Сгенерировать черновик"}
+            </button>
+            {suggestedDraft && <button className="authButton primaryButton" type="button" onClick={applySuggestedDraft}>Применить для проверки</button>}
+          </div>
+        )}
       </div>
       {approvedExamples.length > 0 && (
         <div className="approvedTaskMemory" aria-label="Одобренные примеры заданий">

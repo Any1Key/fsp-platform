@@ -97,7 +97,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 ## M10 — Optional CPU-local AI task copilot
 - [x] LocalAiPort + disabled adapter
 - [x] approved employer-task memory/retrieval
-- [ ] constrained JSON task/rubric draft
+- [x] constrained JSON task/rubric draft
 - [ ] employer approve/edit/reject feedback
 - [ ] async jobs/rate limit/timeout
 - [ ] AI-off fallback tests

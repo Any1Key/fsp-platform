@@ -135,8 +135,11 @@ candidate assignment is covered by the match-bound routes below.
 boundary. It returns the adapter status plus `approved_example_count` and a
 bounded `approved_examples` metadata list. Examples are selected only from
 published task versions owned by the current employer and ranked against the
-current hiring need. With local AI disabled, `draft` remains `null`; retrieval
-is informational and manual authoring continues.
+current hiring need. With local AI disabled, `draft` remains `null`; with the
+opt-in adapter enabled, `draft` contains a server-validated task/rubric proposal
+and advisory `difficulty_rationale`. The proposal is never persisted or
+published by this route. Transport, timeout, malformed JSON and constraint
+failures return an explicit `failed` status; manual authoring continues.
 
 ### Candidate employer-task assignments
 

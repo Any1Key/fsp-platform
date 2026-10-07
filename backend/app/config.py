@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     canonical_exposure_window_days: int = Field(default=90, ge=1, le=3650)
     private_storage_dir: str = "/var/lib/fsp/private"
     cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    local_ai_enabled: bool = False
+    local_ai_base_url: str = "http://local-ai:11434"
+    local_ai_model: str = ""
+    local_ai_timeout_seconds: float = Field(default=60.0, gt=0, le=300)
 
     @property
     def cors_origins(self) -> list[str]:
