@@ -18,7 +18,6 @@ from .assessments import (
     RETEST_COOLDOWN_DAYS,
     AssessmentError,
     AssessmentService,
-    public_attempt,
     public_history_item,
 )
 from .auth import (
@@ -56,7 +55,9 @@ app.add_middleware(
 
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
 
-assessment_service = AssessmentService()
+assessment_service = AssessmentService(
+    canonical_exposure_window=timedelta(days=get_settings().canonical_exposure_window_days)
+)
 auth_verifier = build_verifier(get_settings())
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -864,7 +865,7 @@ def create_assessment_attempt(
         )
     except AssessmentError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    return public_attempt(attempt)
+    return assessment_service.public_attempt(attempt)
 
 
 def _candidate_attempt(attempt_id: str, principal: Principal):
@@ -893,7 +894,7 @@ def get_assessment_attempt(
     principal: Annotated[Principal, Depends(candidate_principal)],
 ) -> dict[str, Any]:
     try:
-        return public_attempt(_candidate_attempt(attempt_id, principal))
+        return assessment_service.public_attempt(_candidate_attempt(attempt_id, principal))
     except AssessmentError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -920,4 +921,4 @@ def submit_assessment_attempt(
     except AssessmentError as exc:
         status = 404 if str(exc) == "attempt_not_found" else 409
         raise HTTPException(status_code=status, detail=str(exc)) from exc
-    return public_attempt(attempt)
+    return assessment_service.public_attempt(attempt)

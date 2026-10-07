@@ -1,22 +1,20 @@
 # Status
 
 Current phase: IMPLEMENTATION  
-Current milestone: M02 — resume parser and review-before-save
+Current milestone: M04 — delayed canonical-answer exposure
 Last verified run: none (external supervisor required)
 
-The current work block extends the private candidate PDF upload with bounded
-CPU-only text extraction, structured field provenance/confidence, and an
-explicit candidate review step. Parser output stays `needs_review` until the
-candidate accepts or rejects it; accepted professional fields reuse the
-candidate profile boundary and contacts are never imported.
+The current work block protects the assessment answer surface after submission.
+Template families are versioned, canonical review is delayed by the configured
+exposure window (90 days by default), and explicit family retirement can
+release detailed explanations earlier. Score, grade, and discoverability stay
+unchanged; canonical details are candidate-visible only after policy release.
 
 Requirement status for this block: IMPLEMENTED pending supervisor evidence:
-CAND-002. Existing assessment implementation remains recorded in the backlog
-and matrix; AST-003 remains IN_PROGRESS until employer-visible category wiring
-exists, and AST-005 remains IN_PROGRESS until synthetic calibration validation
+AST-015. AST-014 remains TODO until synthetic grade/discrimination validation
+exists; AST-003 remains IN_PROGRESS until employer-visible category wiring
 exists.
 
-Important open scope: standardized profile PDF and candidate dashboard, taxonomy
-data/model and assessment UI/history, FSP evidence, ProofMatch,
-invitations/match/chat, employer pipeline, load testing and complete responsive
-journey remain unimplemented.
+Important open scope: synthetic grade validation, FSP evidence, ProofMatch,
+invitations/match/chat, employer pipeline, load testing, and complete
+responsive journey remain unimplemented.

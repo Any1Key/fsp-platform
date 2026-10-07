@@ -106,6 +106,14 @@ candidate or change the deterministic grade. The candidate UI uses the public
 taxonomy catalog to render specialization and grade choices and disables
 specializations without an administered blueprint.
 
+Submitted attempts also include `canonical_review`. Its `delayed` form has
+only `status` and `available_at`; it never includes `correct_option` or
+canonical explanation. The `available` form adds those details only after all
+family/version windows have closed or the families have been explicitly
+retired. The default window is 90 days from first family/version exposure and
+is configured with `CANONICAL_EXPOSURE_WINDOW_DAYS`. In-progress attempts do
+not include review data.
+
 ## Candidate resume upload
 
 `GET /api/v1/candidate/resume` returns the authenticated candidate's latest

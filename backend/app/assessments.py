@@ -20,6 +20,8 @@ from uuid import uuid4
 GRADES = ("Junior", "Middle", "Senior")
 RETEST_COOLDOWN_DAYS = 90
 EXPOSURE_COOLDOWN = timedelta(minutes=30)
+CANONICAL_EXPOSURE_WINDOW = timedelta(days=90)
+ASSESSMENT_FAMILY_VERSION = "2026-10-06"
 SIMILARITY_MIN_TOKENS = 6
 SIMILARITY_REVIEW_THRESHOLD = 0.86
 
@@ -75,6 +77,21 @@ _TEXT_BOILERPLATE = frozenset(
     }
 )
 
+_CANONICAL_EXPLANATIONS = {
+    "runtime-1": "Idempotency keeps repeated evaluation of the same operation safe and predictable.",
+    "runtime-2": "Memoization is safe here because a pure call returns the same value for the same input.",
+    "api-1": "Idempotency makes repeating the request produce the same intended resource effect.",
+    "api-2": "A bounded retry with backoff limits load amplification while allowing transient recovery.",
+    "sql-1": "The composite index follows the filter and sort columns so the database can narrow and order efficiently.",
+    "sql-2": "A transaction makes the schema change atomic, and a reversible step provides a safe rollback path.",
+    "test-1": "A deterministic behavior test protects the observable contract instead of an implementation detail.",
+    "test-2": "The source of nondeterminism must be isolated and the seed fixed so the failure is reproducible.",
+    "arch-1": "An explicit port or interface keeps the boundary replaceable and prevents hidden coupling.",
+    "arch-2": "A measurable budget and p95 latency establish whether the system is within its operating target.",
+    "sec-1": "RBAC limits access and data minimization reduces the impact of any storage or access failure.",
+    "sec-2": "Auditing the event without copying sensitive contents preserves evidence while limiting leakage.",
+}
+
 
 @dataclass(frozen=True)
 class TemplateFamily:
@@ -87,6 +104,16 @@ class TemplateFamily:
     progressive: bool = False
     anchor: bool = False
     hidden_check_terms: tuple[tuple[str, ...], ...] = ()
+    canonical_explanation: str = ""
+    version: str = ASSESSMENT_FAMILY_VERSION
+
+    def __post_init__(self) -> None:
+        if not self.canonical_explanation:
+            object.__setattr__(
+                self,
+                "canonical_explanation",
+                _CANONICAL_EXPLANATIONS[self.family_id],
+            )
 
 
 @dataclass(frozen=True)
@@ -107,6 +134,7 @@ class AssessmentItem:
     progressive: bool
     anchor: bool
     artifact: str
+    family_version: str
 
 
 @dataclass(frozen=True)
@@ -149,6 +177,7 @@ class Attempt:
     integrity_signals: list[str] = field(default_factory=list)
     integrity_evidence: list[dict[str, Any]] = field(default_factory=list)
     submitted_followups: dict[str, str] = field(default_factory=dict)
+    canonical_available_at: dict[str, datetime] = field(default_factory=dict)
 
 
 TEMPLATES: dict[str, TemplateFamily] = {
@@ -229,11 +258,31 @@ class AssessmentError(ValueError):
 
 
 class AssessmentService:
-    def __init__(self, *, now: datetime | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        now: datetime | None = None,
+        canonical_exposure_window: timedelta = CANONICAL_EXPOSURE_WINDOW,
+    ) -> None:
+        if canonical_exposure_window <= timedelta(0):
+            raise ValueError("canonical exposure window must be positive")
         self.attempts: dict[str, Attempt] = {}
         self.history: dict[str, list[str]] = {}
         self.family_exposure: dict[str, list[datetime]] = {}
-        self.now = now or datetime.now(UTC)
+        self.family_exposure_started: dict[tuple[str, str], datetime] = {}
+        self.retired_families: set[tuple[str, str]] = set()
+        self.canonical_exposure_window = canonical_exposure_window
+        self._now_override = now
+
+    @property
+    def now(self) -> datetime:
+        """Use a live UTC clock in production and a frozen clock in tests."""
+
+        return self._now_override or datetime.now(UTC)
+
+    @now.setter
+    def now(self, value: datetime) -> None:
+        self._now_override = value
 
     def create_attempt(self, candidate_id: str, specialization: str, declared_grade: str) -> Attempt:
         blueprint = BLUEPRINTS.get((specialization, declared_grade))
@@ -262,10 +311,22 @@ class AssessmentService:
         answer_keys: dict[str, int] = {}
         followup_keys: dict[str, str] = {}
         hidden_checks: dict[str, HiddenCheck] = {}
+        canonical_available_at: dict[str, datetime] = {}
         for index, family in enumerate(selected):
             prompt, artifact = _variant(seed, family, index)
             item_id = f"item-{uuid4().hex}"
-            item = AssessmentItem(item_id, family.family_id, family.domain, family.difficulty, prompt, family.options, family.progressive, family.anchor, artifact)
+            item = AssessmentItem(
+                item_id,
+                family.family_id,
+                family.domain,
+                family.difficulty,
+                prompt,
+                family.options,
+                family.progressive,
+                family.anchor,
+                artifact,
+                family.version,
+            )
             items.append(item)
             answer_keys[item_id] = family.correct_option
             followup_keys[item_id] = artifact
@@ -276,6 +337,9 @@ class AssessmentService:
             if len(exposed) >= 3:
                 raise AssessmentError("template_family_exposure_budget_reached")
             exposed.append(self.now)
+            exposure_key = (family.family_id, family.version)
+            exposure_started = self.family_exposure_started.setdefault(exposure_key, self.now)
+            canonical_available_at[item_id] = exposure_started + self.canonical_exposure_window
         attempt = Attempt(
             uuid4().hex,
             candidate_id,
@@ -287,6 +351,7 @@ class AssessmentService:
             answer_keys,
             followup_keys,
             hidden_checks,
+            canonical_available_at=canonical_available_at,
         )
         self.attempts[attempt.attempt_id] = attempt
         self.history.setdefault(candidate_id, []).append(attempt.attempt_id)
@@ -311,6 +376,47 @@ class AssessmentService:
             for attempt_id in self.history.get(candidate_id, [])
             if attempt_id in self.attempts
         )
+
+    def retire_family(self, family_id: str, version: str | None = None) -> None:
+        """Release canonical review for an explicitly retired family version."""
+
+        family = TEMPLATES.get(family_id)
+        if family is None or (version is not None and version != family.version):
+            raise AssessmentError("unknown_template_family_version")
+        self.retired_families.add((family_id, family.version if version is None else version))
+
+    def canonical_review(self, attempt: Attempt) -> dict[str, Any] | None:
+        """Return delayed metadata or detailed solutions under the release policy."""
+
+        if not attempt.submitted:
+            return None
+        release_at = max(attempt.canonical_available_at.values(), default=self.now)
+        eligible = True
+        for item in attempt.items:
+            family_key = (item.family_id, item.family_version)
+            item_release_at = attempt.canonical_available_at[item.item_id]
+            if family_key not in self.retired_families and self.now < item_release_at:
+                eligible = False
+                release_at = max(release_at, item_release_at)
+        if not eligible:
+            return {"status": "delayed", "available_at": release_at}
+        return {
+            "status": "available",
+            "available_at": release_at,
+            "items": [
+                {
+                    "item_id": item.item_id,
+                    "family_id": item.family_id,
+                    "family_version": item.family_version,
+                    "correct_option": attempt.answer_keys[item.item_id],
+                    "explanation": TEMPLATES[item.family_id].canonical_explanation,
+                }
+                for item in attempt.items
+            ],
+        }
+
+    def public_attempt(self, attempt: Attempt) -> dict[str, Any]:
+        return public_attempt(attempt, canonical_review=self.canonical_review(attempt))
 
     def submit(self, attempt_id: str, answers: dict[str, int], followups: dict[str, str] | None = None, telemetry: dict[str, Any] | None = None) -> Attempt:
         attempt = self.get(attempt_id)
@@ -441,7 +547,9 @@ def _submission_similarity(left: str, right: str) -> SimilarityMatch | None:
     return SimilarityMatch(modality, similarity)
 
 
-def public_attempt(attempt: Attempt) -> dict[str, Any]:
+def public_attempt(
+    attempt: Attempt, *, canonical_review: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Serialize an attempt without answer keys or scoring internals."""
     return {
         "attempt_id": attempt.attempt_id,
@@ -449,7 +557,7 @@ def public_attempt(attempt: Attempt) -> dict[str, Any]:
         "declared_grade": attempt.declared_grade,
         "status": "submitted" if attempt.submitted else "in_progress",
         "items": [
-            {"item_id": item.item_id, "family_id": item.family_id, "domain": item.domain, "difficulty": item.difficulty, "prompt": item.prompt, "options": item.options, "progressive": item.progressive, "artifact": item.artifact}
+            {"item_id": item.item_id, "family_id": item.family_id, "family_version": item.family_version, "domain": item.domain, "difficulty": item.difficulty, "prompt": item.prompt, "options": item.options, "progressive": item.progressive, "artifact": item.artifact}
             for item in attempt.items
         ],
         **(
@@ -458,6 +566,15 @@ def public_attempt(attempt: Attempt) -> dict[str, Any]:
                 "grade_state": attempt.grade_state,
                 "integrity_signals": attempt.integrity_signals,
                 "integrity_evidence": attempt.integrity_evidence,
+                "canonical_review": canonical_review
+                if canonical_review is not None
+                else {
+                    "status": "delayed",
+                    "available_at": max(
+                        attempt.canonical_available_at.values(),
+                        default=attempt.created_at,
+                    ),
+                },
             }
             if attempt.submitted
             else {}

@@ -44,7 +44,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] hidden deterministic checks where applicable
 - [x] minimal disclosed integrity telemetry
 - [x] code/text similarity advisory signals
-- [ ] delayed canonical-answer exposure policy
+- [x] delayed canonical-answer exposure policy
 - [x] no automatic AI-detector rejection
 - [ ] synthetic grade/discrimination validation scaffolding
 

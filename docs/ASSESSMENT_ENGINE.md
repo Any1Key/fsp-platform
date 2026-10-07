@@ -113,6 +113,14 @@ Rules:
 - cross-submission similarity flags.
 - server-side deterministic checks for applicable progressive responses;
 
+Canonical review policy: template families are versioned and receive a
+server-side canonical explanation. A submitted attempt exposes only a delayed
+review status and the policy release timestamp. The default 90-day window is
+measured from first exposure of each family/version; an explicit retirement
+may release the detailed correct options and explanations earlier. The API
+waits until all family versions in the attempt are eligible, so a mixed active
+and retired form cannot disclose a partial answer key.
+
 See `AI_ASSESSMENT_INTEGRITY.md`.
 
 ## AI resistance

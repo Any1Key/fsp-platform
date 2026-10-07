@@ -57,6 +57,56 @@ def test_progressive_followup_and_integrity_signal_are_advisory() -> None:
     assert result.integrity_signals == ["large_paste_review"]
 
 
+def test_canonical_review_is_delayed_then_released_after_configured_window() -> None:
+    started = datetime(2026, 10, 6, tzinfo=UTC)
+    service = AssessmentService(now=started, canonical_exposure_window=timedelta(days=7))
+    attempt = service.create_attempt("canonical-window", "Backend Engineering", "Middle")
+    result = service.submit(
+        attempt.attempt_id,
+        attempt.answer_keys.copy(),
+        {item.item_id: _valid_followup(item) for item in attempt.items if item.progressive},
+    )
+
+    delayed = service.canonical_review(result)
+    assert delayed is not None
+    assert delayed["status"] == "delayed"
+    assert delayed["available_at"] == started + timedelta(days=7)
+    assert "correct_option" not in delayed
+    assert "explanation" not in delayed
+    score_before_release = result.score
+    assert result.grade_state == "verified"
+
+    service.now = started + timedelta(days=8)
+    available = service.canonical_review(result)
+    assert available is not None
+    assert available["status"] == "available"
+    assert len(available["items"]) == len(result.items)
+    assert all("correct_option" in item and item["explanation"] for item in available["items"])
+    assert result.score == score_before_release
+    assert result.grade_state == "verified"
+    assert service.public_attempt(result)["canonical_review"] == available
+
+
+def test_retirement_releases_only_when_every_family_version_is_retired() -> None:
+    service = AssessmentService(
+        now=datetime(2026, 10, 6, tzinfo=UTC),
+        canonical_exposure_window=timedelta(days=90),
+    )
+    attempt = service.create_attempt("canonical-retirement", "Backend Engineering", "Middle")
+    result = service.submit(attempt.attempt_id, attempt.answer_keys.copy())
+    families = {(item.family_id, item.family_version) for item in result.items}
+
+    family_id, version = next(iter(families))
+    service.retire_family(family_id, version)
+    assert service.canonical_review(result)["status"] == "delayed"
+
+    for family_id, version in families:
+        service.retire_family(family_id, version)
+    available = service.canonical_review(result)
+    assert available["status"] == "available"
+    assert len(available["items"]) == len(result.items)
+
+
 def test_hidden_deterministic_checks_score_rationale_without_exposing_rubric(monkeypatch) -> None:
     monkeypatch.setattr("app.assessments.secrets.token_hex", lambda _: "00" * 16)
     service = AssessmentService(now=datetime(2026, 10, 6, tzinfo=UTC))
@@ -218,6 +268,9 @@ def test_api_does_not_expose_answer_keys_and_scores_submission(auth_context) -> 
     assert submit.json()["grade_state"] in {"verified", "not_confirmed"}
     assert "hidden_check_review" not in submit.json()["integrity_signals"]
     assert submit.json()["integrity_evidence"] == []
+    assert submit.json()["canonical_review"]["status"] == "delayed"
+    assert "correct_option" not in submit.json()["canonical_review"]
+    assert "explanation" not in submit.json()["canonical_review"]
 
 
 def test_api_assessment_is_self_scoped_and_rejects_identity_override(auth_context) -> None:

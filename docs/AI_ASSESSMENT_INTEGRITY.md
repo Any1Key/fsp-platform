@@ -82,6 +82,16 @@ and rounded similarity evidence. It never returns the comparator identity,
 comparator response or raw submitted text. Similarity does not change the
 platform score, grade state or search visibility.
 
+Canonical-answer exposure is also delayed. Each template family has a version
+and server-only canonical explanation. The platform starts a configurable
+exposure window on the first exposure of that family/version (90 days by
+default); a controlled retirement can release it earlier. Immediately after
+submission the candidate receives score, grade, and advisory integrity
+feedback plus only a `canonical_review` status and release timestamp. Detailed
+correct options and explanations are returned only after every family/version
+in that attempt is retired or its window has closed. This policy is applied at
+the API serializer and does not change scoring or candidate discoverability.
+
 Do not use webcam surveillance, keystroke biometrics or covert fingerprinting for the MVP.
 
 ## Similarity analysis
@@ -108,7 +118,10 @@ For the hackathon, the verified baseline is the primary grade assessment.
 
 ## Candidate feedback
 
-Show score, domain breakdown and grade decision. Do not immediately expose reusable answer keys/templates. Detailed canonical solutions are delayed until the item family/version is retired or a configured exposure window closes.
+Show score, domain breakdown and grade decision. Do not immediately expose
+reusable answer keys/templates. Detailed canonical solutions are delayed until
+the item family/version is retired or a configured exposure window closes;
+the candidate sees an explicit delayed-review state in the assessment UI.
 
 ## Validation
 

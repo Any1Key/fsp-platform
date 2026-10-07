@@ -34,6 +34,18 @@ type IntegrityEvidence = {
   similarity: number;
 };
 
+type CanonicalReview = {
+  status: "delayed" | "available";
+  available_at: string;
+  items?: {
+    item_id: string;
+    family_id: string;
+    family_version: string;
+    correct_option: number;
+    explanation: string;
+  }[];
+};
+
 type Attempt = {
   attempt_id: string;
   specialization: string;
@@ -44,6 +56,7 @@ type Attempt = {
   grade_state?: "verified" | "not_confirmed";
   integrity_signals?: string[];
   integrity_evidence?: IntegrityEvidence[];
+  canonical_review?: CanonicalReview;
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -200,6 +213,20 @@ export function CandidateAssessment({
                     </span>
                   ))}
                   <small>Это не автоматический отказ и не изменение результата.</small>
+                </div>
+              )}
+              {attempt.canonical_review?.status === "delayed" && (
+                <div className="assessmentReviewSignals" role="status">
+                  <strong>Подробный разбор будет доступен позже</strong>
+                  <small>Счёт и решение системы уже доступны. Канонические ответы скрыты до завершения окна публикации, чтобы сохранить честность следующих попыток.</small>
+                </div>
+              )}
+              {attempt.canonical_review?.status === "available" && (
+                <div className="assessmentReviewSignals" role="status">
+                  <strong>Канонический разбор доступен</strong>
+                  {attempt.canonical_review.items?.map((item) => (
+                    <span key={item.item_id}>{item.explanation}</span>
+                  ))}
                 </div>
               )}
             </div>
