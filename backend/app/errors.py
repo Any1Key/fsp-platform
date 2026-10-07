@@ -184,6 +184,18 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "EMPLOYER_TASK_DRAFT_REQUIRED",
         "Create or edit a draft before publishing the task.",
     ),
+    "task_assignment_not_found": (
+        "TASK_ASSIGNMENT_NOT_FOUND",
+        "The task assignment was not found or is not available to this candidate.",
+    ),
+    "task_submission_response_required": (
+        "TASK_SUBMISSION_RESPONSE_REQUIRED",
+        "A non-empty task response is required.",
+    ),
+    "task_assignment_deadline_passed": (
+        "TASK_ASSIGNMENT_DEADLINE_PASSED",
+        "The task deadline has passed and no further submission is accepted.",
+    ),
     "hiring_need_required_for_talent_radar": (
         "HIRING_NEED_REQUIRED_FOR_TALENT_RADAR",
         "Create a hiring need before opening Talent Radar.",

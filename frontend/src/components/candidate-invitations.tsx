@@ -24,7 +24,7 @@ function statusLabel(status: Invitation["status"]) {
   return status === "pending" ? "Ждёт ответа" : status === "accepted" ? "MATCH CREATED" : "Отклонено";
 }
 
-export function CandidateInvitations({ token }: { token: string }) {
+export function CandidateInvitations({ token, onMatchCreated }: { token: string; onMatchCreated?: () => void }) {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -59,6 +59,7 @@ export function CandidateInvitations({ token }: { token: string }) {
       });
       if (!response.ok) throw new Error("invitation_response_failed");
       await load();
+      if (action === "accepted") onMatchCreated?.();
       setMessage(action === "accepted" ? "Match создан: теперь можно продолжить общение внутри платформы." : "Приглашение отклонено.");
     } catch {
       setMessage("Не удалось обновить приглашение. Обнови список и попробуй ещё раз.");

@@ -15,6 +15,7 @@ from .assessments import AssessmentService
 from .auth import Principal, sync_identity
 from .chat import create_conversation_for_match
 from .pipelines import pipeline_snapshot_for_company, snapshot_json
+from .task_assignments import ensure_assignments_for_match
 
 InvitationAction = Literal["accepted", "declined"]
 
@@ -271,6 +272,7 @@ def respond_to_invitation(
             "now": now,
         },
     )
+    ensure_assignments_for_match(db, match_id)
     create_conversation_for_match(
         db,
         match_id=match_id,

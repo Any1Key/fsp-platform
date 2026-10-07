@@ -43,6 +43,10 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
             "fsp_achievement",
             "hiring_pipeline",
             "pipeline_stage",
+            "employer_task",
+            "employer_task_version",
+            "task_assignment",
+            "task_submission",
             "alembic_version",
         } <= tables
         assert {
@@ -73,6 +77,14 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
         }
         assert "pipeline_snapshot" in {
             column["name"] for column in inspect(engine).get_columns("invitation")
+        }
+        assignment_foreign_keys = inspect(engine).get_foreign_keys("task_assignment")
+        assert {key["referred_table"] for key in assignment_foreign_keys} >= {
+            "talent_match",
+            "candidate_profile",
+            "employer_task",
+            "employer_task_version",
+            "pipeline_stage",
         }
 
         with engine.begin() as connection:

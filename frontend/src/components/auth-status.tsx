@@ -15,6 +15,7 @@ import { EmployerHiringPipeline } from "./employer-hiring-pipeline";
 import { EmployerTaskAuthoring } from "./employer-task-authoring";
 import { EmployerTalentRadar } from "./employer-talent-radar";
 import { CandidateInvitations } from "./candidate-invitations";
+import { CandidateTaskAssignments } from "./candidate-task-assignments";
 import { EmployerInvitations } from "./employer-invitations";
 import { InternalChat } from "./internal-chat";
 
@@ -43,6 +44,7 @@ export function AuthStatus() {
   const [assessmentRefreshKey, setAssessmentRefreshKey] = useState(0);
   const [talentRadarRefreshKey, setTalentRadarRefreshKey] = useState(0);
   const [invitationRefreshKey, setInvitationRefreshKey] = useState(0);
+  const [taskRefreshKey, setTaskRefreshKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -156,7 +158,8 @@ export function AuthStatus() {
         {auth.session.role === "candidate" && (
           <>
             <CandidateDashboard token={keycloak.current?.token ?? ""} refreshKey={assessmentRefreshKey} />
-            <CandidateInvitations token={keycloak.current?.token ?? ""} />
+            <CandidateInvitations token={keycloak.current?.token ?? ""} onMatchCreated={() => setTaskRefreshKey((value) => value + 1)} />
+            <CandidateTaskAssignments token={keycloak.current?.token ?? ""} refreshKey={taskRefreshKey} />
             <InternalChat token={keycloak.current?.token ?? ""} />
             <CandidateAssessment
               token={keycloak.current?.token ?? ""}

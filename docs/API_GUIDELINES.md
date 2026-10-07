@@ -128,8 +128,28 @@ Task content contains instructions, active taxonomy skill slugs, expected
 grade, time/deadline policy, and rubric dimensions/points. Published versions
 are immutable. Ownership is checked through the authenticated employer's
 company and hiring need; candidate and other-employer requests receive no task
-content. This contract does not yet assign tasks to candidates or grade
-submissions.
+content. The authoring routes do not assign tasks or grade submissions;
+candidate assignment is covered by the match-bound routes below.
+
+### Candidate employer-task assignments
+
+After an invitation is accepted and a `talent_match` exists, published
+employer tasks are assigned to the matched candidate. The assignment stores
+the exact published task version, pipeline stage and server-derived deadline.
+The candidate-only routes are:
+
+- `GET /api/v1/candidate/task-assignments` lists assignments for the
+  authenticated candidate's matches. It reconciles newly published tasks for
+  existing matches, but never exposes tasks before match.
+- `POST /api/v1/candidate/task-assignments/{assignment_id}/submissions` stores
+  a numbered text submission revision and returns the refreshed assignment.
+
+The response includes stage title, task title/instructions/target skills,
+expected grade, estimated duration, deadline and the candidate's own
+submission history. It excludes the employer rubric, contacts, identity
+subjects and other candidates. Submissions after the deadline return
+`TASK_ASSIGNMENT_DEADLINE_PASSED`; assignment ownership failures return
+`TASK_ASSIGNMENT_NOT_FOUND`. Employer evaluation is a later M09 unit.
 
 ## Internal chat
 

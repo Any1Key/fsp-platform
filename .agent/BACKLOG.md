@@ -89,7 +89,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 ## M09 — Employer hiring pipeline/tasks
 - [x] ordered stage builder
 - [x] employer task authoring/versioning
-- [ ] candidate assignment/submission
+- [x] candidate assignment/submission
 - [ ] employer-owned evaluation
 - [ ] employer-specific evidence scope
 - [ ] global-grade non-mutation regression

@@ -145,6 +145,14 @@ membership-scoped. Report audit metadata excludes message and contact contents.
 
 Employer evaluation is employer-specific evidence by default.
 
+`task_assignment` is created only for an accepted `talent_match` and stores
+the candidate, task, pipeline stage, exact published `employer_task_version`,
+status and server-derived deadline. Its `(match_id, task_id)` key makes
+assignment reconciliation idempotent. `task_submission` is append-only per
+assignment and numbers candidate response revisions; submission bodies are
+candidate-visible history and are not copied into audit metadata. Employer
+evaluation and global-grade isolation remain later M09 units.
+
 ## Local AI memory/jobs
 - employer_task_example metadata/index reference
 - ai_job (type/status/input reference/output reference, no secret token)

@@ -65,6 +65,7 @@ from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 from .profile_pdf import render_profile_pdf
 from .protected_candidate import MinorState, get_protected_profile, update_protected_profile
 from .resume import get_resume, review_resume, upload_resume
+from .task_assignments import list_candidate_assignments, submit_candidate_assignment
 from .taxonomy import list_taxonomy
 
 app = FastAPI(
@@ -452,6 +453,43 @@ class EmployerTaskResponse(BaseModel):
     updated_at: datetime
     current_version: EmployerTaskVersionResponse
     versions: list[EmployerTaskVersionSummaryResponse]
+
+
+class TaskSubmissionResponse(BaseModel):
+    id: str
+    attempt_number: int
+    response_text: str
+    submitted_at: datetime
+
+
+class CandidateTaskResponse(BaseModel):
+    version_number: int
+    title: str
+    instructions: str
+    target_skills: list[str]
+    expected_grade: Literal["junior", "middle", "senior"]
+    estimated_minutes: int
+
+
+class CandidateTaskAssignmentResponse(BaseModel):
+    id: str
+    match_id: str
+    task_id: str
+    task_version_id: str
+    pipeline_stage_id: str
+    stage_title: str
+    status: Literal["assigned", "submitted", "expired"]
+    assigned_at: datetime
+    due_at: datetime
+    submitted_at: datetime | None
+    task: CandidateTaskResponse
+    submissions: list[TaskSubmissionResponse]
+
+
+class CandidateTaskSubmissionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    response_text: str = Field(min_length=1, max_length=20000)
 
 
 class CandidateDashboardProfileResponse(BaseModel):
@@ -1264,6 +1302,47 @@ def respond_candidate_invitation(
 ) -> InvitationResponse:
     return InvitationResponse.model_validate(
         respond_to_invitation(db, principal, invitation_id, request.action)
+    )
+
+
+@app.get(
+    "/api/v1/candidate/task-assignments",
+    tags=["candidate employer tasks"],
+    response_model=list[CandidateTaskAssignmentResponse],
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_task_assignments(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[CandidateTaskAssignmentResponse]:
+    """Return employer tasks assigned through accepted matches only."""
+
+    return [
+        CandidateTaskAssignmentResponse.model_validate(item)
+        for item in list_candidate_assignments(db, principal)
+    ]
+
+
+@app.post(
+    "/api/v1/candidate/task-assignments/{assignment_id}/submissions",
+    tags=["candidate employer tasks"],
+    response_model=CandidateTaskAssignmentResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        404: {"model": ErrorResponse, "description": "Assignment not found"},
+        409: {"model": ErrorResponse, "description": "Assignment deadline has passed"},
+        422: {"model": ErrorResponse, "description": "Submission is invalid"},
+    },
+)
+def submit_candidate_task(
+    assignment_id: str,
+    request: CandidateTaskSubmissionRequest,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CandidateTaskAssignmentResponse:
+    return CandidateTaskAssignmentResponse.model_validate(
+        submit_candidate_assignment(db, principal, assignment_id, request.response_text)
     )
 
 
