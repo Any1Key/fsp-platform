@@ -41,7 +41,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 ## M04 — Assessment integrity / anti-AI-by-design
 - [x] session-specific artifacts
 - [x] progressive follow-up mechanics
-- [ ] hidden deterministic checks where applicable
+- [x] hidden deterministic checks where applicable
 - [x] minimal disclosed integrity telemetry
 - [ ] code/text similarity advisory signals
 - [ ] delayed canonical-answer exposure policy

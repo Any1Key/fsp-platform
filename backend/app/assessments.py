@@ -30,6 +30,7 @@ class TemplateFamily:
     correct_option: int
     progressive: bool = False
     anchor: bool = False
+    hidden_check_terms: tuple[tuple[str, ...], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,13 @@ class AssessmentItem:
     artifact: str
 
 
+@dataclass(frozen=True)
+class HiddenCheck:
+    """Server-only deterministic concepts for a progressive response."""
+
+    required_concepts: tuple[tuple[str, ...], ...]
+
+
 @dataclass
 class Attempt:
     attempt_id: str
@@ -63,6 +71,7 @@ class Attempt:
     items: tuple[AssessmentItem, ...]
     answer_keys: dict[str, int]
     followup_keys: dict[str, str]
+    hidden_checks: dict[str, HiddenCheck]
     submitted: bool = False
     score: float | None = None
     grade_state: str | None = None
@@ -73,13 +82,37 @@ TEMPLATES: dict[str, TemplateFamily] = {
     "runtime-1": TemplateFamily("runtime-1", "language_runtime", 2, "Для функции {fn} какое свойство гарантирует корректный результат?", ("Идемпотентность", "Случайный порядок", "Общий mutable state"), 0),
     "runtime-2": TemplateFamily("runtime-2", "language_runtime", 3, "В варианте {value} какая оптимизация сохраняет семантику?", ("Мемоизация чистого вызова", "Удаление проверки ошибок", "Глобальный кэш без ключа"), 0),
     "api-1": TemplateFamily("api-1", "api_fundamentals", 2, "Для повторного {verb} запроса API должен быть безопасен благодаря чему?", ("Идемпотентности", "Случайному токену", "Непредсказуемому статусу"), 0),
-    "api-2": TemplateFamily("api-2", "api_fundamentals", 3, "При таймауте downstream для {route} правильная стратегия —", ("bounded retry с backoff и лимитом", "бесконечный retry", "скрыть ошибку и вернуть 200"), 0, True),
+    "api-2": TemplateFamily(
+        "api-2", "api_fundamentals", 3,
+        "При таймауте downstream для {route} правильная стратегия —",
+        ("bounded retry с backoff и лимитом", "бесконечный retry", "скрыть ошибку и вернуть 200"),
+        0, True,
+        hidden_check_terms=(("retry", "повтор"), ("backoff", "задерж"), ("лимит", "limit", "bounded")),
+    ),
     "sql-1": TemplateFamily("sql-1", "sql_data", 2, "Какой индекс подходит для фильтра по {column} и сортировки по {sort}?", ("составной индекс в порядке фильтра и сортировки", "индекс на случайный столбец", "индекс не влияет на план"), 0),
-    "sql-2": TemplateFamily("sql-2", "sql_data", 3, "После изменения схемы {schema} как сохранить атомарность миграции?", ("транзакция и обратимо проверяемый шаг", "изменить production вручную", "пропустить проверку"), 0, True, True),
+    "sql-2": TemplateFamily(
+        "sql-2", "sql_data", 3,
+        "После изменения схемы {schema} как сохранить атомарность миграции?",
+        ("транзакция и обратимо проверяемый шаг", "изменить production вручную", "пропустить проверку"),
+        0, True, True,
+        hidden_check_terms=(("транзак", "transaction"), ("откат", "rollback", "обратим")),
+    ),
     "test-1": TemplateFamily("test-1", "testing_debugging", 2, "Какой тест лучше ловит регрессию в {component}?", ("детерминированный тест поведения", "тест только внутреннего имени", "случайная задержка"), 0),
-    "test-2": TemplateFamily("test-2", "testing_debugging", 3, "В тесте {fixture} результат нестабилен. Первый шаг —", ("найти источник недетерминизма и зафиксировать seed", "увеличить timeout без анализа", "удалить тест"), 0, True),
+    "test-2": TemplateFamily(
+        "test-2", "testing_debugging", 3,
+        "В тесте {fixture} результат нестабилен. Первый шаг —",
+        ("найти источник недетерминизма и зафиксировать seed", "увеличить timeout без анализа", "удалить тест"),
+        0, True,
+        hidden_check_terms=(("недетермин", "determin"), ("seed", "случайн", "воспроизвод")),
+    ),
     "arch-1": TemplateFamily("arch-1", "architecture", 2, "Для границы {boundary} зависимость должна идти через", ("явный порт/интерфейс", "глобальную переменную", "циклический импорт"), 0),
-    "arch-2": TemplateFamily("arch-2", "architecture", 3, "При росте {load} первым контролем должен быть", ("измеримый budget и p95", "неограниченное масштабирование", "отключение логирования"), 0, True),
+    "arch-2": TemplateFamily(
+        "arch-2", "architecture", 3,
+        "При росте {load} первым контролем должен быть",
+        ("измеримый budget и p95", "неограниченное масштабирование", "отключение логирования"),
+        0, True,
+        hidden_check_terms=(("budget", "бюджет", "лимит"), ("p95", "латент", "метрик")),
+    ),
     "sec-1": TemplateFamily("sec-1", "security_operations", 2, "Для данных {data} минимально необходимый контроль —", ("RBAC и минимизация хранения", "писать секреты в лог", "открыть доступ всем"), 0),
     "sec-2": TemplateFamily("sec-2", "security_operations", 3, "При подозрении на {event} безопаснее всего —", ("аудитировать событие без утечки содержимого", "переслать PII в чат", "игнорировать"), 0, True, True),
 }
@@ -155,6 +188,7 @@ class AssessmentService:
         items: list[AssessmentItem] = []
         answer_keys: dict[str, int] = {}
         followup_keys: dict[str, str] = {}
+        hidden_checks: dict[str, HiddenCheck] = {}
         for index, family in enumerate(selected):
             prompt, artifact = _variant(seed, family, index)
             item_id = f"item-{uuid4().hex}"
@@ -162,12 +196,25 @@ class AssessmentService:
             items.append(item)
             answer_keys[item_id] = family.correct_option
             followup_keys[item_id] = artifact
+            if family.hidden_check_terms:
+                hidden_checks[item_id] = HiddenCheck(family.hidden_check_terms)
             exposed = self.family_exposure.setdefault(family.family_id, [])
             exposed[:] = [stamp for stamp in exposed if self.now - stamp < EXPOSURE_COOLDOWN]
             if len(exposed) >= 3:
                 raise AssessmentError("template_family_exposure_budget_reached")
             exposed.append(self.now)
-        attempt = Attempt(uuid4().hex, candidate_id, specialization, declared_grade, seed, self.now, tuple(items), answer_keys, followup_keys)
+        attempt = Attempt(
+            uuid4().hex,
+            candidate_id,
+            specialization,
+            declared_grade,
+            seed,
+            self.now,
+            tuple(items),
+            answer_keys,
+            followup_keys,
+            hidden_checks,
+        )
         self.attempts[attempt.attempt_id] = attempt
         self.history.setdefault(candidate_id, []).append(attempt.attempt_id)
         return attempt
@@ -200,7 +247,19 @@ class AssessmentService:
             raise AssessmentError("all_items_are_required")
         base_points = sum(answers[item_id] == expected for item_id, expected in attempt.answer_keys.items())
         progressive_ids = [item.item_id for item in attempt.items if item.progressive]
-        followup_points = sum(bool((followups or {}).get(item_id)) for item_id in progressive_ids)
+        followup_points = 0
+        hidden_check_failed = False
+        for item_id in progressive_ids:
+            response = (followups or {}).get(item_id, "")
+            if not response.strip():
+                continue
+            if answers[item_id] != attempt.answer_keys[item_id]:
+                continue
+            hidden_check = attempt.hidden_checks.get(item_id)
+            if hidden_check is None or _passes_hidden_check(response, hidden_check):
+                followup_points += 1
+            else:
+                hidden_check_failed = True
         max_points = len(attempt.items) + len(progressive_ids)
         attempt.score = round((base_points + followup_points * 0.5) / (max_points + len(progressive_ids) * 0.5) * 100, 2)
         attempt.grade_state = "verified" if attempt.score >= 70 else "not_confirmed"
@@ -211,9 +270,19 @@ class AssessmentService:
             signals.append("large_paste_review")
         if followups and any(item_id in followups and not followups[item_id].strip() for item_id in progressive_ids):
             signals.append("missing_progressive_explanation_review")
+        if hidden_check_failed:
+            signals.append("hidden_check_review")
         attempt.integrity_signals = signals
         attempt.submitted = True
         return attempt
+
+
+def _passes_hidden_check(response: str, check: HiddenCheck) -> bool:
+    normalized = " ".join(response.casefold().split())
+    return all(
+        any(term.casefold() in normalized for term in concept_group)
+        for concept_group in check.required_concepts
+    )
 
 
 def public_attempt(attempt: Attempt) -> dict[str, Any]:

@@ -71,7 +71,7 @@ Target: roughly 16–24 items and 45–60 minutes for the full base assessment, 
 - session-specific data/schema task;
 - progressive follow-up after an initial answer.
 
-A full untrusted code execution sandbox is optional for MVP; code tasks can use constrained inputs/hidden deterministic checks first.
+A full untrusted code execution sandbox is optional for MVP; code tasks can use constrained inputs/hidden deterministic checks first. The current progressive families use server-only concept-group checks: follow-up credit requires the selected correct option and a deterministic explanation of the relevant constraint. The check rules are not returned with an attempt.
 
 ## Scoring ownership
 
@@ -111,6 +111,7 @@ Rules:
 - server-side state/timer;
 - delayed detailed canonical solutions while an item family is active;
 - cross-submission similarity flags.
+- server-side deterministic checks for applicable progressive responses;
 
 See `AI_ASSESSMENT_INTEGRITY.md`.
 

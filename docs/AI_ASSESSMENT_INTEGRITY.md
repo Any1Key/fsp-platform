@@ -43,7 +43,12 @@ For selected tasks the candidate first submits an answer and then receives a sho
 - “Which invariant does your solution rely on?”
 - “The index disappeared; diagnose the new bottleneck.”
 
-The follow-up is scored with a small deterministic rubric. This tests understanding rather than prose style.
+The follow-up is scored with a small deterministic rubric. In the current
+backend, applicable progressive families require concept groups covering the
+task's constraint (for example, retry + backoff + a limit). The required terms
+and rubric metadata remain server-side. This tests understanding rather than
+prose style; a non-empty but concept-free response does not receive follow-up
+credit.
 
 ### 5. Session-specific artifacts
 
@@ -59,6 +64,12 @@ With explicit disclosure/consent, collect minimal events such as:
 - high normalized similarity to another submission.
 
 These create review flags. They never automatically fail a candidate or change a grade.
+
+A failed deterministic progressive check creates the advisory
+`hidden_check_review` signal. It is evidence for human review, not an
+automatic rejection or an AI-detection decision. The deterministic score is
+still computed by the platform and the candidate remains discoverable under
+the normal unconfirmed-grade rules.
 
 Do not use webcam surveillance, keystroke biometrics or covert fingerprinting for the MVP.
 

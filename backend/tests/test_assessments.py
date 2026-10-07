@@ -4,7 +4,17 @@ from uuid import uuid4
 import jwt
 import pytest
 
-from app.assessments import AssessmentError, AssessmentService
+from app.assessments import AssessmentError, AssessmentService, public_attempt
+
+
+def _valid_followup(item) -> str:
+    responses = {
+        "api-2": "bounded retry uses backoff and a limit",
+        "sql-2": "transaction makes the migration atomic and rollback keeps it reversible",
+        "test-2": "find the nondeterministic source and fix the seed for reproducibility",
+        "arch-2": "measure the budget and latency at p95 before scaling",
+    }
+    return responses.get(item.family_id, "the explanation follows the constraint in the task")
 
 
 def test_forms_are_unique_and_keep_same_competency_shape() -> None:
@@ -34,12 +44,48 @@ def test_progressive_followup_and_integrity_signal_are_advisory() -> None:
     service = AssessmentService(now=datetime(2026, 10, 6, tzinfo=UTC))
     attempt = service.create_attempt("candidate-c", "Backend Engineering", "Middle")
     answers = attempt.answer_keys.copy()
-    followups = {item.item_id: "candidate rationale" for item in attempt.items if item.progressive}
+    followups = {item.item_id: _valid_followup(item) for item in attempt.items if item.progressive}
     result = service.submit(attempt.attempt_id, answers, followups, telemetry={"paste_chars": 2000})
 
     assert result.score > 70
     assert result.grade_state == "verified"
     assert result.integrity_signals == ["large_paste_review"]
+
+
+def test_hidden_deterministic_checks_score_rationale_without_exposing_rubric(monkeypatch) -> None:
+    monkeypatch.setattr("app.assessments.secrets.token_hex", lambda _: "00" * 16)
+    service = AssessmentService(now=datetime(2026, 10, 6, tzinfo=UTC))
+    valid_attempt = service.create_attempt("hidden-check-valid", "Backend Engineering", "Middle")
+    hidden_items = [item for item in valid_attempt.items if item.item_id in valid_attempt.hidden_checks]
+
+    assert hidden_items
+    public = public_attempt(valid_attempt)
+    assert "hidden_checks" not in public
+    assert all("required_concepts" not in item for item in public["items"])
+
+    valid_followups = {item.item_id: _valid_followup(item) for item in valid_attempt.items if item.progressive}
+    valid_result = service.submit(
+        valid_attempt.attempt_id,
+        valid_attempt.answer_keys.copy(),
+        valid_followups,
+    )
+    assert "hidden_check_review" not in valid_result.integrity_signals
+
+    service.now += timedelta(days=91)
+    invalid_attempt = service.create_attempt("hidden-check-invalid", "Backend Engineering", "Middle")
+    invalid_followups = {
+        item.item_id: "I selected this option because it seemed reasonable."
+        for item in invalid_attempt.items
+        if item.progressive
+    }
+    invalid_result = service.submit(
+        invalid_attempt.attempt_id,
+        invalid_attempt.answer_keys.copy(),
+        invalid_followups,
+    )
+    assert invalid_result.score < valid_result.score
+    assert invalid_result.grade_state == "verified"
+    assert invalid_result.integrity_signals == ["hidden_check_review"]
 
 
 def _headers(private_key, settings, *, sub: str, role: str = "candidate"):
@@ -73,6 +119,7 @@ def test_api_does_not_expose_answer_keys_and_scores_submission(auth_context) -> 
     assert response.status_code == 200
     body = response.json()
     assert "answer_keys" not in body
+    assert "hidden_checks" not in body
     assert all("correct_option" not in item for item in body["items"])
 
     # The test uses the domain service's private key only to model a completed
@@ -83,11 +130,19 @@ def test_api_does_not_expose_answer_keys_and_scores_submission(auth_context) -> 
     submit = client.post(
         f"/api/v1/assessments/attempts/{body['attempt_id']}/submit",
         headers=headers,
-        json={"answers": attempt.answer_keys},
+        json={
+            "answers": attempt.answer_keys,
+            "followups": {
+                item.item_id: _valid_followup(item)
+                for item in attempt.items
+                if item.progressive
+            },
+        },
     )
     assert submit.status_code == 200
     assert submit.json()["score"] is not None
     assert submit.json()["grade_state"] in {"verified", "not_confirmed"}
+    assert "hidden_check_review" not in submit.json()["integrity_signals"]
 
 
 def test_api_assessment_is_self_scoped_and_rejects_identity_override(auth_context) -> None:

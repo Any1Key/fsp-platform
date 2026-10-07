@@ -45,8 +45,14 @@ def _create_and_submit(client, candidate_id: str, *, correct: bool, headers):
         item.item_id: attempt.answer_keys[item.item_id] if correct else 9
         for item in attempt.items
     }
+    valid_followups = {
+        "api-2": "bounded retry uses backoff and a limit",
+        "sql-2": "transaction makes the migration atomic and rollback keeps it reversible",
+        "test-2": "find the nondeterministic source and fix the seed for reproducibility",
+        "arch-2": "measure the budget and latency at p95 before scaling",
+    }
     followups = {
-        item.item_id: "candidate rationale"
+        item.item_id: valid_followups.get(item.family_id, "the explanation follows the constraint in the task")
         for item in attempt.items
         if item.progressive and correct
     }
