@@ -40,7 +40,8 @@ contain candidate email, phone, date of birth, documents, or other protected pro
 Acceptance updates the invitation and inserts one `talent_match` row in one transaction. The
 same transaction writes `MATCH_CREATED` and `CONTACT_UNLOCKED` to `domain_event` and records
 non-PII audit events. The timestamps are present on both the invitation and match state.
-This is the server-side unlock boundary for M08 chat; no conversation or direct message exists
-in this M07 slice.
+This is the server-side unlock boundary for M08 chat. Acceptance also creates the
+match-bound conversation and its two authorized members in the same transaction; no
+direct message exists before a valid match.
 
 Decline only changes the invitation to `declined` and does not create a match or unlock event.

@@ -14,6 +14,7 @@ import { EmployerHiringNeed } from "./employer-hiring-need";
 import { EmployerTalentRadar } from "./employer-talent-radar";
 import { CandidateInvitations } from "./candidate-invitations";
 import { EmployerInvitations } from "./employer-invitations";
+import { InternalChat } from "./internal-chat";
 
 type Session = {
   identity_id: string | null;
@@ -154,6 +155,7 @@ export function AuthStatus() {
           <>
             <CandidateDashboard token={keycloak.current?.token ?? ""} refreshKey={assessmentRefreshKey} />
             <CandidateInvitations token={keycloak.current?.token ?? ""} />
+            <InternalChat token={keycloak.current?.token ?? ""} />
             <CandidateAssessment
               token={keycloak.current?.token ?? ""}
               onSubmitted={() => setAssessmentRefreshKey((value) => value + 1)}
@@ -171,6 +173,7 @@ export function AuthStatus() {
             <EmployerHiringNeed token={keycloak.current?.token ?? ""} onSaved={() => setTalentRadarRefreshKey((value) => value + 1)} />
             <EmployerTalentRadar token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} onInvitationCreated={() => setInvitationRefreshKey((value) => value + 1)} />
             <EmployerInvitations token={keycloak.current?.token ?? ""} refreshKey={invitationRefreshKey} />
+            <InternalChat token={keycloak.current?.token ?? ""} />
           </>
         )}
       </div>

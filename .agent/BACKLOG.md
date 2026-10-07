@@ -78,13 +78,13 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] privacy regression tests
 
 ## M08 — Internal post-match chat
-- [ ] no-chat-before-match authorization
-- [ ] conversation creation on match
-- [ ] persisted messages/history
-- [ ] unread/read state
-- [ ] exchange contacts in matched conversation
-- [ ] abuse/report baseline
-- [ ] chat privacy/logging tests
+- [x] no-chat-before-match authorization
+- [x] conversation creation on match
+- [x] persisted messages/history
+- [x] unread/read state
+- [x] exchange contacts in matched conversation
+- [x] abuse/report baseline
+- [x] chat privacy/logging tests
 
 ## M09 — Employer hiring pipeline/tasks
 - [ ] ordered stage builder

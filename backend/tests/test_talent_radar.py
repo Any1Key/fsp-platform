@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import jwt
+from test_invitations import _valid_followup
 
 from app import main
 
@@ -54,12 +55,19 @@ def _candidate(client, private_key, settings, *, sub: str, skills: list[str], as
         item.item_id: attempt.answer_keys[item.item_id] if assessed == "verified" else 9
         for item in attempt.items
     }
+    followups = {
+        item.item_id: _valid_followup(item)
+        for item in attempt.items
+        if assessed == "verified" and item.progressive
+    }
     submitted = client.post(
         f"/api/v1/assessments/attempts/{attempt.attempt_id}/submit",
         headers=headers,
-        json={"answers": answers},
+        json={"answers": answers, "followups": followups},
     )
     assert submitted.status_code == 200
+    if assessed == "verified":
+        assert submitted.json()["grade_state"] == "verified"
     return headers
 
 

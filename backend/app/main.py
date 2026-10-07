@@ -30,6 +30,14 @@ from .auth import (
     sync_identity,
 )
 from .candidates import get_profile, update_profile
+from .chat import (
+    exchange_contact,
+    get_conversation,
+    list_conversations,
+    mark_conversation_read,
+    report_conversation,
+    send_message,
+)
 from .companies import get_company, update_company
 from .config import get_settings
 from .db import get_db_session
@@ -233,6 +241,74 @@ class InvitationActionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     action: Literal["accepted", "declined"]
+
+
+class ChatMessageRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    body: str = Field(min_length=1, max_length=4000)
+
+
+class ChatMessageResponse(BaseModel):
+    id: str
+    sender_is_current: bool
+    body: str
+    created_at: datetime
+    read_at: datetime | None
+
+
+class ChatContactRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contact_type: Literal["email", "phone", "telegram", "other"]
+    contact_value: str = Field(min_length=1, max_length=160)
+
+
+class ChatContactResponse(BaseModel):
+    id: str
+    is_current: bool
+    contact_type: Literal["email", "phone", "telegram", "other"]
+    contact_value: str
+    created_at: datetime
+
+
+class ChatReportRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: Literal["spam", "harassment", "inappropriate", "other"]
+    details: str | None = Field(default=None, max_length=500)
+
+
+class ChatReportResponse(BaseModel):
+    id: str
+    status: Literal["open"]
+
+
+class ChatConversationSummaryResponse(BaseModel):
+    id: str
+    match_id: str
+    participant_label: str
+    created_at: datetime
+    last_message_at: datetime | None
+    last_message_preview: str | None
+    unread_count: int
+
+
+class ChatConversationResponse(BaseModel):
+    id: str
+    match_id: str
+    participant_label: str
+    created_at: datetime
+    last_message_at: datetime | None
+    unread_count: int
+    messages: list[ChatMessageResponse]
+    contacts: list[ChatContactResponse]
+
+
+class ChatReadResponse(BaseModel):
+    conversation_id: str
+    marked_count: int
+    unread_count: int
 
 
 class HiringNeedSkillResponse(BaseModel):
@@ -594,6 +670,14 @@ def employer_principal(
     return principal
 
 
+def chat_principal(
+    principal: Annotated[Principal, Depends(resolve_current_principal)],
+) -> Principal:
+    if principal.role not in {Role.CANDIDATE, Role.EMPLOYER}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="role_required")
+    return principal
+
+
 @app.post(
     "/api/v1/auth/registration/check",
     tags=["auth"],
@@ -927,6 +1011,133 @@ def respond_candidate_invitation(
 ) -> InvitationResponse:
     return InvitationResponse.model_validate(
         respond_to_invitation(db, principal, invitation_id, request.action)
+    )
+
+
+@app.get(
+    "/api/v1/chat/conversations",
+    tags=["chat"],
+    response_model=list[ChatConversationSummaryResponse],
+    responses={403: {"model": ErrorResponse, "description": "Candidate or employer role required"}},
+)
+def chat_conversations(
+    principal: Annotated[Principal, Depends(chat_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[ChatConversationSummaryResponse]:
+    """List only conversations belonging to the authenticated matched party."""
+
+    return [ChatConversationSummaryResponse.model_validate(item) for item in list_conversations(db, principal)]
+
+
+@app.get(
+    "/api/v1/chat/conversations/{conversation_id}",
+    tags=["chat"],
+    response_model=ChatConversationResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate or employer role required"},
+        404: {"model": ErrorResponse, "description": "Conversation not found or not accessible"},
+    },
+)
+def chat_conversation(
+    conversation_id: str,
+    principal: Annotated[Principal, Depends(chat_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+    limit: int = Query(default=100, ge=1, le=200),
+) -> ChatConversationResponse:
+    return ChatConversationResponse.model_validate(
+        get_conversation(db, principal, conversation_id, limit=limit)
+    )
+
+
+@app.post(
+    "/api/v1/chat/conversations/{conversation_id}/messages",
+    tags=["chat"],
+    response_model=ChatMessageResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate or employer role required"},
+        404: {"model": ErrorResponse, "description": "Conversation not found or not accessible"},
+        422: {"model": ErrorResponse, "description": "Message body is invalid"},
+    },
+)
+def create_chat_message(
+    conversation_id: str,
+    request: ChatMessageRequest,
+    principal: Annotated[Principal, Depends(chat_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> ChatMessageResponse:
+    return ChatMessageResponse.model_validate(send_message(db, principal, conversation_id, request.body))
+
+
+@app.post(
+    "/api/v1/chat/conversations/{conversation_id}/read",
+    tags=["chat"],
+    response_model=ChatReadResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate or employer role required"},
+        404: {"model": ErrorResponse, "description": "Conversation not found or not accessible"},
+    },
+)
+def read_chat_conversation(
+    conversation_id: str,
+    principal: Annotated[Principal, Depends(chat_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> ChatReadResponse:
+    return ChatReadResponse.model_validate(mark_conversation_read(db, principal, conversation_id))
+
+
+@app.post(
+    "/api/v1/chat/conversations/{conversation_id}/contacts",
+    tags=["chat"],
+    response_model=ChatContactResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate or employer role required"},
+        404: {"model": ErrorResponse, "description": "Conversation not found or not accessible"},
+        422: {"model": ErrorResponse, "description": "Contact value is invalid"},
+    },
+)
+def share_chat_contact(
+    conversation_id: str,
+    request: ChatContactRequest,
+    principal: Annotated[Principal, Depends(chat_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> ChatContactResponse:
+    return ChatContactResponse.model_validate(
+        exchange_contact(
+            db,
+            principal,
+            conversation_id,
+            contact_type=request.contact_type,
+            contact_value=request.contact_value,
+        )
+    )
+
+
+@app.post(
+    "/api/v1/chat/conversations/{conversation_id}/reports",
+    tags=["chat"],
+    response_model=ChatReportResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate or employer role required"},
+        404: {"model": ErrorResponse, "description": "Conversation not found or not accessible"},
+    },
+)
+def report_chat_conversation(
+    conversation_id: str,
+    request: ChatReportRequest,
+    principal: Annotated[Principal, Depends(chat_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> ChatReportResponse:
+    return ChatReportResponse.model_validate(
+        report_conversation(
+            db,
+            principal,
+            conversation_id,
+            reason=request.reason,
+            details=request.details,
+        )
     )
 
 

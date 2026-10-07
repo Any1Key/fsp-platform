@@ -152,6 +152,22 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "INVITATION_NOT_PENDING",
         "Only a pending invitation can be changed.",
     ),
+    "conversation_not_found": (
+        "CONVERSATION_NOT_FOUND",
+        "The conversation was not found or is not available to this account.",
+    ),
+    "conversation_match_invalid": (
+        "CONVERSATION_MATCH_INVALID",
+        "The matched parties could not be added to a private conversation.",
+    ),
+    "message_body_required": (
+        "MESSAGE_BODY_REQUIRED",
+        "A non-empty text message is required.",
+    ),
+    "contact_value_required": (
+        "CONTACT_VALUE_REQUIRED",
+        "A contact value is required when sharing contact details.",
+    ),
     "talent_radar_limit_invalid": (
         "TALENT_RADAR_LIMIT_INVALID",
         "Talent Radar limit must be between 1 and 100.",

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from .assessments import AssessmentService
 from .auth import Principal, sync_identity
+from .chat import create_conversation_for_match
 
 InvitationAction = Literal["accepted", "declined"]
 
@@ -261,6 +262,12 @@ def respond_to_invitation(
             "candidate_profile_id": profile_id,
             "now": now,
         },
+    )
+    create_conversation_for_match(
+        db,
+        match_id=match_id,
+        employer_identity_id=row["employer_identity_id"],
+        candidate_profile_id=profile_id,
     )
     event_payload = {"invitation_id": invitation_id, "match_id": match_id}
     for event_type in ("MATCH_CREATED", "CONTACT_UNLOCKED"):

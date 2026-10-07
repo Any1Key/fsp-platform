@@ -113,6 +113,12 @@ Snapshot preserves result context during refinement.
 
 No conversation exists or accepts messages before valid match.
 
+M08 realizes these entities as `conversation` (one per `talent_match`),
+`conversation_member` (the employer and candidate identities), `message`,
+`message_read`, `conversation_contact_exchange`, and `conversation_report`. The
+conversation is inserted in the acceptance transaction, and all reads/writes are
+membership-scoped. Report audit metadata excludes message and contact contents.
+
 ## Vacancies/applications
 - vacancy
 - salary min/max RUB

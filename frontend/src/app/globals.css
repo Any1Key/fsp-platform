@@ -127,6 +127,37 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .inviteForm input:focus, .inviteForm textarea:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
 .inviteFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
 .inviteError { color: #ffb6bd; font-size: 9px; line-height: 1.5; }
+.chatPanel { flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14); padding-top: 16px; color: #ededed; }
+.chatPanel.muted, .chatPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.chatPanel.error { color: #ffb6bd; }
+.chatHeading { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.chatHeading > div { display: grid; gap: 5px; }
+.chatHeading h2 { margin: 0; font-size: 15px; }
+.chatHeading p, .chatMessage { margin: 0; color: #b7b7c1; font-size: 10px; line-height: 1.5; }
+.chatMessage { color: #8be0b2; }
+.chatEmpty { display: grid; gap: 5px; border: 1px dashed rgba(169,161,255,.42); border-radius: 13px; padding: 18px; color: #d5d5dc; font-size: 11px; }
+.chatEmpty span { color: #b7b7c1; font-size: 9px; line-height: 1.5; }
+.chatLayout { display: grid; grid-template-columns: minmax(180px, .35fr) minmax(0, 1fr); gap: 10px; }
+.chatConversations { display: grid; align-content: start; gap: 7px; }
+.chatConversation { position: relative; display: grid; gap: 5px; border: 1px solid rgba(169,161,255,.22); border-radius: 11px; padding: 11px; background: rgba(27,28,33,.5); color: #ededed; text-align: left; cursor: pointer; font: inherit; }
+.chatConversation.selected { border-color: rgba(169,161,255,.72); background: rgba(64,47,255,.13); }
+.chatConversation small { color: #b7b7c1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
+.chatConversation b { position: absolute; top: 9px; right: 9px; border-radius: 999px; padding: 3px 5px; background: var(--brand-accent); color: white; font-size: 8px; }
+.chatThread { display: grid; gap: 10px; min-width: 0; border: 1px solid rgba(169,161,255,.25); border-radius: 13px; padding: 13px; background: rgba(27,28,33,.5); }
+.chatThreadTop { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.chatMessages { display: grid; gap: 7px; min-height: 160px; max-height: 320px; overflow: auto; align-content: start; padding: 4px; }
+.chatNoMessages { color: #b7b7c1; font-size: 10px; }
+.chatBubble { max-width: 80%; border-radius: 11px; padding: 9px 10px; color: #d5d5dc; font-size: 10px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chatBubble.mine { justify-self: end; background: rgba(64,47,255,.4); color: white; }
+.chatBubble.theirs { justify-self: start; background: rgba(255,255,255,.09); }
+.chatContacts { display: grid; gap: 4px; border: 1px solid rgba(139,224,178,.25); border-radius: 9px; padding: 8px; }
+.chatContacts span { color: #8be0b2; font-size: 8px; letter-spacing: .08em; }
+.chatContacts small { color: #d5d5dc; font-size: 9px; }
+.chatComposer, .chatContactForm { display: flex; gap: 8px; align-items: end; }
+.chatComposer textarea, .chatContactForm input { flex: 1; min-width: 0; border: 1px solid #555760; border-radius: 9px; padding: 9px 10px; background: rgba(255,255,255,.06); color: white; font: inherit; font-size: 10px; outline: none; }
+.chatComposer textarea { min-height: 44px; resize: vertical; }
+.chatComposer textarea:focus, .chatContactForm input:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
+.chatComposer .authButton, .chatContactForm .authButton { flex: 0 0 auto; font-size: 9px; }
 .assessmentPanel {
   flex: 1 1 100%; display: grid; gap: 16px; border-top: 1px solid rgba(255,255,255,.14);
   padding-top: 16px; color: #ededed; scroll-margin-top: 18px;
@@ -465,6 +496,10 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .authButton { width: 100%; }
   .dashboardHeading, .dashboardHistoryHeading { align-items: flex-start; flex-direction: column; }
   .invitationHeading, .invitationCardTop, .employerInvitationRow { align-items: flex-start; flex-direction: column; }
+  .chatHeading, .chatThreadTop { align-items: flex-start; flex-direction: column; }
+  .chatLayout { grid-template-columns: 1fr; }
+  .chatComposer, .chatContactForm { align-items: stretch; flex-direction: column; }
+  .chatComposer .authButton, .chatContactForm .authButton { width: 100%; }
   .invitationSalary { text-align: left; }
   .invitationActions, .inviteActions { flex-direction: column; }
   .invitationActions .authButton, .inviteActions .authButton { width: 100%; }

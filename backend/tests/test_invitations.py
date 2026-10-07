@@ -7,6 +7,16 @@ from sqlalchemy import create_engine, text
 from app import main
 
 
+def _valid_followup(item) -> str:
+    responses = {
+        "api-2": "bounded retry uses backoff and a limit",
+        "sql-2": "transaction makes the migration atomic and rollback keeps it reversible",
+        "test-2": "find the nondeterministic source and fix the seed for reproducibility",
+        "arch-2": "measure the budget and latency at p95 before scaling",
+    }
+    return responses.get(item.family_id, "the explanation follows the constraint in the task")
+
+
 def _headers(private_key, settings, *, sub: str, role: str):
     now = datetime.now(UTC)
     token = jwt.encode(
@@ -53,9 +63,17 @@ def _candidate(client, private_key, settings, *, sub: str, verified: bool = True
     submitted = client.post(
         f"/api/v1/assessments/attempts/{attempt.attempt_id}/submit",
         headers=headers,
-        json={"answers": attempt.answer_keys},
+        json={
+            "answers": attempt.answer_keys,
+            "followups": {
+                item.item_id: _valid_followup(item)
+                for item in attempt.items
+                if item.progressive
+            },
+        },
     )
     assert submitted.status_code == 200
+    assert submitted.json()["grade_state"] == "verified"
     return headers, profile.json()["id"]
 
 

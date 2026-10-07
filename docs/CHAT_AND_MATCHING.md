@@ -27,6 +27,12 @@ After `MATCH_CREATED`:
 - allow employer hiring-pipeline stages/tasks;
 - keep full authorization server-side.
 
+The current implementation creates the conversation and its two membership rows in
+the same database transaction as invitation acceptance. A pending or declined
+invitation therefore has no conversation to address. An authenticated account that
+is not one of the two match identities receives the same `CONVERSATION_NOT_FOUND`
+boundary for history, messages, contacts and reports.
+
 ## MVP chat scope
 
 Required:
@@ -39,6 +45,25 @@ Required:
 - no cross-conversation access.
 
 Attachments, typing indicators and presence are optional and must not delay P0.
+
+## REST contract
+
+- `GET /api/v1/chat/conversations` lists only the caller's matched conversations and
+  includes the participant label, last-message preview and unread count.
+- `GET /api/v1/chat/conversations/{id}` returns up to 100 persisted messages and
+  exchanged contacts for a member of that conversation.
+- `POST /api/v1/chat/conversations/{id}/messages` persists a trimmed text body up to
+  4,000 characters.
+- `POST /api/v1/chat/conversations/{id}/read` writes per-message read receipts for
+  unread messages addressed to the caller.
+- `POST /api/v1/chat/conversations/{id}/contacts` exchanges one caller-owned contact
+  value with the other member; a later submission updates that caller's value.
+- `POST /api/v1/chat/conversations/{id}/reports` records a basic moderation report.
+
+The report audit event stores only the conversation/report IDs and reason. It never
+copies message bodies, contact values, tokens or document contents into audit details.
+The API intentionally uses polling/history REST endpoints for this MVP; WebSocket
+transport can be added behind the same authorization service later.
 
 ## Transport
 

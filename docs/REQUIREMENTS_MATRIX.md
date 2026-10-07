@@ -10,16 +10,16 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | AST-001 | P0 | Onboarding questionnaire for industry/specialization | Candidate E2E | TODO |  |
 | AST-002 | P0 | Candidate chooses declared grade | Authenticated candidate assessment UI + API lifecycle tests | VERIFIED | backend/tests/test_assessments.py:235-273; frontend/src/components/candidate-assessment.tsx:234-249 |
 | AST-003 | P0 | Working assessment determines employer-visible category | Employer Talent Radar assessment-to-category integration tests | IMPLEMENTED | backend/tests/test_talent_radar.py; backend/app/discovery.py |
-| AST-004 | P0 | Assessment resists leaked fixed questions | Variants/anchors implementation | VERIFIED | backend/app/assessments.py; backend/tests/test_assessments.py; docs/AI_ASSESSMENT_INTEGRITY.md |
+| AST-004 | P0 | Assessment resists leaked fixed questions | Variants/anchors implementation | VERIFIED | backend/app/assessments.py; backend/tests/test_assessments.py; docs/AI_ASSESSMENT_INTEGRITY.md; .agent/runs/20261007-103547-c032/verification.log |
 | AST-005 | P0 | Different forms have comparable difficulty | Blueprint/anchor validation | IN_PROGRESS | backend/tests/test_assessments.py (stable domain shape; calibration validation pending) |
 | AST-006 | P0 | Show test formation from several vacancy/need descriptions | Demo data/tests | TODO |  |
 | AST-007 | P0 | Failed declared-grade test does not forcibly downgrade | Domain test | TODO |  |
 | AST-008 | P0 | Candidate can take lower-grade test | Domain/E2E | TODO |  |
 | AST-009 | P0 | Strong result can offer higher-grade test | Domain/E2E | TODO |  |
-| AST-010 | P0 | Grade change/retest frequency limited | 90-day configurable test | VERIFIED | backend/app/assessments.py; backend/tests/test_assessments.py::test_retest_is_locked_and_failed_declared_grade_is_not_downgraded |
+| AST-010 | P0 | Grade change/retest frequency limited | 90-day configurable test | VERIFIED | backend/app/assessments.py; backend/tests/test_assessments.py::test_retest_is_locked_and_failed_declared_grade_is_not_downgraded; .agent/runs/20261007-103547-c032/verification.log |
 | AST-011 | P2 | Periodic short employer challenges | E2E + freshness | TODO |  |
-| AST-012 | P0 | Different candidates do not receive identical assessment forms | Form uniqueness property/integration tests | VERIFIED | backend/tests/test_assessments.py::test_forms_are_unique_and_keep_same_competency_shape; backend/tests/test_assessment_validation.py; docs/VALIDATION_RESULTS.md |
-| AST-013 | P0 | Base grade assessment is scored by the platform/system | Scoring domain tests | VERIFIED | backend/app/assessments.py; backend/tests/test_assessments.py::test_api_assessment_does_not_expose_answer_keys_and_scores_submission |
+| AST-012 | P0 | Different candidates do not receive identical assessment forms | Form uniqueness property/integration tests | VERIFIED | backend/tests/test_assessments.py::test_forms_are_unique_and_keep_same_competency_shape; docs/VALIDATION_RESULTS.md |
+| AST-013 | P0 | Base grade assessment is scored by the platform/system | Scoring domain tests | VERIFIED | backend/app/assessments.py; backend/tests/test_assessments.py::test_api_does_not_expose_answer_keys_and_scores_submission |
 | AST-014 | P0 | Synthetic/labeled validation proves grade discrimination and detects grade collapse | Confusion matrix + grade-collapse report | VERIFIED | backend/app/assessment_validation.py; backend/tests/test_assessment_validation.py; docs/VALIDATION_RESULTS.md |
 | AST-015 | P0 | AI-resistant assessment uses progressive/session-specific controls; no AI detector as sole gate | Progressive/session controls, delayed canonical review, advisory telemetry, deterministic hidden checks and cross-submission text/code similarity tests; no automatic rejection | VERIFIED | backend/app/assessments.py; backend/tests/test_assessments.py; docs/AI_ASSESSMENT_INTEGRITY.md |
 | AST-016 | P0 | Exposure control prevents immediate reusable answer-key leakage | Exposure/version tests | VERIFIED | backend/app/assessments.py; backend/tests/test_assessments.py; docs/API_GUIDELINES.md |
@@ -53,11 +53,11 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | EMP-014 | P1 | Local CPU AI can propose employer task/rubric drafts from current need and approved task history | AI-off/AI-on adapter tests | TODO |  |
 | EMP-015 | P0 | Employer-specific result does not silently overwrite global verified grade | Domain regression test | TODO |  |
 | PRIV-001 | P0 | No employer candidate contacts before unlock | Invitation/discovery payload privacy regression tests | VERIFIED | backend/tests/test_invitations.py::test_employer_creates_salary_bearing_invitation_and_candidate_sees_only_safe_offer; backend/app/invitations.py; docs/INVITATIONS.md |
-| CHAT-001 | P0 | Neither employer nor candidate can chat before match | Authorization/E2E | TODO |  |
-| CHAT-002 | P0 | Accepted invitation creates match and unlocks private internal chat | State-machine E2E | TODO |  |
-| CHAT-003 | P0 | Matched parties can exchange messages/contacts; outsiders cannot access conversation | Chat authorization E2E | TODO |  |
-| CHAT-004 | P1 | Persisted chat has unread state/history and safe logging | UI/API tests | TODO |  |
-| MATCH-001 | P0 | Search based on assessed category, not resume keywords | Category-first Talent Radar projection tests | VERIFIED | backend/tests/test_talent_radar.py; backend/app/discovery.py; docs/MATCHING_ENGINE.md |
+| CHAT-001 | P0 | Neither employer nor candidate can chat before match | Authorization/E2E | VERIFIED | backend/tests/test_chat.py::test_chat_is_unavailable_before_match_and_conversation_is_created_atomically; backend/app/chat.py; docs/CHAT_AND_MATCHING.md |
+| CHAT-002 | P0 | Accepted invitation creates match and unlocks private internal chat | State-machine E2E | VERIFIED | backend/tests/test_chat.py::test_chat_is_unavailable_before_match_and_conversation_is_created_atomically; backend/app/invitations.py; backend/app/chat.py |
+| CHAT-003 | P0 | Matched parties can exchange messages/contacts; outsiders cannot access conversation | Chat authorization E2E | VERIFIED | backend/tests/test_chat.py::test_matched_parties_exchange_messages_contacts_and_read_state; backend/tests/test_chat.py::test_chat_membership_denies_outsider_and_invalid_message_is_safe; backend/app/chat.py |
+| CHAT-004 | P1 | Persisted chat has unread state/history and safe logging | UI/API tests | VERIFIED | backend/tests/test_chat.py::test_matched_parties_exchange_messages_contacts_and_read_state; backend/alembic/versions/20261007_0014_internal_chat.py; docs/CHAT_AND_MATCHING.md |
+| MATCH-001 | P0 | Search based on assessed category, not resume keywords | Category-first Talent Radar projection tests | VERIFIED | backend/app/discovery.py; backend/tests/test_talent_radar.py; docs/MATCHING_ENGINE.md |
 | MATCH-002 | P0 | Within-category rank uses assessment/FSP evidence | Score breakdown and FSP contribution integration tests | VERIFIED | backend/tests/test_talent_radar.py; backend/app/discovery.py |
 | MATCH-003 | P0 | Rank by employer-need fit | Required/preferred coverage and need-specific ranking tests | VERIFIED | backend/tests/test_talent_radar.py; docs/MATCHING_ENGINE.md |
 | MATCH-004 | P0 | Explainable ranking | Reasons, component scores and evidence UI/API | IMPLEMENTED | backend/tests/test_talent_radar.py; frontend/src/components/employer-talent-radar.tsx |
@@ -69,9 +69,9 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | DATA-003 | P0 | Candidate sees salary before communication | Candidate inbox response/UI test coverage | IMPLEMENTED | backend/tests/test_invitations.py; frontend/src/components/candidate-invitations.tsx |
 | DATA-004 | P0 | Invitation contains company + contact method | Company/contact snapshot and inbox integration tests | VERIFIED | backend/tests/test_invitations.py; backend/app/invitations.py; docs/INVITATIONS.md |
 | DATA-005 | P0 | Interaction statuses visible to relevant sides | Employer/candidate scoped status API/UI tests | IMPLEMENTED | backend/tests/test_invitations.py; frontend/src/components/employer-invitations.tsx; frontend/src/components/candidate-invitations.tsx |
-| AUTH-001 | P0 | Email registration + verification | Keycloak/Mailpit E2E | VERIFIED | qa/tests/auth-registration.spec.ts; .agent/runs/20261007-095458-c031/verification.log; .agent/runs/20261007-095458-c031/compose-ps.txt |
-| AUTH-002 | P0 | Registration accepts only email domains ending in `.ru` | Identity validation tests | VERIFIED | backend/tests/test_auth.py; backend/app/auth.py; infrastructure/keycloak/realm-fsp.json |
-| AUTH-003 | P0 | Working Keycloak/OIDC integration is demonstrated | Demo E2E + JWT/role evidence | VERIFIED | backend/tests/test_auth.py:61-205; qa/tests/auth-registration.spec.ts:103-160; .agent/runs/20261007-083720-c029/verification.log:242-263 |
+| AUTH-001 | P0 | Email registration + verification | Keycloak/Mailpit E2E | VERIFIED | qa/tests/auth-registration.spec.ts; .agent/runs/20261007-103547-c032/verification.log; .agent/runs/20261007-103547-c032/compose-ps.txt |
+| AUTH-002 | P0 | Registration accepts only email domains ending in `.ru` | Identity validation tests | VERIFIED | backend/tests/test_auth.py::test_registration_check_enforces_exact_ru_domain; backend/app/auth.py; infrastructure/keycloak/realm-fsp.json |
+| AUTH-003 | P0 | Working Keycloak/OIDC integration is demonstrated | Demo E2E + JWT/role evidence | VERIFIED | backend/tests/test_auth.py; qa/tests/auth-registration.spec.ts; .agent/runs/20261007-103547-c032/verification.log |
 | AUTH-004 | P0 | Verified account without a Keycloak application role can complete one-time candidate/employer role onboarding | Signed-token API tests + browser role chooser | VERIFIED | backend/app/auth.py:123-235; backend/tests/test_auth.py:74-130; frontend/src/components/auth-status.tsx:108-139 |
 | FSP-001 | P0 | Correct no-FSP-history case | Candidate API/UI explicitly returns no-history for no link and empty linked history; integration tests | VERIFIED | backend/tests/test_fsp.py; frontend/src/components/candidate-fsp.tsx; docs/FSP_INTEGRATION.md |
 | FSP-002 | P0 | Synthetic replaceable adapter | `FspRegistryPort`, deterministic adapter tests, candidate link API | VERIFIED | backend/app/fsp.py; backend/tests/test_fsp.py; docs/FSP_INTEGRATION.md |
@@ -81,19 +81,19 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | VAL-002 | P0 | Own validation procedure + real results | Validation suite | TODO |  |
 | NFR-001 | P0 | Runs on ordinary machine with reasonable memory | Compose review | TODO |  |
 | NFR-002 | P0 | Open unobfuscated source | Repository | TODO |  |
-| NFR-003 | P0 | Clear frontend/backend/storage separation | Architecture review + database session boundary tests | VERIFIED | docs/ARCHITECTURE.md; backend/app/db.py; backend/tests/test_database.py |
-| NFR-004 | P0 | Reproducible Docker Compose startup | Locked installs, startup migration, and empty-database migration test | VERIFIED | backend/tests/test_migrations.py; .agent/runs/20261007-095458-c031/verification.log; .agent/runs/20261007-095458-c031/compose-ps.txt |
+| NFR-003 | P0 | Clear frontend/backend/storage separation | Architecture review + database session boundary tests | VERIFIED | docs/ARCHITECTURE.md; backend/app/db.py; backend/tests/test_database.py; .agent/runs/20261007-103547-c032/verification.log |
+| NFR-004 | P0 | Reproducible Docker Compose startup | Locked installs, startup migration, and empty-database migration test | VERIFIED | backend/tests/test_migrations.py; .agent/runs/20261007-103547-c032/verification.log; .agent/runs/20261007-103547-c032/compose-ps.txt |
 | NFR-005 | P0 | OpenAPI documents API/errors | OpenAPI audit | VERIFIED | backend/tests/test_errors.py; backend/app/errors.py; docs/API_GUIDELINES.md |
 | NFR-006 | P0 | RBAC, secure tokens, consent/privacy | Security tests | TODO |  |
-| NFR-007 | P0 | Keycloak compatibility | OIDC implementation | VERIFIED | backend/app/auth.py:74-119; backend/tests/test_auth.py:61-205; infrastructure/keycloak/realm-fsp.json:43-76; .agent/runs/20261007-083720-c029/compose-ps.txt:5 |
+| NFR-007 | P0 | Keycloak compatibility | OIDC implementation | VERIFIED | backend/app/auth.py; backend/tests/test_auth.py; infrastructure/keycloak/realm-fsp.json; .agent/runs/20261007-103547-c032/compose-ps.txt |
 | NFR-008 | P0 | Modern desktop browsers | Playwright | TODO |  |
 | NFR-009 | P1 | Responsive tablet/mobile (project upgrades optional item) | Responsive E2E/screenshots | TODO |  |
 | NFR-010 | P0 | Stable for tens of concurrent users with reproducible load test | Target load-test report | TODO |  |
 | NFR-011 | P0 | Core system requires no GPU and targets ~8 CPU / 32–64 GB RAM | Deployment/resource test | VERIFIED | docker-compose.yml; docs/PERFORMANCE_RESULTS.md; .agent/runs/20261006-m00-resource-baseline-rerun/performance/summary.txt; .agent/runs/20261006-m00-resource-baseline-rerun/performance/host-specs.txt |
 | NFR-012 | P1 | Optional local AI is isolated, asynchronous and has deterministic fallback | Failure/fallback tests | TODO |  |
-| NFR-013 | P0 | Automated CI validates locked backend/frontend/QA toolchains and Compose configuration | GitHub Actions workflow + CI contract test | VERIFIED | .github/workflows/ci.yml; agent/test-ci-contract.sh; .agent/runs/20261007-095458-c031/verification.log |
+| NFR-013 | P0 | Automated CI validates locked backend/frontend/QA toolchains and Compose configuration | GitHub Actions workflow + CI contract test | VERIFIED | .github/workflows/ci.yml; agent/test-ci-contract.sh; .agent/runs/20261007-103547-c032/verification.log |
 | LEGAL-001 | P0 | 152-FZ-oriented data minimization, consent, RBAC and audit controls are documented/implemented | Security/privacy audit | TODO |  |
-| LEGAL-002 | P1 | Withdrawal/deletion/export/retention workflows or demonstrable MVP concepts exist | Privacy E2E/docs | VERIFIED | backend/app/privacy.py; backend/tests/test_auth.py; docs/API_GUIDELINES.md; docs/SECURITY.md |
+| LEGAL-002 | P1 | Withdrawal/deletion/export/retention workflows or demonstrable MVP concepts exist | Privacy E2E/docs | VERIFIED | backend/app/privacy.py; backend/tests/test_auth.py::test_candidate_privacy_requires_consent_and_records_safe_audit; docs/API_GUIDELINES.md; docs/SECURITY.md |
 | LEGAL-003 | P0 | Telegram agent reporting never sends real PII/chat/minor documents | Reporter tests/config audit | TODO |  |
 | DOC-001 | P0 | Architecture docs | Docs audit | TODO |  |
 | DOC-002 | P0 | Assessment/leak-resistance docs | Docs audit | TODO |  |
@@ -102,7 +102,7 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | DOC-005 | P0 | FSP integration scheme docs | Docs audit | VERIFIED | docs/FSP_INTEGRATION.md; docs/DATA_MODEL.md |
 | DOC-006 | P0 | API description | OpenAPI/docs | VERIFIED | docs/API_GUIDELINES.md; backend/tests/test_errors.py; backend/app/main.py |
 | DOC-007 | P0 | Libraries/components with versions | COMPONENTS.md | VERIFIED | docs/COMPONENTS.md; backend/requirements.lock; frontend/package-lock.json; qa/package-lock.json; docker-compose.yml |
-| DOC-008 | P0 | Step-by-step build/deploy/local run | Setup/deployment docs | VERIFIED | docs/DEPLOYMENT.md; .env.example; scripts/demo-reset.sh; .agent/runs/20261007-095458-c031/verification.log |
+| DOC-008 | P0 | Step-by-step build/deploy/local run | Setup/deployment docs | VERIFIED | docs/DEPLOYMENT.md; .env.example; scripts/demo-reset.sh; .agent/runs/20261007-103547-c032/verification.log |
 | DEMO-001 | P0 | Full candidate→assessment→employer→contact demo | Playwright + demo reset | TODO |  |
 | BONUS-001 | P2 | Fake-vacancy / bad-employer protection concept/MVP | Trust design | TODO |  |
 | BONUS-002 | P2 | ATS integration concept | Docs/contract | TODO |  |

@@ -94,6 +94,16 @@ employer account email, tokens, candidate data, or protected attributes. A
 candidate receives `ROLE_REQUIRED`; invalid input uses `VALIDATION_ERROR`,
 `COMPANY_NAME_REQUIRED`, or `COMPANY_PROFILE_UPDATE_REQUIRED` as applicable.
 
+## Internal chat
+
+The `/api/v1/chat/conversations` endpoints are available only to candidate and
+employer identities. They require conversation membership established by an
+accepted invitation/match; no endpoint accepts a match ID as a substitute for the
+membership check. Unauthorized conversation IDs use the same not-found response to
+avoid cross-user existence leaks. Message bodies are persisted for authorized
+history but are excluded from audit/log metadata. Read receipts are per identity,
+and contact exchange is a match-scoped user action.
+
 ## Employer Talent Radar
 
 `GET /api/v1/employer/talent-radar` is employer-only and requires the current
