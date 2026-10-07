@@ -30,6 +30,7 @@ from .auth import (
     sync_identity,
 )
 from .candidates import get_profile, update_profile
+from .companies import get_company, update_company
 from .config import get_settings
 from .db import get_db_session
 from .errors import ErrorResponse, error_response, normalize_http_error
@@ -157,6 +158,29 @@ class CandidateProfileResponse(BaseModel):
     experience: list[CandidateExperience]
     skills: list[str]
     work_preferences: CandidateWorkPreferences
+    updated_at: datetime
+
+
+class CompanyProfileUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = Field(default=None, max_length=160)
+    description: str | None = Field(default=None, max_length=4000)
+    industry: str | None = Field(default=None, max_length=120)
+    website: str | None = Field(default=None, max_length=255, pattern=r"^https?://[^\s]+$")
+    location: str | None = Field(default=None, max_length=120)
+    public_contact_method: str | None = Field(default=None, max_length=160)
+
+
+class CompanyProfileResponse(BaseModel):
+    id: str
+    name: str | None
+    description: str | None
+    industry: str | None
+    website: str | None
+    location: str | None
+    public_contact_method: str | None
+    created_at: datetime
     updated_at: datetime
 
 
@@ -591,6 +615,41 @@ def employer_context(
     db: Annotated[Session, Depends(get_db_session)],
 ) -> AuthSessionResponse:
     return _role_context(principal, db)
+
+
+@app.get(
+    "/api/v1/employer/company",
+    tags=["employer company"],
+    response_model=CompanyProfileResponse,
+    responses={403: {"model": ErrorResponse, "description": "Employer role required"}},
+)
+def employer_company(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CompanyProfileResponse:
+    """Return the authenticated employer's company profile only."""
+
+    return CompanyProfileResponse.model_validate(get_company(db, principal))
+
+
+@app.patch(
+    "/api/v1/employer/company",
+    tags=["employer company"],
+    response_model=CompanyProfileResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        422: {"model": ErrorResponse, "description": "Company profile is invalid"},
+    },
+)
+def update_employer_company(
+    request: CompanyProfileUpdateRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CompanyProfileResponse:
+    changes = request.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(status_code=422, detail="company_profile_update_required")
+    return CompanyProfileResponse.model_validate(update_company(db, principal, changes))
 
 
 def _privacy_response(state: PrivacyState) -> CandidatePrivacyResponse:

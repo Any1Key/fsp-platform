@@ -310,6 +310,26 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .textButton:hover, .removeButton:hover { text-decoration: underline; }
 .profileFooter { align-items: flex-end; }
 .profileFooter small { max-width: 60%; }
+.companyPanel {
+  flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14);
+  padding-top: 16px; color: #ededed;
+}
+.companyPanel.muted, .companyPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.companyPanel.error { color: #ffb6bd; }
+.companyHeading, .companyFooter { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+.companyHeading > div { display: grid; gap: 5px; }
+.companyHeading h2 { margin: 0; font-size: 15px; }
+.companyHeading p, .companyFooter small { margin: 0; color: #b7b7c1; font-size: 10px; line-height: 1.5; }
+.companyForm { display: grid; gap: 13px; }
+.companyForm label { display: grid; gap: 6px; color: #d5d5dc; font-size: 10px; }
+.companyForm input, .companyForm textarea {
+  width: 100%; border: 1px solid #555760; border-radius: 9px; padding: 10px 11px;
+  background: rgba(255,255,255,.06); color: white; font: inherit; font-size: 11px; outline: none;
+}
+.companyForm textarea { resize: vertical; line-height: 1.5; }
+.companyForm input:focus, .companyForm textarea:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
+.companyFooter { align-items: flex-end; }
+.companyFooter small { max-width: 60%; }
 .proofCard {
   background: white; color: var(--text); border-radius: 24px; padding: 30px;
   box-shadow: 0 25px 90px rgba(0,0,0,.28); transform: rotate(-1deg);
@@ -366,6 +386,8 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .resumeReviewActions .authButton { width: 100%; }
   .profileGrid { grid-template-columns: 1fr; }
   .profileFooter small { max-width: none; }
+  .companyHeading, .companyFooter { align-items: flex-start; flex-direction: column; }
+  .companyFooter small { max-width: none; }
   .principles { grid-template-columns: 1fr; padding: 32px 20px 60px; }
   .shell { background: linear-gradient(180deg, #1b1c21 0 50rem, var(--surface) 50rem); }
 }

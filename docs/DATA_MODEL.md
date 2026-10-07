@@ -11,7 +11,11 @@
   content type/size/digest, UUID storage key, timestamps, and optional
   reviewer/audit metadata. File bytes are stored outside the database in a
   configured private directory and are never employer-visible.
-- `company`: owner, name, description, industry, public contacts, trust fields.
+- `company`: one employer-owned row per identity; name, description, industry,
+  website, location, explicitly supplied public contact method, and timestamps.
+  Trust fields remain future employer-discovery scope. The empty draft row is
+  provisioned on the employer's first company-profile read, while a saved
+  profile requires a non-blank name.
 
 ## Taxonomy
 - `specialization`: active, stable slug/name for a professional track.

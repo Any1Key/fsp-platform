@@ -59,7 +59,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] future Keycloak/FSP integration demonstration/concept
 
 ## M06 — Employer discovery / ProofMatch
-- [ ] company profile
+- [x] company profile
 - [ ] hiring need required/preferred skills
 - [ ] Talent Radar/category discovery
 - [ ] verified + unconfirmed grade eligibility states

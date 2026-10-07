@@ -69,6 +69,20 @@ returns identity email, contacts, DOB/minor state, resume documents, consent
 metadata, or assessment results. Employers receive `ROLE_REQUIRED` and cannot
 use this self-scoped resource.
 
+## Employer company profile
+
+`GET /api/v1/employer/company` and `PATCH /api/v1/employer/company` are
+employer-only and derive the company owner from the validated Keycloak subject.
+The first read provisions an empty company profile for a stable UI empty state;
+the first save requires `name`. The patch accepts `name`, `description`,
+`industry`, `website`, `location`, and explicitly supplied
+`public_contact_method`. Website values must use `http` or `https`.
+
+The response contains company-facing fields only. It does not expose the
+employer account email, tokens, candidate data, or protected attributes. A
+candidate receives `ROLE_REQUIRED`; invalid input uses `VALIDATION_ERROR`,
+`COMPANY_NAME_REQUIRED`, or `COMPANY_PROFILE_UPDATE_REQUIRED` as applicable.
+
 ## Candidate dashboard
 
 `GET /api/v1/candidate/dashboard` returns the authenticated candidate's safe

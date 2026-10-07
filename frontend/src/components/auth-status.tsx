@@ -9,6 +9,7 @@ import { CandidateResume } from "./candidate-resume";
 import { CandidateDashboard } from "./candidate-dashboard";
 import { CandidateAssessment } from "./candidate-assessment";
 import { CandidateFsp } from "./candidate-fsp";
+import { EmployerCompanyProfile } from "./employer-company-profile";
 
 type Session = {
   identity_id: string | null;
@@ -156,6 +157,9 @@ export function AuthStatus() {
             <CandidateProfile token={keycloak.current?.token ?? ""} />
             <CandidateResume token={keycloak.current?.token ?? ""} />
           </>
+        )}
+        {auth.session.role === "employer" && (
+          <EmployerCompanyProfile token={keycloak.current?.token ?? ""} />
         )}
       </div>
     );

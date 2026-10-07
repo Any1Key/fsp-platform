@@ -72,6 +72,14 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "PROCESSING_CONSENT_REQUIRED",
         "Processing consent is required before publication.",
     ),
+    "company_name_required": (
+        "COMPANY_NAME_REQUIRED",
+        "A company name is required before the profile can be saved.",
+    ),
+    "company_profile_update_required": (
+        "COMPANY_PROFILE_UPDATE_REQUIRED",
+        "At least one company profile field is required.",
+    ),
     "fsp_participant_not_found": (
         "FSP_PARTICIPANT_NOT_FOUND",
         "The FSP participant was not found in the configured registry.",
