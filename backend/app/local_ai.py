@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal, Protocol
+from uuid import uuid4
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -16,6 +17,7 @@ from .auth import Principal
 from .companies import _ensure_company
 
 LocalAiStatus = Literal["disabled", "completed", "failed"]
+DraftFeedbackDecision = Literal["approved", "edited", "rejected"]
 
 
 @dataclass(frozen=True)
@@ -371,3 +373,130 @@ def retrieve_approved_task_examples(
         )
     )
     return examples[: max(0, min(limit, 10))]
+
+
+def _feedback_response(row: Any) -> dict[str, Any]:
+    reviewed_draft = row["reviewed_draft"]
+    need_snapshot = row["need_snapshot"]
+    if isinstance(reviewed_draft, str):
+        reviewed_draft = json.loads(reviewed_draft)
+    if isinstance(need_snapshot, str):
+        need_snapshot = json.loads(need_snapshot)
+    return {
+        "id": row["id"],
+        "decision": row["decision"],
+        "reviewed_draft": reviewed_draft,
+        "feedback_note": row["feedback_note"],
+        "need_snapshot": need_snapshot,
+        "created_at": row["created_at"],
+    }
+
+
+def _need_snapshot(context: EmployerTaskDraftContext) -> dict[str, Any]:
+    return {
+        "team": context.team,
+        "role": context.role,
+        "specialization": context.specialization,
+        "grade": context.grade,
+        "required_skills": list(context.required_skills),
+        "preferred_skills": list(context.preferred_skills),
+    }
+
+
+def record_draft_feedback(
+    db: Session,
+    principal: Principal,
+    *,
+    hiring_need_id: str,
+    context: EmployerTaskDraftContext,
+    decision: DraftFeedbackDecision,
+    draft: dict[str, Any] | None,
+    feedback_note: str | None,
+) -> dict[str, Any]:
+    """Persist an employer review without publishing or indexing a task.
+
+    Only the employer's current need is accepted. Rejected feedback deliberately
+    stores no generated content; approved and edited feedback stores the
+    need-validated draft so the employer can audit what was reviewed.
+    """
+
+    if decision == "rejected":
+        if draft is not None:
+            raise DraftValidationError("feedback_rejected_draft_forbidden")
+        reviewed_draft = None
+    else:
+        if draft is None:
+            raise DraftValidationError("feedback_draft_required")
+        reviewed_draft = validate_task_draft(draft, context)
+
+    identity_id, company_id = _ensure_company(db, principal)
+    owned_need = db.execute(
+        text(
+            "SELECT id FROM hiring_need WHERE id = :need_id AND company_id = :company_id"
+        ),
+        {"need_id": hiring_need_id, "company_id": company_id},
+    ).scalar_one_or_none()
+    if owned_need is None:
+        raise DraftValidationError("feedback_need_not_owned")
+
+    note = feedback_note.strip() if feedback_note else None
+    feedback_id = str(uuid4())
+    db.execute(
+        text(
+            "INSERT INTO employer_task_draft_feedback "
+            "(id, company_id, hiring_need_id, decision, reviewed_draft, feedback_note, "
+            "need_snapshot, created_by_identity_id, created_at) "
+            "VALUES (:id, :company_id, :need_id, :decision, :reviewed_draft, :feedback_note, "
+            ":need_snapshot, :identity_id, :created_at)"
+        ),
+        {
+            "id": feedback_id,
+            "company_id": company_id,
+            "need_id": hiring_need_id,
+            "decision": decision,
+            "reviewed_draft": (
+                json.dumps(reviewed_draft, ensure_ascii=False, separators=(",", ":"))
+                if reviewed_draft is not None
+                else None
+            ),
+            "feedback_note": note or None,
+            "need_snapshot": json.dumps(_need_snapshot(context), ensure_ascii=False, separators=(",", ":")),
+            "identity_id": identity_id,
+            "created_at": datetime.now(UTC),
+        },
+    )
+    db.commit()
+    return _feedback_response(
+        db.execute(
+            text(
+                "SELECT id, decision, reviewed_draft, feedback_note, need_snapshot, created_at "
+                "FROM employer_task_draft_feedback WHERE id = :feedback_id"
+            ),
+            {"feedback_id": feedback_id},
+        ).mappings().one()
+    )
+
+
+def list_draft_feedback(
+    db: Session,
+    principal: Principal,
+    *,
+    hiring_need_id: str,
+    limit: int = 10,
+) -> list[dict[str, Any]]:
+    """Return recent feedback scoped to the current employer and need."""
+
+    _, company_id = _ensure_company(db, principal)
+    rows = db.execute(
+        text(
+            "SELECT id, decision, reviewed_draft, feedback_note, need_snapshot, created_at "
+            "FROM employer_task_draft_feedback WHERE company_id = :company_id "
+            "AND hiring_need_id = :need_id ORDER BY created_at DESC, id DESC LIMIT :limit"
+        ),
+        {
+            "company_id": company_id,
+            "need_id": hiring_need_id,
+            "limit": max(0, min(limit, 20)),
+        },
+    ).mappings()
+    return [_feedback_response(row) for row in rows]

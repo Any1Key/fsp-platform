@@ -172,7 +172,108 @@ def test_employer_task_draft_suggestion_exposes_ai_off_fallback(auth_context):
         "draft": None,
         "approved_example_count": 0,
         "approved_examples": [],
+        "feedback_history": [],
     }
+
+
+def test_employer_can_approve_edit_or_reject_a_draft_and_history_is_scoped(auth_context, monkeypatch):
+    client, private_key, settings = auth_context
+    employer = _employer(client, private_key, settings, sub=f"local-ai-feedback-{uuid4().hex}")
+    created_need = client.post("/api/v1/employer/hiring-need", headers=employer, json=_need())
+    assert created_need.status_code == 201, created_need.text
+
+    class DraftAdapter:
+        async def propose_task_draft(self, context):
+            del context
+            return LocalAiDraftResult(status="completed", source="local", draft=_draft())
+
+    monkeypatch.setattr(main, "local_ai_port", DraftAdapter())
+    suggestion = client.post("/api/v1/employer/tasks/draft-suggestion", headers=employer)
+    assert suggestion.status_code == 200, suggestion.text
+    generated = suggestion.json()["draft"]
+
+    approved = client.post(
+        "/api/v1/employer/tasks/draft-suggestion/feedback",
+        headers=employer,
+        json={"decision": "approved", "draft": generated, "feedback_note": "Good baseline."},
+    )
+    assert approved.status_code == 201, approved.text
+    assert approved.json()["decision"] == "approved"
+    assert approved.json()["reviewed_draft"]["title"] == "Bounded retry policy"
+    assert approved.json()["feedback_note"] == "Good baseline."
+
+    edited_draft = {**generated, "title": "Reviewed bounded retry policy"}
+    edited = client.post(
+        "/api/v1/employer/tasks/draft-suggestion/feedback",
+        headers=employer,
+        json={"decision": "edited", "draft": edited_draft},
+    )
+    assert edited.status_code == 201, edited.text
+    assert edited.json()["reviewed_draft"]["title"] == "Reviewed bounded retry policy"
+
+    rejected = client.post(
+        "/api/v1/employer/tasks/draft-suggestion/feedback",
+        headers=employer,
+        json={"decision": "rejected", "feedback_note": "Too narrow for this team."},
+    )
+    assert rejected.status_code == 201, rejected.text
+    assert rejected.json()["reviewed_draft"] is None
+
+    history = client.get(
+        "/api/v1/employer/tasks/draft-suggestion/feedback", headers=employer
+    )
+    assert history.status_code == 200, history.text
+    assert [item["decision"] for item in history.json()] == ["rejected", "edited", "approved"]
+
+    suggestion_after_feedback = client.post(
+        "/api/v1/employer/tasks/draft-suggestion", headers=employer
+    )
+    assert suggestion_after_feedback.status_code == 200
+    assert [item["decision"] for item in suggestion_after_feedback.json()["feedback_history"]] == [
+        "rejected",
+        "edited",
+        "approved",
+    ]
+
+    other = _employer(client, private_key, settings, sub=f"local-ai-feedback-other-{uuid4().hex}")
+    assert client.post("/api/v1/employer/hiring-need", headers=other, json=_need()).status_code == 201
+    other_history = client.get(
+        "/api/v1/employer/tasks/draft-suggestion/feedback", headers=other
+    )
+    assert other_history.status_code == 200
+    assert other_history.json() == []
+
+
+def test_draft_feedback_requires_need_validated_content_and_never_publishes(auth_context):
+    client, private_key, settings = auth_context
+    employer = _employer(client, private_key, settings, sub=f"local-ai-feedback-validation-{uuid4().hex}")
+    created_need = client.post("/api/v1/employer/hiring-need", headers=employer, json=_need())
+    assert created_need.status_code == 201, created_need.text
+
+    missing_draft = client.post(
+        "/api/v1/employer/tasks/draft-suggestion/feedback",
+        headers=employer,
+        json={"decision": "approved"},
+    )
+    assert missing_draft.status_code == 422
+    assert missing_draft.json()["error"]["code"] == "LOCAL_AI_FEEDBACK_DRAFT_REQUIRED"
+
+    invalid = client.post(
+        "/api/v1/employer/tasks/draft-suggestion/feedback",
+        headers=employer,
+        json={"decision": "edited", "draft": {**_draft(), "expected_grade": "senior"}},
+    )
+    assert invalid.status_code == 422
+    assert invalid.json()["error"]["code"] == "LOCAL_AI_FEEDBACK_DRAFT_INVALID"
+
+    rejected_with_content = client.post(
+        "/api/v1/employer/tasks/draft-suggestion/feedback",
+        headers=employer,
+        json={"decision": "rejected", "draft": _draft()},
+    )
+    assert rejected_with_content.status_code == 422
+    assert rejected_with_content.json()["error"]["code"] == "LOCAL_AI_FEEDBACK_REJECTED_DRAFT_FORBIDDEN"
+    assert client.get("/api/v1/employer/tasks", headers=employer).json() == []
 
 
 def test_draft_suggestion_does_not_expose_an_invalid_adapter_draft(auth_context, monkeypatch):

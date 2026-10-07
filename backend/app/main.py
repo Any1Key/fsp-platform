@@ -66,6 +66,8 @@ from .local_ai import (
     LocalAiPort,
     build_local_ai_port,
     context_from_hiring_need,
+    list_draft_feedback,
+    record_draft_feedback,
     retrieve_approved_task_examples,
     validate_task_draft,
 )
@@ -473,6 +475,24 @@ class LocalAiDraftSuggestionResponse(BaseModel):
     draft: dict[str, Any] | None
     approved_example_count: int
     approved_examples: list[dict[str, Any]]
+    feedback_history: list[dict[str, Any]]
+
+
+class LocalAiDraftFeedbackRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    decision: Literal["approved", "edited", "rejected"]
+    draft: dict[str, Any] | None = None
+    feedback_note: str | None = Field(default=None, max_length=1000)
+
+
+class LocalAiDraftFeedbackResponse(BaseModel):
+    id: str
+    decision: Literal["approved", "edited", "rejected"]
+    reviewed_draft: dict[str, Any] | None
+    feedback_note: str | None
+    need_snapshot: dict[str, Any]
+    created_at: datetime
 
 
 class TaskSubmissionResponse(BaseModel):
@@ -1228,7 +1248,72 @@ async def employer_task_draft_suggestion(
             }
             for example in examples
         ],
+        feedback_history=list_draft_feedback(db, principal, hiring_need_id=need["id"]),
     )
+
+
+@app.get(
+    "/api/v1/employer/tasks/draft-suggestion/feedback",
+    tags=["employer tasks"],
+    response_model=list[LocalAiDraftFeedbackResponse],
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Hiring need not found"},
+    },
+)
+def employer_task_draft_feedback(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[LocalAiDraftFeedbackResponse]:
+    """Return the current employer's review history for local-AI drafts."""
+
+    need = get_hiring_need(db, principal)
+    if need is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="hiring_need_not_found")
+    return [
+        LocalAiDraftFeedbackResponse.model_validate(item)
+        for item in list_draft_feedback(db, principal, hiring_need_id=need["id"])
+    ]
+
+
+@app.post(
+    "/api/v1/employer/tasks/draft-suggestion/feedback",
+    tags=["employer tasks"],
+    response_model=LocalAiDraftFeedbackResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Hiring need not found"},
+        422: {"model": ErrorResponse, "description": "Draft feedback is invalid"},
+    },
+)
+def submit_employer_task_draft_feedback(
+    request: LocalAiDraftFeedbackRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> LocalAiDraftFeedbackResponse:
+    """Record an explicit employer decision without publishing a task."""
+
+    need = get_hiring_need(db, principal)
+    if need is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="hiring_need_not_found")
+    context = context_from_hiring_need(need)
+    try:
+        feedback = record_draft_feedback(
+            db,
+            principal,
+            hiring_need_id=need["id"],
+            context=context,
+            decision=request.decision,
+            draft=request.draft,
+            feedback_note=request.feedback_note,
+        )
+    except DraftValidationError as exc:
+        reason = str(exc)
+        if reason not in {"feedback_draft_required", "feedback_rejected_draft_forbidden"}:
+            reason = "local_ai_feedback_draft_invalid"
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=reason) from exc
+    return LocalAiDraftFeedbackResponse.model_validate(feedback)
 
 
 @app.post(

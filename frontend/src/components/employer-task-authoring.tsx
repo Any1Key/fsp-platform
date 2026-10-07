@@ -32,6 +32,13 @@ type ApprovedExample = {
   relevance_score: number;
 };
 type GeneratedDraft = Content & { difficulty_rationale: string };
+type DraftFeedback = {
+  id: string;
+  decision: "approved" | "edited" | "rejected";
+  reviewed_draft: GeneratedDraft | null;
+  feedback_note: string | null;
+  created_at: string;
+};
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const emptyRubric = (): Rubric[] => [
@@ -84,6 +91,10 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
   const [localAiStatus, setLocalAiStatus] = useState<LocalAiStatus>("loading");
   const [approvedExamples, setApprovedExamples] = useState<ApprovedExample[]>([]);
   const [suggestedDraft, setSuggestedDraft] = useState<GeneratedDraft | null>(null);
+  const [suggestedDraftApplied, setSuggestedDraftApplied] = useState(false);
+  const [feedbackHistory, setFeedbackHistory] = useState<DraftFeedback[]>([]);
+  const [feedbackNote, setFeedbackNote] = useState("");
+  const [feedbackBusy, setFeedbackBusy] = useState(false);
 
   const employerStages = useMemo(
     () => (pipeline?.stages ?? []).filter((stage) => stage.stage_type === "employer_task" && stage.id),
@@ -136,9 +147,12 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
         status: "disabled" | "completed" | "failed";
         approved_examples: ApprovedExample[];
         draft: GeneratedDraft | null;
+        feedback_history: DraftFeedback[];
       };
       setApprovedExamples(result.approved_examples ?? []);
       setSuggestedDraft(result.status === "completed" ? result.draft : null);
+      setSuggestedDraftApplied(false);
+      setFeedbackHistory(result.feedback_history ?? []);
       setLocalAiStatus(result.status === "disabled" ? "disabled" : result.status === "completed" ? "available" : "error");
     } catch {
       // AI is optional: a probe failure must never disable manual authoring.
@@ -155,13 +169,42 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
       ...content,
       rubric: content.rubric.map((item) => ({ ...item, description: item.description ?? "" })),
     });
+    setSuggestedDraftApplied(true);
     setMessage(`Черновик применён для проверки. Обоснование сложности: ${rationale}`);
+  }
+
+  async function submitFeedback(decision: DraftFeedback["decision"]) {
+    if (decision !== "rejected" && !suggestedDraft) return;
+    setFeedbackBusy(true);
+    setMessage(null);
+    const draft = decision === "rejected" ? null : decision === "approved" ? suggestedDraft : {
+      ...form,
+      difficulty_rationale: suggestedDraft?.difficulty_rationale ?? "Отредактировано работодателем после проверки.",
+    };
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/employer/tasks/draft-suggestion/feedback`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ decision, draft, feedback_note: feedbackNote.trim() || null }),
+      });
+      if (!response.ok) throw new Error(await readError(response));
+      const feedback = (await response.json()) as DraftFeedback;
+      setFeedbackHistory((current) => [feedback, ...current].slice(0, 10));
+      setFeedbackNote("");
+      setMessage(decision === "rejected" ? "Подсказка отклонена. Это не меняет задание и не блокирует ручное создание." : "Решение сохранено. Сохраните и опубликуйте задание отдельно, если оно готово.");
+      if (decision === "rejected") setSuggestedDraft(null);
+    } catch (error) {
+      setMessage((error as Error).message);
+    } finally {
+      setFeedbackBusy(false);
+    }
   }
 
   function selectTask(task: Task) {
     setSelectedId(task.id);
     setStageId(task.pipeline_stage_id ?? employerStages[0]?.id ?? "");
     setForm(toForm(task.current_version));
+    setSuggestedDraftApplied(false);
     setMessage(null);
   }
 
@@ -169,6 +212,7 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
     setSelectedId(null);
     setStageId(employerStages[0]?.id ?? "");
     setForm(blankContent());
+    setSuggestedDraftApplied(false);
     setMessage(null);
   }
 
@@ -272,6 +316,31 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
               <li key={example.task_version_id}>
                 <span>{example.title}</span>
                 <small>{example.specialization} · {example.grade} · {example.target_skills.join(", ")}</small>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {suggestedDraft && (
+        <div className="draftFeedback" aria-label="Проверка подсказки">
+          <strong>Решение по текущему черновику</strong>
+          <small>Одобрение сохраняет feedback для этой компании, но само по себе не публикует задание.</small>
+          <input maxLength={1000} value={feedbackNote} onChange={(event) => setFeedbackNote(event.target.value)} placeholder="Необязательный комментарий для команды" />
+          <div className="taskAiActions">
+            <button className="authButton secondaryButton" type="button" disabled={feedbackBusy} onClick={() => void submitFeedback("rejected")}>Отклонить</button>
+            <button className="authButton secondaryButton" type="button" disabled={feedbackBusy || !suggestedDraftApplied} onClick={() => void submitFeedback("edited")}>Сохранить как изменённый</button>
+            <button className="authButton primaryButton" type="button" disabled={feedbackBusy} onClick={() => void submitFeedback("approved")}>Одобрить</button>
+          </div>
+        </div>
+      )}
+      {feedbackHistory.length > 0 && (
+        <div className="draftFeedbackHistory" aria-label="История решений по подсказкам">
+          <strong>Последние решения</strong>
+          <ul>
+            {feedbackHistory.map((feedback) => (
+              <li key={feedback.id}>
+                <span>{feedback.decision === "approved" ? "Одобрено" : feedback.decision === "edited" ? "Изменено" : "Отклонено"}</span>
+                <small>{new Date(feedback.created_at).toLocaleString("ru-RU")}{feedback.feedback_note ? ` · ${feedback.feedback_note}` : ""}</small>
               </li>
             ))}
           </ul>

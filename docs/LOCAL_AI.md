@@ -53,7 +53,13 @@ explicit opt-in local runtime can now generate a constrained JSON draft from
 that context. The server validates the returned title, instructions, current
 grade, current-need skills, time limits, rubric and difficulty rationale before
 returning it. The employer can apply the suggestion to the editable form, but
-the draft is never persisted or published automatically.
+the draft is never persisted or published automatically. The authoring panel
+records an explicit employer decision as `approved`, `edited`, or `rejected`.
+Approved and edited decisions retain the need-validated reviewed draft and an
+optional bounded note; rejected decisions retain only the decision/note. This
+feedback is company-scoped review history and does not enter approved-task
+generation memory until the employer separately saves and publishes a task
+version.
 
 ### Constrained draft generation
 
@@ -70,8 +76,8 @@ it includes `title`, `instructions`, `target_skills`, `expected_grade`,
 `estimated_minutes`, `deadline_hours`, `rubric`, and advisory
 `difficulty_rationale`. Required skills must be included, target skills must
 come from the current need, and the grade must match the need. Human review and
-explicit publication remain mandatory. Feedback memory and background jobs
-remain separate follow-up units.
+explicit publication remain mandatory. Background jobs/rate limiting remain a
+separate follow-up unit.
 
 ## Runtime architecture
 

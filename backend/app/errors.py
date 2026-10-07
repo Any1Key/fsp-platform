@@ -184,6 +184,18 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "EMPLOYER_TASK_DRAFT_REQUIRED",
         "Create or edit a draft before publishing the task.",
     ),
+    "feedback_draft_required": (
+        "LOCAL_AI_FEEDBACK_DRAFT_REQUIRED",
+        "An approved or edited draft is required for this feedback decision.",
+    ),
+    "feedback_rejected_draft_forbidden": (
+        "LOCAL_AI_FEEDBACK_REJECTED_DRAFT_FORBIDDEN",
+        "Rejected feedback cannot include draft content.",
+    ),
+    "local_ai_feedback_draft_invalid": (
+        "LOCAL_AI_FEEDBACK_DRAFT_INVALID",
+        "The reviewed draft does not match the current hiring need.",
+    ),
     "task_assignment_not_found": (
         "TASK_ASSIGNMENT_NOT_FOUND",
         "The task assignment was not found or is not available to this candidate.",

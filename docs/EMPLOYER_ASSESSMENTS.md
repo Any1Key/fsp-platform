@@ -45,10 +45,13 @@ company-scoped approved examples and the draft-suggestion route retrieves a
 bounded, relevance-ranked set for the optional adapter. When explicitly enabled,
 the local adapter returns a strict JSON task/rubric draft plus a difficulty
 rationale. The API validates the draft against the current need before the
-authoring panel offers an apply-for-review action. Nothing is persisted or
-published automatically. When the adapter is disabled or fails, the employer
-continues with the manual editor. Feedback memory and background jobs are
-separate follow-up units.
+authoring panel offers an apply-for-review action. The employer can explicitly
+approve, edit, or reject the suggestion; those decisions are stored as
+company-scoped review history, while rejected content is not retained. Nothing
+is published automatically, and reviewed drafts enter approved-task generation
+memory only after a separate task save and publication. When the adapter is
+disabled or fails, the employer continues with the manual editor. Background
+jobs remain a separate follow-up unit.
 
 The current authoring slice validates target skills against the active
 taxonomy, expected grade, estimated duration, deadline policy, and rubric

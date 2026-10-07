@@ -98,7 +98,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] LocalAiPort + disabled adapter
 - [x] approved employer-task memory/retrieval
 - [x] constrained JSON task/rubric draft
-- [ ] employer approve/edit/reject feedback
+- [x] employer approve/edit/reject feedback
 - [ ] async jobs/rate limit/timeout
 - [ ] AI-off fallback tests
 - [ ] optional CPU-local runtime profile if host supports it
