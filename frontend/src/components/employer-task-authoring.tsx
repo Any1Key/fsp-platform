@@ -23,6 +23,14 @@ type Task = {
   versions: { version_number: number; status: string }[];
 };
 type LocalAiStatus = "loading" | "disabled" | "available" | "error";
+type ApprovedExample = {
+  task_version_id: string;
+  title: string;
+  specialization: string;
+  grade: string;
+  target_skills: string[];
+  relevance_score: number;
+};
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const emptyRubric = (): Rubric[] => [
@@ -73,6 +81,7 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [localAiStatus, setLocalAiStatus] = useState<LocalAiStatus>("loading");
+  const [approvedExamples, setApprovedExamples] = useState<ApprovedExample[]>([]);
 
   const employerStages = useMemo(
     () => (pipeline?.stages ?? []).filter((stage) => stage.stage_type === "employer_task" && stage.id),
@@ -121,10 +130,15 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error("local_ai_unavailable");
-      const result = (await response.json()) as { status: "disabled" | "completed" | "failed" };
+      const result = (await response.json()) as {
+        status: "disabled" | "completed" | "failed";
+        approved_examples: ApprovedExample[];
+      };
+      setApprovedExamples(result.approved_examples ?? []);
       setLocalAiStatus(result.status === "disabled" ? "disabled" : result.status === "completed" ? "available" : "error");
     } catch {
       // AI is optional: a probe failure must never disable manual authoring.
+      setApprovedExamples([]);
       setLocalAiStatus("error");
     }
   }
@@ -200,6 +214,7 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
       setTasks((current) => current.map((item) => item.id === task.id ? task : item));
       setForm(toForm(task.current_version));
       setMessage("Версия опубликована. Изменения после этого создадут новую версию.");
+      void probeLocalAi();
     } catch (error) {
       setMessage((error as Error).message);
     } finally {
@@ -225,6 +240,20 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
         <span>{localAiStatus === "disabled" ? "LOCAL AI OFF" : localAiStatus === "available" ? "LOCAL AI READY" : localAiStatus === "loading" ? "CHECKING LOCAL AI…" : "LOCAL AI UNAVAILABLE"}</span>
         <small>{localAiStatus === "disabled" ? "Создайте задание вручную — это не блокирует hiring pipeline." : "Подсказки не публикуются автоматически; работодатель всегда редактирует и публикует задание."}</small>
       </div>
+      {approvedExamples.length > 0 && (
+        <div className="approvedTaskMemory" aria-label="Одобренные примеры заданий">
+          <strong>{approvedExamples.length} одобренных примера доступны для подсказки</strong>
+          <small>Подобраны по текущей специализации, грейду и навыкам. Содержимое остаётся в контуре вашей компании.</small>
+          <ul>
+            {approvedExamples.map((example) => (
+              <li key={example.task_version_id}>
+                <span>{example.title}</span>
+                <small>{example.specialization} · {example.grade} · {example.target_skills.join(", ")}</small>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="taskToolbar">
         <div className="taskList" aria-label="Задания работодателя">
           {tasks.map((task) => (

@@ -40,10 +40,12 @@ Employer can:
 - edit everything before publishing.
 
 The current M10 foundation exposes the optional adapter boundary and an explicit
-AI-off state in the authoring panel. When the adapter is disabled, no draft is
+AI-off state in the authoring panel. Published versions are recorded as
+company-scoped approved examples and the draft-suggestion probe retrieves a
+bounded, relevance-ranked set for the optional adapter. The authoring panel
+shows the retrieved example metadata. When the adapter is disabled, no draft is
 pretended or persisted; the employer continues with the manual editor. Enabled
-generation, approved-task retrieval, and background jobs are separate follow-up
-units.
+generation, feedback memory, and background jobs are separate follow-up units.
 
 The current authoring slice validates target skills against the active
 taxonomy, expected grade, estimated duration, deadline policy, and rubric

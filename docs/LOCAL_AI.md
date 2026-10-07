@@ -30,6 +30,28 @@ Never make the local model the sole grader for the platform-wide grade.
 
 This gives organization-specific behavior without expensive fine-tuning and works on CPU.
 
+### Implemented approved-task memory slice
+
+Published employer task versions are immutable approved examples. Publication
+writes a company-scoped `employer_task_example` index row containing only the
+need specialization/grade, target skills, duration/deadline metadata and audit
+reference; the task version remains the source for the full prompt context.
+Existing published/retired versions are indexed during migration as approved
+history.
+
+`POST /api/v1/employer/tasks/draft-suggestion` retrieves at most five approved
+examples for the authenticated employer. Retrieval is deterministic and
+explainable: matching specialization, grade, required skills and preferred
+skills contribute to the ranking, with approval time and ID as stable
+tie-breakers. The response exposes only the employer's own metadata and
+relevance matches, while the replaceable `LocalAiPort` receives the sanitized
+full examples for a future constrained adapter.
+
+The current deployment still uses `DisabledLocalAiAdapter`, so retrieval does
+not pretend to generate a draft and manual authoring remains available. Draft
+generation, feedback memory, and background jobs remain separate follow-up
+units.
+
 ## Runtime architecture
 
 The backend now exposes an async `LocalAiPort` in `backend/app/local_ai.py`.

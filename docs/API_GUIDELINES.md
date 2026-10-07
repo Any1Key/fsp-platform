@@ -131,6 +131,13 @@ company and hiring need; candidate and other-employer requests receive no task
 content. The authoring routes do not assign tasks or grade submissions;
 candidate assignment is covered by the match-bound routes below.
 
+`POST /api/v1/employer/tasks/draft-suggestion` is the optional local-AI
+boundary. It returns the adapter status plus `approved_example_count` and a
+bounded `approved_examples` metadata list. Examples are selected only from
+published task versions owned by the current employer and ranked against the
+current hiring need. With local AI disabled, `draft` remains `null`; retrieval
+is informational and manual authoring continues.
+
 ### Candidate employer-task assignments
 
 After an invitation is accepted and a `talent_match` exists, published

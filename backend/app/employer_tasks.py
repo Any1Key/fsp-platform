@@ -344,6 +344,53 @@ def publish_task(db: Session, principal: Principal, task_id: str) -> dict[str, A
         ),
         {"id": draft_id, "identity_id": identity_id},
     )
+    _index_approved_example(db, draft_id, identity_id)
     db.execute(text("UPDATE employer_task SET updated_at = CURRENT_TIMESTAMP WHERE id = :id"), {"id": task["id"]})
     db.commit()
     return _task_response(db, _task_scope(db, company_id, task_id))
+
+
+def _index_approved_example(db: Session, task_version_id: str, identity_id: str) -> None:
+    """Record a published immutable version in the employer task memory index."""
+
+    if db.execute(
+        text("SELECT 1 FROM employer_task_example WHERE task_version_id = :version_id"),
+        {"version_id": task_version_id},
+    ).scalar_one_or_none():
+        return
+    source = db.execute(
+        text(
+            "SELECT etv.target_skills, etv.estimated_minutes, etv.deadline_hours, "
+            "et.hiring_need_id, hn.company_id, s.slug AS specialization_slug, "
+            "g.slug AS grade_slug "
+            "FROM employer_task_version etv "
+            "JOIN employer_task et ON et.id = etv.task_id "
+            "JOIN hiring_need hn ON hn.id = et.hiring_need_id "
+            "JOIN specialization s ON s.id = hn.specialization_id "
+            "JOIN grade g ON g.id = hn.grade_id "
+            "WHERE etv.id = :version_id"
+        ),
+        {"version_id": task_version_id},
+    ).mappings().one()
+    db.execute(
+        text(
+            "INSERT INTO employer_task_example "
+            "(id, task_version_id, company_id, specialization_slug, grade_slug, "
+            "target_skills, estimated_minutes, deadline_hours, approval_status, "
+            "approved_at, approved_by_identity_id) "
+            "VALUES (:id, :version_id, :company_id, :specialization, :grade, "
+            ":target_skills, :estimated_minutes, :deadline_hours, 'approved', "
+            "CURRENT_TIMESTAMP, :identity_id)"
+        ),
+        {
+            "id": str(uuid4()),
+            "version_id": task_version_id,
+            "company_id": source["company_id"],
+            "specialization": source["specialization_slug"],
+            "grade": source["grade_slug"],
+            "target_skills": source["target_skills"],
+            "estimated_minutes": source["estimated_minutes"],
+            "deadline_hours": source["deadline_hours"],
+            "identity_id": identity_id,
+        },
+    )

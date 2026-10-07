@@ -157,7 +157,9 @@ linked only to the matched assignment and employer identity; it is not linked
 to platform assessment results and cannot mutate the global verified grade.
 
 ## Local AI memory/jobs
-- employer_task_example metadata/index reference
+- `employer_task_example`: immutable company-scoped reference to a published
+  task version, approved status, need specialization/grade/skill metadata and
+  approval audit fields; used for deterministic bounded retrieval
 - ai_job (type/status/input reference/output reference, no secret token)
 - employer_feedback on generated draft
 

@@ -60,7 +60,12 @@ from .invitations import (
     list_employer_invitations,
     respond_to_invitation,
 )
-from .local_ai import LocalAiPort, build_local_ai_port, context_from_hiring_need
+from .local_ai import (
+    LocalAiPort,
+    build_local_ai_port,
+    context_from_hiring_need,
+    retrieve_approved_task_examples,
+)
 from .minor_consent import get_document_status, upload_document
 from .pipelines import get_hiring_pipeline, update_hiring_pipeline
 from .privacy import PrivacyState, get_privacy, request_export, update_privacy
@@ -463,6 +468,8 @@ class LocalAiDraftSuggestionResponse(BaseModel):
     source: Literal["disabled", "local"]
     reason: str | None
     draft: dict[str, Any] | None
+    approved_example_count: int
+    approved_examples: list[dict[str, Any]]
 
 
 class TaskSubmissionResponse(BaseModel):
@@ -1175,12 +1182,32 @@ async def employer_task_draft_suggestion(
     need = get_hiring_need(db, principal)
     if need is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="hiring_need_not_found")
-    result = await local_ai_port.propose_task_draft(context_from_hiring_need(need))
+    context = context_from_hiring_need(need)
+    examples = retrieve_approved_task_examples(db, principal, context)
+    context = context_from_hiring_need(need, tuple(examples))
+    result = await local_ai_port.propose_task_draft(context)
     return LocalAiDraftSuggestionResponse(
         status=result.status,
         source=result.source,
         reason=result.reason,
         draft=result.draft,
+        approved_example_count=len(examples),
+        approved_examples=[
+            {
+                "id": example.example_id,
+                "task_version_id": example.task_version_id,
+                "title": example.title,
+                "specialization": example.specialization,
+                "grade": example.grade,
+                "target_skills": list(example.target_skills),
+                "estimated_minutes": example.estimated_minutes,
+                "relevance_score": example.relevance_score,
+                "matched_required_skills": list(example.matched_required_skills),
+                "matched_preferred_skills": list(example.matched_preferred_skills),
+                "approved_at": example.approved_at,
+            }
+            for example in examples
+        ],
     )
 
 

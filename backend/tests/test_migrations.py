@@ -45,6 +45,7 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
             "pipeline_stage",
             "employer_task",
             "employer_task_version",
+            "employer_task_example",
             "task_assignment",
             "task_submission",
             "employer_evaluation",
@@ -90,6 +91,12 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
         evaluation_foreign_keys = inspect(engine).get_foreign_keys("employer_evaluation")
         assert {key["referred_table"] for key in evaluation_foreign_keys} == {
             "task_assignment",
+            "user_identity",
+        }
+        example_foreign_keys = inspect(engine).get_foreign_keys("employer_task_example")
+        assert {key["referred_table"] for key in example_foreign_keys} == {
+            "employer_task_version",
+            "company",
             "user_identity",
         }
 
