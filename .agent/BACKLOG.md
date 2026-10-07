@@ -90,9 +90,9 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] ordered stage builder
 - [x] employer task authoring/versioning
 - [x] candidate assignment/submission
-- [ ] employer-owned evaluation
-- [ ] employer-specific evidence scope
-- [ ] global-grade non-mutation regression
+- [x] employer-owned evaluation
+- [x] employer-specific evidence scope
+- [x] global-grade non-mutation regression
 
 ## M10 — Optional CPU-local AI task copilot
 - [ ] LocalAiPort + disabled adapter

@@ -150,8 +150,11 @@ the candidate, task, pipeline stage, exact published `employer_task_version`,
 status and server-derived deadline. Its `(match_id, task_id)` key makes
 assignment reconciliation idempotent. `task_submission` is append-only per
 assignment and numbers candidate response revisions; submission bodies are
-candidate-visible history and are not copied into audit metadata. Employer
-evaluation and global-grade isolation remain later M09 units.
+candidate-visible history and are not copied into audit metadata.
+`employer_evaluation` stores one employer-owned, rubric-derived evaluation per
+assignment with draft or released state, feedback and audit timestamps. It is
+linked only to the matched assignment and employer identity; it is not linked
+to platform assessment results and cannot mutate the global verified grade.
 
 ## Local AI memory/jobs
 - employer_task_example metadata/index reference

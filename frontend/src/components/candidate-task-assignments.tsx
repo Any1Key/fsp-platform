@@ -25,6 +25,7 @@ type Assignment = {
     estimated_minutes: number;
   };
   submissions: Submission[];
+  evaluation: { score: number; feedback: string | null; released_at: string } | null;
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -125,6 +126,7 @@ export function CandidateTaskAssignments({ token, refreshKey = 0 }: { token: str
               <div className="candidateTaskMeta"><span>{assignment.task.expected_grade} · около {assignment.task.estimated_minutes} мин.</span><span>{assignment.task.target_skills.join(" · ")}</span></div>
               <p className="candidateTaskInstructions">{assignment.task.instructions}</p>
               {assignment.submissions.length > 0 && <div className="candidateTaskHistory"><strong>История ответов</strong>{assignment.submissions.map((submission) => <div key={submission.id}><span>Версия {submission.attempt_number} · {dateLabel(submission.submitted_at)}</span><p>{submission.response_text}</p></div>)}</div>}
+              {assignment.evaluation && <div className="candidateTaskEvaluation"><strong>Оценка работодателя · {assignment.evaluation.score}/100</strong><p>{assignment.evaluation.feedback || "Оценка опубликована без дополнительного комментария."}</p></div>}
               {assignment.status !== "expired" && <div className="candidateTaskComposer"><label>Новая версия ответа<textarea value={drafts[assignment.id] ?? ""} onChange={(event) => setDrafts((current) => ({ ...current, [assignment.id]: event.target.value }))} maxLength={20000} rows={5} placeholder="Опишите решение, ход мыслей и результат…" /></label><button className="authButton primaryButton" disabled={busyId === assignment.id} onClick={() => void submit(assignment)}>{busyId === assignment.id ? "Отправляем…" : assignment.status === "submitted" ? "Отправить новую версию" : "Отправить ответ"}</button></div>}
             </article>
           ))}

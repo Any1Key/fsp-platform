@@ -147,9 +147,22 @@ The candidate-only routes are:
 The response includes stage title, task title/instructions/target skills,
 expected grade, estimated duration, deadline and the candidate's own
 submission history. It excludes the employer rubric, contacts, identity
-subjects and other candidates. Submissions after the deadline return
+subjects and other candidates. A released employer evaluation adds only score,
+feedback and release time. Submissions after the deadline return
 `TASK_ASSIGNMENT_DEADLINE_PASSED`; assignment ownership failures return
-`TASK_ASSIGNMENT_NOT_FOUND`. Employer evaluation is a later M09 unit.
+`TASK_ASSIGNMENT_NOT_FOUND`.
+
+### Employer task evaluation
+
+Employer-only `GET /api/v1/employer/task-assignments` lists submissions for
+matches owned by the authenticated employer's company. `PUT
+/api/v1/employer/task-assignments/{assignment_id}/evaluation` accepts one score
+for each dimension of the assigned immutable rubric, derives the 0–100 score,
+and saves employer-specific evidence. The candidate must have submitted at
+least one response. `release_to_candidate: false` keeps the evaluation as a
+draft; `true` releases only the derived score and feedback to the candidate.
+Other employers and candidates receive a safe not-found/role response, and
+the endpoint does not update platform assessment results.
 
 ## Internal chat
 

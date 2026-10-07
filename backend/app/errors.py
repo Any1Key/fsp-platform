@@ -196,6 +196,22 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "TASK_ASSIGNMENT_DEADLINE_PASSED",
         "The task deadline has passed and no further submission is accepted.",
     ),
+    "employer_task_assignment_not_found": (
+        "EMPLOYER_TASK_ASSIGNMENT_NOT_FOUND",
+        "The matched task assignment was not found or is not owned by this employer.",
+    ),
+    "employer_evaluation_submission_required": (
+        "EMPLOYER_EVALUATION_SUBMISSION_REQUIRED",
+        "A candidate submission is required before an employer evaluation can be saved.",
+    ),
+    "employer_evaluation_rubric_mismatch": (
+        "EMPLOYER_EVALUATION_RUBRIC_MISMATCH",
+        "Evaluation scores must include each assigned rubric dimension exactly once.",
+    ),
+    "employer_evaluation_score_out_of_range": (
+        "EMPLOYER_EVALUATION_SCORE_OUT_OF_RANGE",
+        "A rubric score must be between zero and that dimension's maximum points.",
+    ),
     "hiring_need_required_for_talent_radar": (
         "HIRING_NEED_REQUIRED_FOR_TALENT_RADAR",
         "Create a hiring need before opening Talent Radar.",

@@ -42,6 +42,7 @@ from .companies import get_company, update_company
 from .config import get_settings
 from .db import get_db_session
 from .discovery import RadarFilters, get_talent_radar
+from .employer_evaluations import list_employer_assignments, save_employer_evaluation
 from .employer_tasks import create_task, create_version, list_tasks, publish_task, update_draft
 from .errors import ErrorResponse, error_response, normalize_http_error
 from .fsp import (
@@ -471,6 +472,12 @@ class CandidateTaskResponse(BaseModel):
     estimated_minutes: int
 
 
+class CandidateEvaluationResponse(BaseModel):
+    score: int
+    feedback: str | None
+    released_at: datetime
+
+
 class CandidateTaskAssignmentResponse(BaseModel):
     id: str
     match_id: str
@@ -484,12 +491,68 @@ class CandidateTaskAssignmentResponse(BaseModel):
     submitted_at: datetime | None
     task: CandidateTaskResponse
     submissions: list[TaskSubmissionResponse]
+    evaluation: CandidateEvaluationResponse | None
 
 
 class CandidateTaskSubmissionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     response_text: str = Field(min_length=1, max_length=20000)
+
+
+class EmployerEvaluationRubricScoreRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=120)
+    points_awarded: int = Field(ge=0, le=1000)
+
+
+class EmployerEvaluationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    rubric_scores: list[EmployerEvaluationRubricScoreRequest] = Field(min_length=1, max_length=12)
+    feedback: str | None = Field(default=None, max_length=5000)
+    release_to_candidate: bool = False
+
+
+class EmployerEvaluationResponse(BaseModel):
+    id: str
+    assignment_id: str
+    score: int
+    rubric_scores: list[dict[str, Any]]
+    feedback: str | None
+    status: Literal["draft", "released"]
+    created_at: datetime
+    updated_at: datetime
+    released_at: datetime | None
+
+
+class EmployerTaskAssignmentTaskResponse(BaseModel):
+    version_number: int
+    title: str
+    instructions: str
+    target_skills: list[str]
+    expected_grade: Literal["junior", "middle", "senior"]
+    estimated_minutes: int
+    rubric: list[dict[str, Any]]
+
+
+class EmployerTaskAssignmentResponse(BaseModel):
+    id: str
+    match_id: str
+    candidate_profile_id: str
+    candidate_display_name: str
+    task_id: str
+    task_version_id: str
+    pipeline_stage_id: str
+    stage_title: str
+    status: Literal["assigned", "submitted", "expired"]
+    assigned_at: datetime
+    due_at: datetime
+    submitted_at: datetime | None
+    task: EmployerTaskAssignmentTaskResponse
+    submissions: list[TaskSubmissionResponse]
+    evaluation: EmployerEvaluationResponse | None
 
 
 class CandidateDashboardProfileResponse(BaseModel):
@@ -1343,6 +1406,53 @@ def submit_candidate_task(
 ) -> CandidateTaskAssignmentResponse:
     return CandidateTaskAssignmentResponse.model_validate(
         submit_candidate_assignment(db, principal, assignment_id, request.response_text)
+    )
+
+
+@app.get(
+    "/api/v1/employer/task-assignments",
+    tags=["employer tasks"],
+    response_model=list[EmployerTaskAssignmentResponse],
+    responses={403: {"model": ErrorResponse, "description": "Employer role required"}},
+)
+def employer_task_assignments(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[EmployerTaskAssignmentResponse]:
+    """Return matched candidate task submissions owned by the current employer."""
+
+    return [
+        EmployerTaskAssignmentResponse.model_validate(item)
+        for item in list_employer_assignments(db, principal)
+    ]
+
+
+@app.put(
+    "/api/v1/employer/task-assignments/{assignment_id}/evaluation",
+    tags=["employer tasks"],
+    response_model=EmployerTaskAssignmentResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Assignment not found"},
+        409: {"model": ErrorResponse, "description": "A candidate submission is required"},
+        422: {"model": ErrorResponse, "description": "Evaluation rubric is invalid"},
+    },
+)
+def evaluate_employer_task(
+    assignment_id: str,
+    request: EmployerEvaluationRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> EmployerTaskAssignmentResponse:
+    return EmployerTaskAssignmentResponse.model_validate(
+        save_employer_evaluation(
+            db,
+            principal,
+            assignment_id,
+            [score.model_dump() for score in request.rubric_scores],
+            request.feedback,
+            request.release_to_candidate,
+        )
     )
 
 

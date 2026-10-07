@@ -12,6 +12,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .auth import Principal, sync_identity
+from .employer_evaluations import get_released_candidate_evaluation
 
 
 def _now() -> datetime:
@@ -172,6 +173,7 @@ def _public_assignment(db: Session, profile_id: str, assignment_id: str) -> dict
             "estimated_minutes": row["estimated_minutes"],
         },
         "submissions": row["submissions"],
+        "evaluation": get_released_candidate_evaluation(db, assignment_id),
     }
 
 
