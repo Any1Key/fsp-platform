@@ -33,7 +33,13 @@ from .candidates import get_profile, update_profile
 from .config import get_settings
 from .db import get_db_session
 from .errors import ErrorResponse, error_response, normalize_http_error
-from .fsp import SyntheticFspRegistryAdapter, get_fsp, link_fsp, unlink_fsp
+from .fsp import (
+    SyntheticFspRegistryAdapter,
+    get_fsp,
+    get_fsp_identity_bridge,
+    link_fsp,
+    unlink_fsp,
+)
 from .minor_consent import get_document_status, upload_document
 from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 from .profile_pdf import render_profile_pdf
@@ -335,6 +341,27 @@ class CandidateFspResponse(BaseModel):
     updated_at: datetime | None
     history_status: Literal["no_history", "has_history"]
     achievements: list[FspAchievementResponse]
+
+
+class FspKeycloakIdentityResponse(BaseModel):
+    provider: Literal["keycloak"]
+    issuer: str
+    subject_fingerprint: str = Field(pattern=r"^[0-9a-f]{16}$")
+
+
+class FspBridgeStateResponse(BaseModel):
+    provider: str | None
+    participant_id: str | None
+    status: Literal["not_linked", "linked"]
+    history_status: Literal["no_history", "has_history"]
+
+
+class FspIdentityBridgeResponse(BaseModel):
+    bridge_version: str
+    binding_mode: Literal["explicit_candidate_link"]
+    keycloak: FspKeycloakIdentityResponse
+    fsp: FspBridgeStateResponse
+    registry_adapter: Literal["FspRegistryPort"]
 
 
 def _request_id(value: str | None) -> str:
@@ -754,6 +781,27 @@ def candidate_fsp(
     """Return the candidate's FSP link and safe synthetic evidence snapshot."""
 
     return CandidateFspResponse.model_validate(get_fsp(db, principal))
+
+
+@app.get(
+    "/api/v1/candidate/fsp/integration",
+    tags=["candidate FSP"],
+    response_model=FspIdentityBridgeResponse,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_fsp_integration(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> FspIdentityBridgeResponse:
+    """Expose the safe Keycloak-to-FSP application-link demonstration contract."""
+
+    return FspIdentityBridgeResponse.model_validate(
+        get_fsp_identity_bridge(
+            db,
+            principal,
+            keycloak_issuer=auth_verifier.settings.keycloak_issuer,
+        )
+    )
 
 
 @app.post(

@@ -6,6 +6,7 @@ not a claim about a production FSP API or an external identity schema.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -46,6 +47,7 @@ _RECENCY_BANDS = ((365, 100, "recent"), (730, 70, "aging"), (1095, 40, "old"))
 
 FSP_RANKING_WEIGHT = 10.0
 FSP_RANKING_VERSION = "fsp-evidence-2026-10"
+FSP_IDENTITY_BRIDGE_VERSION = "keycloak-fsp-explicit-link-2026-10"
 _FSP_RANKING_COMPONENT_WEIGHTS = {
     "result_strength": 0.40,
     "event_level": 0.20,
@@ -542,6 +544,41 @@ def get_fsp(db: Session, principal: Principal) -> dict[str, object]:
         "updated_at": link["updated_at"],
         "history_status": "has_history" if rows else "no_history",
         "achievements": [_achievement_response(row) for row in rows],
+    }
+
+
+def get_fsp_identity_bridge(
+    db: Session,
+    principal: Principal,
+    *,
+    keycloak_issuer: str,
+) -> dict[str, object]:
+    """Return the safe demo contract joining Keycloak and a candidate FSP link.
+
+    Keycloak authenticates the platform account; the FSP participant remains a
+    separately verified registry identity. The raw OIDC subject is deliberately
+    not part of this response. A real FSP adapter can replace the synthetic
+    registry behind ``FspRegistryPort`` without changing this application-link
+    contract.
+    """
+
+    fsp_state = get_fsp(db, principal)
+    subject_fingerprint = hashlib.sha256(principal.subject.encode("utf-8")).hexdigest()[:16]
+    return {
+        "bridge_version": FSP_IDENTITY_BRIDGE_VERSION,
+        "binding_mode": "explicit_candidate_link",
+        "keycloak": {
+            "provider": "keycloak",
+            "issuer": keycloak_issuer,
+            "subject_fingerprint": subject_fingerprint,
+        },
+        "fsp": {
+            "provider": fsp_state["provider"],
+            "participant_id": fsp_state["participant_id"],
+            "status": fsp_state["status"],
+            "history_status": fsp_state["history_status"],
+        },
+        "registry_adapter": "FspRegistryPort",
     }
 
 

@@ -123,6 +123,12 @@ preflight. The API allows only the documented localhost/127.0.0.1 frontend
 origins for browser requests, with explicit Bearer-header preflight support;
 credentials are not enabled.
 
+Keycloak identity and FSP participant identity remain separate. Candidate
+`GET /api/v1/candidate/fsp/integration` exposes a safe, one-way subject
+fingerprint plus the explicit candidate-link state, so the demo can show the
+future federation seam without inventing an external FSP schema or using email
+as an identity join key. The FSP provider remains behind `FspRegistryPort`.
+
 Candidate privacy is a self-scoped boundary in `backend/app/privacy.py` and
 the candidate routes in `backend/app/main.py`. It lazily provisions the
 candidate profile, applies server-owned consent dependencies, stores only

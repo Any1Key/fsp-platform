@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 from uuid import uuid4
 
 import jwt
@@ -270,6 +271,66 @@ def test_candidate_fsp_link_requires_consent_and_exposes_achievements(auth_conte
         "synthetic-achievement-001",
         "synthetic-achievement-002",
     ]
+
+
+def test_keycloak_fsp_identity_bridge_is_safe_candidate_scoped_and_explicit(auth_context):
+    client, private_key, settings = auth_context
+    subject = f"fsp-bridge-{uuid4().hex}"
+    headers = _headers(private_key, settings, sub=subject)
+
+    unlinked = client.get("/api/v1/candidate/fsp/integration", headers=headers)
+    assert unlinked.status_code == 200
+    unlinked_body = unlinked.json()
+    assert unlinked_body["bridge_version"] == "keycloak-fsp-explicit-link-2026-10"
+    assert unlinked_body["binding_mode"] == "explicit_candidate_link"
+    assert unlinked_body["registry_adapter"] == "FspRegistryPort"
+    assert unlinked_body["keycloak"] == {
+        "provider": "keycloak",
+        "issuer": settings.keycloak_issuer,
+        "subject_fingerprint": sha256(subject.encode()).hexdigest()[:16],
+    }
+    assert "subject" not in unlinked_body["keycloak"]
+    assert unlinked_body["fsp"] == {
+        "provider": None,
+        "participant_id": None,
+        "status": "not_linked",
+        "history_status": "no_history",
+    }
+
+    _grant_processing_consent(client, headers)
+    linked = client.post(
+        "/api/v1/candidate/fsp-link",
+        headers=headers,
+        json={"fsp_id": "FSP-DEMO-001"},
+    )
+    assert linked.status_code == 201
+
+    bridge = client.get("/api/v1/candidate/fsp/integration", headers=headers)
+    assert bridge.status_code == 200
+    bridge_body = bridge.json()
+    assert bridge_body["keycloak"]["subject_fingerprint"] == sha256(subject.encode()).hexdigest()[:16]
+    assert bridge_body["fsp"] == {
+        "provider": "synthetic",
+        "participant_id": "FSP-DEMO-001",
+        "status": "linked",
+        "history_status": "has_history",
+    }
+
+    other_headers = _headers(private_key, settings, sub=f"fsp-bridge-other-{uuid4().hex}")
+    other = client.get("/api/v1/candidate/fsp/integration", headers=other_headers)
+    assert other.status_code == 200
+    assert other.json()["fsp"]["participant_id"] is None
+    assert other.json()["keycloak"]["subject_fingerprint"] != bridge_body["keycloak"]["subject_fingerprint"]
+
+    employer_headers = _headers(
+        private_key,
+        settings,
+        sub=f"fsp-bridge-employer-{uuid4().hex}",
+        role="employer",
+    )
+    denied = client.get("/api/v1/candidate/fsp/integration", headers=employer_headers)
+    assert denied.status_code == 403
+    assert denied.json()["error"]["code"] == "ROLE_REQUIRED"
 
 
 def test_candidate_can_replace_with_no_history_and_unlink(auth_context):

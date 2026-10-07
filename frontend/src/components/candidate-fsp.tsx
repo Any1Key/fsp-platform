@@ -32,6 +32,23 @@ type FspState = {
   achievements: Achievement[];
 };
 
+type FspIdentityBridge = {
+  bridge_version: string;
+  binding_mode: "explicit_candidate_link";
+  keycloak: {
+    provider: "keycloak";
+    issuer: string;
+    subject_fingerprint: string;
+  };
+  fsp: {
+    provider: string | null;
+    participant_id: string | null;
+    status: "not_linked" | "linked";
+    history_status: "no_history" | "has_history";
+  };
+  registry_adapter: "FspRegistryPort";
+};
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 function formatDate(value: string) {
@@ -52,6 +69,7 @@ function recencyLabel(value: string) {
 
 export function CandidateFsp({ token }: { token: string }) {
   const [fsp, setFsp] = useState<FspState | null>(null);
+  const [integration, setIntegration] = useState<FspIdentityBridge | null>(null);
   const [fspId, setFspId] = useState("");
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [saving, setSaving] = useState(false);
@@ -68,6 +86,18 @@ export function CandidateFsp({ token }: { token: string }) {
       setState("ready");
     } catch {
       setState("error");
+    }
+  }
+
+  async function loadIntegration() {
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/candidate/fsp/integration`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error("fsp_integration_unavailable");
+      setIntegration((await response.json()) as FspIdentityBridge);
+    } catch {
+      setIntegration(null);
     }
   }
 
@@ -88,6 +118,7 @@ export function CandidateFsp({ token }: { token: string }) {
       .catch(() => {
         if (active) setState("error");
       });
+    void loadIntegration();
     return () => {
       active = false;
     };
@@ -117,6 +148,7 @@ export function CandidateFsp({ token }: { token: string }) {
         return;
       }
       setFsp((await response.json()) as FspState);
+      await loadIntegration();
       setFspId("");
       setMessage("FSP ID привязан.");
     } catch {
@@ -136,6 +168,7 @@ export function CandidateFsp({ token }: { token: string }) {
       });
       if (!response.ok) throw new Error("unlink_failed");
       await load();
+      await loadIntegration();
       setMessage("FSP ID отвязан. История не влияет на доступность профиля.");
     } catch {
       setMessage("Не удалось отвязать FSP ID.");
@@ -171,6 +204,31 @@ export function CandidateFsp({ token }: { token: string }) {
           </span>
         )}
       </div>
+
+      {integration && (
+        <div className="fspIdentityBridge" aria-label="Связка Keycloak и FSP">
+          <div className="fspBridgeHeading">
+            <div>
+              <span className="fspSectionKicker">IDENTITY BRIDGE · DEMO CONTRACT</span>
+              <strong>Keycloak и FSP — разные идентичности</strong>
+            </div>
+            <span>{integration.binding_mode === "explicit_candidate_link" ? "Явная связь" : integration.binding_mode}</span>
+          </div>
+          <div className="fspBridgeGrid">
+            <div>
+              <span>KEYCLOAK IDENTITY</span>
+              <strong>{integration.keycloak.provider}</strong>
+              <small>fingerprint · {integration.keycloak.subject_fingerprint}</small>
+            </div>
+            <div>
+              <span>FSP REGISTRY LINK</span>
+              <strong>{integration.fsp.participant_id ?? "Не привязан"}</strong>
+              <small>{integration.registry_adapter} · {integration.fsp.status === "linked" ? "подтверждён" : "ожидает link"}</small>
+            </div>
+          </div>
+          <small className="fspBridgeNote">Схема готова к замене synthetic adapter на реальный FSP-провайдер без связывания по email или раскрытия OIDC subject.</small>
+        </div>
+      )}
 
       {fsp.status === "linked" ? (
         <>

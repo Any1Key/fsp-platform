@@ -20,6 +20,8 @@ endpoints:
 
 - `GET /api/v1/candidate/fsp` — returns `not_linked` or `linked`, the history state,
   and safe achievement fields;
+- `GET /api/v1/candidate/fsp/integration` — returns the safe Keycloak/FSP identity
+  bridge demonstration contract;
 - `POST /api/v1/candidate/fsp-link` — verifies and snapshots a synthetic participant
   after processing consent, using a replaceable `FspRegistryPort`;
 - `DELETE /api/v1/candidate/fsp-link` — removes the candidate-owned link and snapshot.
@@ -89,6 +91,20 @@ consumes it; candidate FSP HTTP responses continue to expose the evidence snapsh
 ## Linking / Keycloak demo
 
 Keep application auth identity and FSP participant link separate. Demonstrate linking a synthetic FSP ID to the authenticated candidate and show how a future Keycloak/FSP identity federation could replace the synthetic adapter.
+
+The integration endpoint makes that concept explicit without inventing an external
+FSP schema. It reports:
+
+- the configured Keycloak issuer and a truncated SHA-256 fingerprint of the
+  validated OIDC subject (never the raw subject or token);
+- the candidate-owned FSP provider, participant and history state;
+- `binding_mode: explicit_candidate_link` and `registry_adapter: FspRegistryPort`.
+
+The current demo therefore authenticates through Keycloak and links to the FSP
+participant only after the candidate's consent-gated action. A future real FSP
+adapter may obtain a participant through an owner-approved federation contract,
+but the platform must not infer that relationship from email or silently expose
+an invented production API.
 
 ## No-history path
 
