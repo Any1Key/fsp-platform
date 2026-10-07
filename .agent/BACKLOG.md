@@ -43,7 +43,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] progressive follow-up mechanics
 - [x] hidden deterministic checks where applicable
 - [x] minimal disclosed integrity telemetry
-- [ ] code/text similarity advisory signals
+- [x] code/text similarity advisory signals
 - [ ] delayed canonical-answer exposure policy
 - [x] no automatic AI-detector rejection
 - [ ] synthetic grade/discrimination validation scaffolding

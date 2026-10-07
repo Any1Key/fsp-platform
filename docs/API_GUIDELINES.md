@@ -96,11 +96,15 @@ so attempt existence is not disclosed across ownership boundaries.
 
 The create response includes prompts, options, session artifacts, and item
 metadata, but never answer keys or correct options. Submission returns the
-system score, grade state, and advisory integrity signals. The client sends
-only disclosed minimal telemetry; integrity signals cannot automatically
-reject a candidate. The candidate UI uses the public taxonomy catalog to
-render specialization and grade choices and disables specializations without
-an administered blueprint.
+system score, grade state, and advisory integrity signals. A submitted attempt
+may also contain `integrity_evidence` for a cross-submission similarity review:
+it is limited to the signal code, `text`/`code` modality, the candidate's own
+progressive item scope and a rounded score. Comparator identity, comparator
+content and raw submitted text are never returned. The client sends only
+disclosed minimal telemetry; integrity signals cannot automatically reject a
+candidate or change the deterministic grade. The candidate UI uses the public
+taxonomy catalog to render specialization and grade choices and disables
+specializations without an administered blueprint.
 
 ## Candidate resume upload
 

@@ -4,7 +4,12 @@ from uuid import uuid4
 import jwt
 import pytest
 
-from app.assessments import AssessmentError, AssessmentService, public_attempt
+from app.assessments import (
+    AssessmentError,
+    AssessmentService,
+    _submission_similarity,
+    public_attempt,
+)
 
 
 def _valid_followup(item) -> str:
@@ -88,6 +93,75 @@ def test_hidden_deterministic_checks_score_rationale_without_exposing_rubric(mon
     assert invalid_result.integrity_signals == ["hidden_check_review"]
 
 
+def test_similarity_signal_is_advisory_and_scoped_to_same_family(monkeypatch) -> None:
+    monkeypatch.setattr("app.assessments.secrets.token_hex", lambda _: "00" * 16)
+    service = AssessmentService(now=datetime(2026, 10, 6, tzinfo=UTC))
+    first = service.create_attempt("similarity-a", "Backend Engineering", "Middle")
+    second = service.create_attempt("similarity-b", "Backend Engineering", "Middle")
+    shared_families = {
+        item.family_id
+        for item in first.items
+        if item.progressive
+    } & {
+        item.family_id
+        for item in second.items
+        if item.progressive
+    }
+    assert shared_families
+    first_item = next(item for item in first.items if item.family_id in shared_families)
+    second_item = next(item for item in second.items if item.family_id == first_item.family_id)
+    shared_response = "bounded retry uses backoff and a limit for safe recovery"
+
+    first_result = service.submit(
+        first.attempt_id,
+        first.answer_keys.copy(),
+        {first_item.item_id: shared_response},
+    )
+    second_result = service.submit(
+        second.attempt_id,
+        second.answer_keys.copy(),
+        {second_item.item_id: shared_response},
+    )
+
+    assert "cross_submission_similarity_review" not in first_result.integrity_signals
+    assert "cross_submission_similarity_review" in second_result.integrity_signals
+    assert second_result.score == first_result.score
+    assert second_result.grade_state == first_result.grade_state
+    assert second_result.integrity_evidence == [
+        {
+            "signal": "cross_submission_similarity_review",
+            "modality": "text",
+            "scope": "progressive_response",
+            "item_id": second_item.item_id,
+            "similarity": 1.0,
+        }
+    ]
+    assert "similarity-a" not in str(second_result.integrity_evidence)
+    assert shared_response not in str(second_result.integrity_evidence)
+    public = public_attempt(second_result)
+    assert public["integrity_evidence"] == second_result.integrity_evidence
+    assert "submitted_followups" not in public
+
+
+def test_similarity_normalizes_code_and_ignores_short_or_dissimilar_text() -> None:
+    code_match = _submission_similarity(
+        "def total(first, second): # candidate A\n    return first + second + 1",
+        "def total(left, right): # candidate B\n    return left + right + 1",
+    )
+
+    assert code_match is not None
+    assert code_match.modality == "code"
+    assert code_match.similarity >= 0.86
+    assert _submission_similarity("same words", "same words") is None
+    assert (
+        _submission_similarity(
+            "retry with bounded backoff and a limit",
+            "transaction rollback protects the schema migration",
+        )
+        is None
+    )
+
+
 def _headers(private_key, settings, *, sub: str, role: str = "candidate"):
     now = datetime.now(UTC)
     token = jwt.encode(
@@ -143,6 +217,7 @@ def test_api_does_not_expose_answer_keys_and_scores_submission(auth_context) -> 
     assert submit.json()["score"] is not None
     assert submit.json()["grade_state"] in {"verified", "not_confirmed"}
     assert "hidden_check_review" not in submit.json()["integrity_signals"]
+    assert submit.json()["integrity_evidence"] == []
 
 
 def test_api_assessment_is_self_scoped_and_rejects_identity_override(auth_context) -> None:

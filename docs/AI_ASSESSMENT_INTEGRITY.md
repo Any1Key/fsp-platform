@@ -71,6 +71,17 @@ automatic rejection or an AI-detection decision. The deterministic score is
 still computed by the platform and the candidate remains discoverable under
 the normal unconfirmed-grade rules.
 
+Cross-submission similarity is implemented for submitted progressive responses.
+The server compares responses only within the same template family after both
+attempts are complete. Prose uses boilerplate-filtered lexical tokens; code-like
+responses have comments removed and identifiers/numbers normalized before a
+combined sequence/Jaccard score is calculated. A meaningful response and a
+high score are both required. The API returns the stable
+`cross_submission_similarity_review` signal plus only modality, own-item scope
+and rounded similarity evidence. It never returns the comparator identity,
+comparator response or raw submitted text. Similarity does not change the
+platform score, grade state or search visibility.
+
 Do not use webcam surveillance, keystroke biometrics or covert fingerprinting for the MVP.
 
 ## Similarity analysis

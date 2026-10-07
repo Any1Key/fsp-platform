@@ -8,9 +8,11 @@ PostgreSQL repository without changing the domain rules.
 from __future__ import annotations
 
 import hmac
+import re
 import secrets
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from difflib import SequenceMatcher
 from hashlib import sha256
 from typing import Any
 from uuid import uuid4
@@ -18,6 +20,60 @@ from uuid import uuid4
 GRADES = ("Junior", "Middle", "Senior")
 RETEST_COOLDOWN_DAYS = 90
 EXPOSURE_COOLDOWN = timedelta(minutes=30)
+SIMILARITY_MIN_TOKENS = 6
+SIMILARITY_REVIEW_THRESHOLD = 0.86
+
+_TEXT_TOKEN_PATTERN = re.compile(r"[^\W_]+", re.UNICODE)
+_CODE_TOKEN_PATTERN = re.compile(
+    r"[A-Za-z_][A-Za-z0-9_]*|\d+(?:\.\d+)?|===|!==|==|!=|<=|>=|=>|&&|\|\||[{}()[\];,.=:+*/%<>!-]"
+)
+_CODE_COMMENT_PATTERN = re.compile(r"/\*.*?\*/|//[^\n]*|#[^\n]*", re.DOTALL)
+_CODE_KEYWORDS = frozenset(
+    {
+        "and",
+        "async",
+        "await",
+        "class",
+        "const",
+        "def",
+        "else",
+        "for",
+        "from",
+        "function",
+        "if",
+        "import",
+        "in",
+        "let",
+        "new",
+        "not",
+        "or",
+        "return",
+        "while",
+        "with",
+        "yield",
+    }
+)
+_TEXT_BOILERPLATE = frozenset(
+    {
+        "a",
+        "an",
+        "and",
+        "answer",
+        "because",
+        "choice",
+        "i",
+        "my",
+        "option",
+        "selected",
+        "the",
+        "this",
+        "выбрал",
+        "выбрала",
+        "выбор",
+        "потому",
+        "что",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -60,6 +116,21 @@ class HiddenCheck:
     required_concepts: tuple[tuple[str, ...], ...]
 
 
+@dataclass(frozen=True)
+class SimilarityMatch:
+    modality: str
+    similarity: float
+
+    def public(self, item_id: str) -> dict[str, Any]:
+        return {
+            "signal": "cross_submission_similarity_review",
+            "modality": self.modality,
+            "scope": "progressive_response",
+            "item_id": item_id,
+            "similarity": round(self.similarity, 2),
+        }
+
+
 @dataclass
 class Attempt:
     attempt_id: str
@@ -76,6 +147,8 @@ class Attempt:
     score: float | None = None
     grade_state: str | None = None
     integrity_signals: list[str] = field(default_factory=list)
+    integrity_evidence: list[dict[str, Any]] = field(default_factory=list)
+    submitted_followups: dict[str, str] = field(default_factory=dict)
 
 
 TEMPLATES: dict[str, TemplateFamily] = {
@@ -272,9 +345,44 @@ class AssessmentService:
             signals.append("missing_progressive_explanation_review")
         if hidden_check_failed:
             signals.append("hidden_check_review")
+        submitted_followups = {
+            item.item_id: response.strip()
+            for item in attempt.items
+            if item.progressive and (response := (followups or {}).get(item.item_id, "")).strip()
+        }
+        similarity_evidence = self._find_similarity_evidence(attempt, submitted_followups)
+        if similarity_evidence:
+            signals.append("cross_submission_similarity_review")
+        attempt.integrity_evidence = similarity_evidence
+        attempt.submitted_followups = submitted_followups
         attempt.integrity_signals = signals
         attempt.submitted = True
         return attempt
+
+    def _find_similarity_evidence(
+        self, attempt: Attempt, submitted_followups: dict[str, str]
+    ) -> list[dict[str, Any]]:
+        evidence: list[dict[str, Any]] = []
+        for item in attempt.items:
+            response = submitted_followups.get(item.item_id)
+            if not response:
+                continue
+            for previous in self.attempts.values():
+                if previous.attempt_id == attempt.attempt_id or not previous.submitted:
+                    continue
+                for previous_item in previous.items:
+                    if previous_item.family_id != item.family_id:
+                        continue
+                    previous_response = previous.submitted_followups.get(previous_item.item_id)
+                    if not previous_response:
+                        continue
+                    match = _submission_similarity(response, previous_response)
+                    if match is not None:
+                        evidence.append(match.public(item.item_id))
+                        break
+                if evidence and evidence[-1]["item_id"] == item.item_id:
+                    break
+        return evidence
 
 
 def _passes_hidden_check(response: str, check: HiddenCheck) -> bool:
@@ -283,6 +391,54 @@ def _passes_hidden_check(response: str, check: HiddenCheck) -> bool:
         any(term.casefold() in normalized for term in concept_group)
         for concept_group in check.required_concepts
     )
+
+
+def _looks_like_code(value: str) -> bool:
+    return bool(
+        re.search(
+            r"[{};]|=>|\b(?:class|const|def|function|let|return|SELECT|FROM|WHERE)\b",
+            value,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _normalized_tokens(value: str) -> tuple[str, ...]:
+    if _looks_like_code(value):
+        without_comments = _CODE_COMMENT_PATTERN.sub(" ", value)
+        tokens: list[str] = []
+        for token in _CODE_TOKEN_PATTERN.findall(without_comments):
+            folded = token.casefold()
+            if folded.replace(".", "", 1).isdigit():
+                tokens.append("<number>")
+            elif re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", token) and folded not in _CODE_KEYWORDS:
+                tokens.append("<identifier>")
+            else:
+                tokens.append(folded)
+        return tuple(tokens)
+
+    normalized = " ".join(value.casefold().split())
+    return tuple(
+        token
+        for token in _TEXT_TOKEN_PATTERN.findall(normalized)
+        if token not in _TEXT_BOILERPLATE
+    )
+
+
+def _submission_similarity(left: str, right: str) -> SimilarityMatch | None:
+    left_tokens = _normalized_tokens(left)
+    right_tokens = _normalized_tokens(right)
+    if min(len(left_tokens), len(right_tokens)) < SIMILARITY_MIN_TOKENS:
+        return None
+    left_set = set(left_tokens)
+    right_set = set(right_tokens)
+    jaccard = len(left_set & right_set) / len(left_set | right_set)
+    sequence = SequenceMatcher(a=left_tokens, b=right_tokens, autojunk=False).ratio()
+    similarity = (jaccard * 0.4) + (sequence * 0.6)
+    if similarity < SIMILARITY_REVIEW_THRESHOLD:
+        return None
+    modality = "code" if _looks_like_code(left) or _looks_like_code(right) else "text"
+    return SimilarityMatch(modality, similarity)
 
 
 def public_attempt(attempt: Attempt) -> dict[str, Any]:
@@ -296,7 +452,16 @@ def public_attempt(attempt: Attempt) -> dict[str, Any]:
             {"item_id": item.item_id, "family_id": item.family_id, "domain": item.domain, "difficulty": item.difficulty, "prompt": item.prompt, "options": item.options, "progressive": item.progressive, "artifact": item.artifact}
             for item in attempt.items
         ],
-        **({"score": attempt.score, "grade_state": attempt.grade_state, "integrity_signals": attempt.integrity_signals} if attempt.submitted else {}),
+        **(
+            {
+                "score": attempt.score,
+                "grade_state": attempt.grade_state,
+                "integrity_signals": attempt.integrity_signals,
+                "integrity_evidence": attempt.integrity_evidence,
+            }
+            if attempt.submitted
+            else {}
+        ),
     }
 
 

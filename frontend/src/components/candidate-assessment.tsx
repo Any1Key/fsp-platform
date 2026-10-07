@@ -26,6 +26,14 @@ type AssessmentItem = {
   progressive: boolean;
 };
 
+type IntegrityEvidence = {
+  signal: "cross_submission_similarity_review";
+  modality: "text" | "code";
+  scope: "progressive_response";
+  item_id: string;
+  similarity: number;
+};
+
 type Attempt = {
   attempt_id: string;
   specialization: string;
@@ -35,6 +43,7 @@ type Attempt = {
   score?: number;
   grade_state?: "verified" | "not_confirmed";
   integrity_signals?: string[];
+  integrity_evidence?: IntegrityEvidence[];
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -182,6 +191,17 @@ export function CandidateAssessment({
                   ? `Уровень ${attempt.declared_grade} подтверждён и добавлен в Skill Passport.`
                   : `Заявленный уровень ${attempt.declared_grade} пока не подтверждён. Профиль остаётся видимым работодателям.`}
               </p>
+              {!!attempt.integrity_evidence?.length && (
+                <div className="assessmentReviewSignals" role="status">
+                  <strong>Сигналы для ручной проверки</strong>
+                  {attempt.integrity_evidence.map((evidence) => (
+                    <span key={`${evidence.item_id}-${evidence.signal}`}>
+                      {evidence.modality === "code" ? "Структурное сходство кода" : "Лексическое сходство текста"} · {Math.round(evidence.similarity * 100)}%
+                    </span>
+                  ))}
+                  <small>Это не автоматический отказ и не изменение результата.</small>
+                </div>
+              )}
             </div>
           )}
           <div className="assessmentSelection">
