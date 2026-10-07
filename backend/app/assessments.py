@@ -10,6 +10,7 @@ from __future__ import annotations
 import hmac
 import re
 import secrets
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from difflib import SequenceMatcher
@@ -263,6 +264,7 @@ class AssessmentService:
         *,
         now: datetime | None = None,
         canonical_exposure_window: timedelta = CANONICAL_EXPOSURE_WINDOW,
+        seed_factory: Callable[[], str] | None = None,
     ) -> None:
         if canonical_exposure_window <= timedelta(0):
             raise ValueError("canonical exposure window must be positive")
@@ -273,6 +275,7 @@ class AssessmentService:
         self.retired_families: set[tuple[str, str]] = set()
         self.canonical_exposure_window = canonical_exposure_window
         self._now_override = now
+        self._seed_factory = seed_factory or (lambda: secrets.token_hex(16))
 
     @property
     def now(self) -> datetime:
@@ -291,7 +294,7 @@ class AssessmentService:
         recent = [self.attempts[item] for item in self.history.get(candidate_id, [])]
         if recent and self.now - recent[-1].created_at < timedelta(days=RETEST_COOLDOWN_DAYS):
             raise AssessmentError("retest_locked_until_90_days")
-        seed = secrets.token_hex(16)
+        seed = self._seed_factory()
         families = _select_families(blueprint, seed)
         if recent:
             previous = {item.family_id for item in recent[-1].items}

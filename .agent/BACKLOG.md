@@ -46,7 +46,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] code/text similarity advisory signals
 - [x] delayed canonical-answer exposure policy
 - [x] no automatic AI-detector rejection
-- [ ] synthetic grade/discrimination validation scaffolding
+- [x] synthetic grade/discrimination validation scaffolding
 
 ## M05 — FSP evidence + Keycloak integration concept
 - [ ] registry port + synthetic adapter
