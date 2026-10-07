@@ -10,6 +10,7 @@ type Invitation = {
   company: { name: string };
   candidate: { display_name: string };
   created_at: string;
+  pipeline_stages: { title: string; required: boolean; estimated_minutes: number }[];
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -39,7 +40,7 @@ export function EmployerInvitations({ token, refreshKey = 0 }: { token: string; 
       <div className="invitationHeading"><div><span className="authLabel">OUTREACH PIPELINE</span><h2 id="employer-invitations-title">Мои приглашения</h2><p>Статус обновляется после решения кандидата. Контакты доступны только в matched flow.</p></div><span className="profileStatus">{invitations.length} SENT</span></div>
       {invitations.length === 0 ? <div className="invitationEmpty"><strong>Приглашений пока нет</strong><span>Открой Talent Radar и выбери кандидата для salary-bearing offer.</span></div> : (
         <div className="employerInvitationRows">
-          {invitations.map((invitation) => <div className="employerInvitationRow" key={invitation.id}><div><strong>{invitation.candidate.display_name}</strong><small>{invitation.company.name} · {invitation.salary_min_rub.toLocaleString("ru-RU")}–{invitation.salary_max_rub.toLocaleString("ru-RU")} ₽</small></div><span className={`invitationState ${invitation.status}`}>{invitation.status === "pending" ? "Ждёт ответа" : invitation.status === "accepted" ? "MATCH CREATED" : "Отклонено"}</span></div>)}
+          {invitations.map((invitation) => <div className="employerInvitationRow" key={invitation.id}><div><strong>{invitation.candidate.display_name}</strong><small>{invitation.company.name} · {invitation.salary_min_rub.toLocaleString("ru-RU")}–{invitation.salary_max_rub.toLocaleString("ru-RU")} ₽ · {invitation.pipeline_stages.length} этапов в snapshot</small></div><span className={`invitationState ${invitation.status}`}>{invitation.status === "pending" ? "Ждёт ответа" : invitation.status === "accepted" ? "MATCH CREATED" : "Отклонено"}</span></div>)}
         </div>
       )}
     </section>

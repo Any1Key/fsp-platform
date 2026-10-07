@@ -87,7 +87,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] chat privacy/logging tests
 
 ## M09 — Employer hiring pipeline/tasks
-- [ ] ordered stage builder
+- [x] ordered stage builder
 - [ ] employer task authoring/versioning
 - [ ] candidate assignment/submission
 - [ ] employer-owned evaluation

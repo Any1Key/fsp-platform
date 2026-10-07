@@ -94,6 +94,22 @@ employer account email, tokens, candidate data, or protected attributes. A
 candidate receives `ROLE_REQUIRED`; invalid input uses `VALIDATION_ERROR`,
 `COMPANY_NAME_REQUIRED`, or `COMPANY_PROFILE_UPDATE_REQUIRED` as applicable.
 
+## Employer hiring pipeline
+
+Employer-only `GET` and `PUT /api/v1/employer/hiring-pipeline` configure the
+ordered stages attached to the current hiring need. A pipeline contains two to
+twelve stages. `platform_review` and `final_decision` are required boundary
+stages; employer stages can be inserted, removed and reordered. Each stage has
+an employer-facing `title`, `required` flag and estimated duration from 5 to
+480 minutes. The server derives ownership through the authenticated employer's
+company and rejects invalid boundary/order payloads without partially writing
+the replacement.
+
+Salary-bearing invitation responses include `pipeline_stages`, a safe snapshot
+of only stage type/title/required/duration captured when the invitation is
+created. This lets a candidate understand the expected process before
+accepting; task content, answers and contacts are not included.
+
 ## Internal chat
 
 The `/api/v1/chat/conversations` endpoints are available only to candidate and

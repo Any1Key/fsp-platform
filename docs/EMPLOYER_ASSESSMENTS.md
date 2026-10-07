@@ -16,6 +16,14 @@ A hiring need/vacancy can define ordered stages such as:
 
 Stages can be optional/required and reordered before candidates enter them.
 
+The current implementation exposes this configuration through the employer
+Hiring Pipeline builder. It persists a one-to-one pipeline for the hiring need,
+keeps the platform-review and final-decision boundary stages, and supports up
+to twelve ordered stages. New salary-bearing invitations receive a safe stage
+snapshot, which is shown to the candidate before the accept/decline decision.
+Detailed employer task authoring and candidate assignment remain subsequent
+M09 units.
+
 ## Employer task authoring
 
 Employer can:

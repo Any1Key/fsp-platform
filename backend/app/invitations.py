@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from .assessments import AssessmentService
 from .auth import Principal, sync_identity
 from .chat import create_conversation_for_match
+from .pipelines import pipeline_snapshot_for_company, snapshot_json
 
 InvitationAction = Literal["accepted", "declined"]
 
@@ -24,6 +25,7 @@ def _invitation_row(db: Session, invitation_id: str):
             "SELECT i.id, i.employer_identity_id, i.company_id, i.candidate_profile_id, "
             "i.salary_min_rub, i.salary_max_rub, i.offer_description, "
             "i.company_name_snapshot, i.contact_method_snapshot, i.status, "
+            "i.pipeline_snapshot, "
             "i.created_at, i.updated_at, i.responded_at, i.matched_at, i.contact_unlocked_at, "
             "cp.display_name AS candidate_display_name, tm.id AS match_id "
             "FROM invitation i "
@@ -36,6 +38,9 @@ def _invitation_row(db: Session, invitation_id: str):
 
 
 def _public_invitation(row) -> dict[str, Any]:
+    pipeline_stages = row["pipeline_snapshot"] or []
+    if isinstance(pipeline_stages, str):
+        pipeline_stages = json.loads(pipeline_stages)
     return {
         "id": row["id"],
         "status": row["status"],
@@ -57,6 +62,7 @@ def _public_invitation(row) -> dict[str, Any]:
         "matched_at": row["matched_at"],
         "contact_unlocked_at": row["contact_unlocked_at"],
         "match_id": row["match_id"],
+        "pipeline_stages": pipeline_stages,
     }
 
 
@@ -154,15 +160,16 @@ def create_invitation(
     if duplicate is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="invitation_already_pending")
 
+    pipeline_stages = pipeline_snapshot_for_company(db, company["id"])
     invitation_id = str(uuid4())
     db.execute(
         text(
             "INSERT INTO invitation ("
             "id, employer_identity_id, company_id, candidate_profile_id, salary_min_rub, "
-            "salary_max_rub, offer_description, company_name_snapshot, contact_method_snapshot"
+            "salary_max_rub, offer_description, company_name_snapshot, contact_method_snapshot, pipeline_snapshot"
             ") VALUES ("
             ":id, :employer_identity_id, :company_id, :candidate_profile_id, :salary_min_rub, "
-            ":salary_max_rub, :offer_description, :company_name_snapshot, :contact_method_snapshot"
+            ":salary_max_rub, :offer_description, :company_name_snapshot, :contact_method_snapshot, :pipeline_snapshot"
             ")"
         ),
         {
@@ -175,6 +182,7 @@ def create_invitation(
             "offer_description": offer_description.strip(),
             "company_name_snapshot": company["name"],
             "contact_method_snapshot": company["public_contact_method"],
+            "pipeline_snapshot": snapshot_json(pipeline_stages),
         },
     )
     db.commit()

@@ -116,6 +116,30 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "HIRING_NEED_UPDATE_REQUIRED",
         "At least one hiring need field is required.",
     ),
+    "hiring_pipeline_stage_count_invalid": (
+        "HIRING_PIPELINE_STAGE_COUNT_INVALID",
+        "A hiring pipeline must contain between two and twelve stages.",
+    ),
+    "hiring_pipeline_stage_type_invalid": (
+        "HIRING_PIPELINE_STAGE_TYPE_INVALID",
+        "The hiring pipeline stage type is not supported.",
+    ),
+    "hiring_pipeline_stage_title_required": (
+        "HIRING_PIPELINE_STAGE_TITLE_REQUIRED",
+        "Every hiring pipeline stage needs a title.",
+    ),
+    "hiring_pipeline_platform_review_required": (
+        "HIRING_PIPELINE_PLATFORM_REVIEW_REQUIRED",
+        "The Verified Skill Passport review is required in the pipeline.",
+    ),
+    "hiring_pipeline_final_decision_required": (
+        "HIRING_PIPELINE_FINAL_DECISION_REQUIRED",
+        "The final decision stage is required in the pipeline.",
+    ),
+    "hiring_pipeline_duration_invalid": (
+        "HIRING_PIPELINE_DURATION_INVALID",
+        "Stage duration must be between five and 480 minutes.",
+    ),
     "hiring_need_required_for_talent_radar": (
         "HIRING_NEED_REQUIRED_FOR_TALENT_RADAR",
         "Create a hiring need before opening Talent Radar.",

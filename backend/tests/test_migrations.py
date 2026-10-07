@@ -41,6 +41,8 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
             "privacy_request",
             "fsp_link",
             "fsp_achievement",
+            "hiring_pipeline",
+            "pipeline_stage",
             "alembic_version",
         } <= tables
         assert {
@@ -68,6 +70,9 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
             "canonical_skill_slugs",
             "result_score",
             "result_label",
+        }
+        assert "pipeline_snapshot" in {
+            column["name"] for column in inspect(engine).get_columns("invitation")
         }
 
         with engine.begin() as connection:

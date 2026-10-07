@@ -59,6 +59,7 @@ from .invitations import (
     respond_to_invitation,
 )
 from .minor_consent import get_document_status, upload_document
+from .pipelines import get_hiring_pipeline, update_hiring_pipeline
 from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 from .profile_pdf import render_profile_pdf
 from .protected_candidate import MinorState, get_protected_profile, update_protected_profile
@@ -74,7 +75,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "PUT", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
 
@@ -221,6 +222,21 @@ class InvitationCandidateResponse(BaseModel):
     display_name: str
 
 
+class PipelineStagePreviewResponse(BaseModel):
+    stage_type: Literal[
+        "platform_review",
+        "employer_task",
+        "questionnaire",
+        "portfolio_review",
+        "interview",
+        "custom",
+        "final_decision",
+    ]
+    title: str
+    required: bool
+    estimated_minutes: int
+
+
 class InvitationResponse(BaseModel):
     id: str
     status: Literal["pending", "accepted", "declined"]
@@ -235,6 +251,7 @@ class InvitationResponse(BaseModel):
     matched_at: datetime | None
     contact_unlocked_at: datetime | None
     match_id: str | None
+    pipeline_stages: list[PipelineStagePreviewResponse]
 
 
 class InvitationActionRequest(BaseModel):
@@ -346,6 +363,45 @@ class HiringNeedResponse(BaseModel):
     preferred_skills: list[HiringNeedSkillResponse]
     created_at: datetime
     updated_at: datetime
+
+
+PipelineStageType = Literal[
+    "platform_review",
+    "employer_task",
+    "questionnaire",
+    "portfolio_review",
+    "interview",
+    "custom",
+    "final_decision",
+]
+
+
+class PipelineStageRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    stage_type: PipelineStageType
+    title: str = Field(min_length=1, max_length=120)
+    required: bool = True
+    estimated_minutes: int = Field(ge=5, le=480)
+
+
+class PipelineStageResponse(PipelineStageRequest):
+    id: str
+    position: int
+
+
+class HiringPipelineRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    stages: list[PipelineStageRequest] = Field(min_length=2, max_length=12)
+
+
+class HiringPipelineResponse(BaseModel):
+    id: str
+    hiring_need_id: str
+    created_at: datetime
+    updated_at: datetime
+    stages: list[PipelineStageResponse]
 
 
 class CandidateDashboardProfileResponse(BaseModel):
@@ -879,6 +935,48 @@ def update_employer_hiring_need(
     if not payload:
         raise HTTPException(status_code=422, detail="hiring_need_update_required")
     return HiringNeedResponse.model_validate(update_hiring_need(db, principal, payload))
+
+
+@app.get(
+    "/api/v1/employer/hiring-pipeline",
+    tags=["employer hiring pipeline"],
+    response_model=HiringPipelineResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Hiring need not found"},
+    },
+)
+def employer_hiring_pipeline(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> HiringPipelineResponse:
+    """Return the employer-owned ordered hiring pipeline."""
+
+    return HiringPipelineResponse.model_validate(get_hiring_pipeline(db, principal))
+
+
+@app.put(
+    "/api/v1/employer/hiring-pipeline",
+    tags=["employer hiring pipeline"],
+    response_model=HiringPipelineResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Hiring need not found"},
+        422: {"model": ErrorResponse, "description": "Pipeline stages are invalid"},
+    },
+)
+def update_employer_hiring_pipeline(
+    request: HiringPipelineRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> HiringPipelineResponse:
+    return HiringPipelineResponse.model_validate(
+        update_hiring_pipeline(
+            db,
+            principal,
+            [stage.model_dump() for stage in request.stages],
+        )
+    )
 
 
 @app.get(

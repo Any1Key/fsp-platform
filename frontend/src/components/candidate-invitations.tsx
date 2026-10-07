@@ -11,6 +11,7 @@ type Invitation = {
   company: { name: string; contact_method: string };
   created_at: string;
   matched_at: string | null;
+  pipeline_stages: { stage_type: string; title: string; required: boolean; estimated_minutes: number }[];
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -91,6 +92,14 @@ export function CandidateInvitations({ token }: { token: string }) {
                 <strong className="invitationSalary">{invitation.salary_min_rub.toLocaleString("ru-RU")}–{invitation.salary_max_rub.toLocaleString("ru-RU")} ₽</strong>
               </div>
               <p className="invitationOffer">{invitation.offer_description}</p>
+              {invitation.pipeline_stages.length > 0 && (
+                <div className="invitationPipeline">
+                  <strong>Что будет после match</strong>
+                  <ol>
+                    {invitation.pipeline_stages.map((stage, index) => <li key={`${invitation.id}-${index}`}><span>{stage.title}</span><small>{stage.required ? "Обязательный" : "Опциональный"} · около {stage.estimated_minutes} мин.</small></li>)}
+                  </ol>
+                </div>
+              )}
               {invitation.status === "pending" && (
                 <div className="invitationActions">
                   <button className="authButton primaryButton" disabled={busyId === invitation.id} onClick={() => void respond(invitation.id, "accepted")}>Принять · создать match</button>

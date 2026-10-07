@@ -129,6 +129,10 @@ membership-scoped. Report audit metadata excludes message and contact contents.
 ## Employer hiring pipeline
 - hiring_pipeline
 - pipeline_stage (ordered/type/required)
+- `hiring_pipeline` is one-to-one with the current `hiring_need`; `pipeline_stage`
+  stores position, employer-facing title, required/optional state and estimated
+  duration. The platform-review and final-decision boundary stages are required
+  by the domain service.
 - employer_task_template/version
 - task_assignment
 - task_submission

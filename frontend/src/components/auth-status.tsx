@@ -11,6 +11,7 @@ import { CandidateAssessment } from "./candidate-assessment";
 import { CandidateFsp } from "./candidate-fsp";
 import { EmployerCompanyProfile } from "./employer-company-profile";
 import { EmployerHiringNeed } from "./employer-hiring-need";
+import { EmployerHiringPipeline } from "./employer-hiring-pipeline";
 import { EmployerTalentRadar } from "./employer-talent-radar";
 import { CandidateInvitations } from "./candidate-invitations";
 import { EmployerInvitations } from "./employer-invitations";
@@ -171,6 +172,7 @@ export function AuthStatus() {
           <>
             <EmployerCompanyProfile token={keycloak.current?.token ?? ""} />
             <EmployerHiringNeed token={keycloak.current?.token ?? ""} onSaved={() => setTalentRadarRefreshKey((value) => value + 1)} />
+            <EmployerHiringPipeline token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} />
             <EmployerTalentRadar token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} onInvitationCreated={() => setInvitationRefreshKey((value) => value + 1)} />
             <EmployerInvitations token={keycloak.current?.token ?? ""} refreshKey={invitationRefreshKey} />
             <InternalChat token={keycloak.current?.token ?? ""} />
