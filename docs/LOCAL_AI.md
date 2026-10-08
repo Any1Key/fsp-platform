@@ -106,6 +106,13 @@ remains available. Possible future adapters:
 
 The exact runtime/model is replaceable. Prefer a small quantized instruction model (roughly 3B–8B class) if acceptable on the actual Synology CPU. Model inference is asynchronous, single-worker, rate-limited, and timeout-bounded.
 
+The AI-off fallback is an end-to-end manual path, not only a status message:
+the disabled suggestion response is immediate, has `status=disabled`,
+`draft=null`, and no `job_id`; it does not enqueue a local-AI job. The employer
+can then create, save, and explicitly publish a task through the normal
+employer-task API/UI. This path is covered by
+`test_ai_off_fallback_keeps_manual_task_authoring_available_without_queueing`.
+
 ## Fallback behavior
 
 If the local model is absent, slow or fails:

@@ -61,10 +61,14 @@ def _poll_suggestion(client, headers, response):
     assert response.status_code == 202, response.text
     body = response.json()
     assert body["job_id"]
-    for _ in range(100):
+    # The job is deliberately asynchronous.  Keep a bounded wait that is
+    # longer than the old one-second budget so a busy verification host can
+    # schedule the single local-AI worker without making the contract flaky.
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
         if body["status"] not in {"queued", "running"}:
             return body
-        time.sleep(0.01)
+        time.sleep(0.05)
         polled = client.get(
             f"/api/v1/employer/tasks/draft-suggestion/jobs/{body['job_id']}",
             headers=headers,
@@ -197,6 +201,42 @@ def test_employer_task_draft_suggestion_exposes_ai_off_fallback(auth_context):
         "approved_examples": [],
         "feedback_history": [],
     }
+
+
+def test_ai_off_fallback_keeps_manual_task_authoring_available_without_queueing(
+    auth_context, monkeypatch
+):
+    client, private_key, settings = auth_context
+    employer = _employer(client, private_key, settings, sub=f"local-ai-off-manual-{uuid4().hex}")
+    stage_id = _employer_task_stage(client, employer)
+
+    def fail_if_queued(*args, **kwargs):
+        del args, kwargs
+        raise AssertionError("AI-off mode must not create an async local-AI job")
+
+    monkeypatch.setattr(main, "enqueue_task_draft_job", fail_if_queued)
+    suggestion = client.post(
+        "/api/v1/employer/tasks/draft-suggestion",
+        headers=employer,
+    )
+    assert suggestion.status_code == 200, suggestion.text
+    assert suggestion.json()["status"] == "disabled"
+    assert suggestion.json()["draft"] is None
+    assert suggestion.json()["job_id"] is None
+
+    created = client.post(
+        "/api/v1/employer/tasks",
+        headers=employer,
+        json={**_content("Manual fallback task"), "pipeline_stage_id": stage_id},
+    )
+    assert created.status_code == 201, created.text
+    task_id = created.json()["id"]
+    assert created.json()["status"] == "draft"
+
+    published = client.post(f"/api/v1/employer/tasks/{task_id}/publish", headers=employer)
+    assert published.status_code == 200, published.text
+    assert published.json()["status"] == "published"
+    assert published.json()["current_version"]["title"] == "Manual fallback task"
 
 
 def test_employer_can_approve_edit_or_reject_a_draft_and_history_is_scoped(auth_context, monkeypatch):

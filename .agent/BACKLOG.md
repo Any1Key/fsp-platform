@@ -100,7 +100,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] constrained JSON task/rubric draft
 - [x] employer approve/edit/reject feedback
 - [x] async jobs/rate limit/timeout
-- [ ] AI-off fallback tests
+- [x] AI-off fallback tests
 - [ ] optional CPU-local runtime profile if host supports it
 
 ## M11 — Vacancies/applications/challenges
