@@ -93,6 +93,29 @@ services:
       retries: 20
     restart: unless-stopped
 
+  # Optional CPU-only local model runtime. Core services deliberately do not
+  # depend on this profile so AI-off startup remains the default path.
+  local-ai:
+    image: ${LOCAL_AI_IMAGE:-ollama/ollama:0.40.0}
+    profiles: ["local-ai"]
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_KEEP_ALIVE: ${LOCAL_AI_KEEP_ALIVE:-5m}
+    volumes:
+      - local-ai-data:/root/.ollama
+    ports:
+      - "${LOCAL_AI_PORT:-11434}:11434"
+    cpus: ${LOCAL_AI_CPU_LIMIT:-4.0}
+    mem_limit: ${LOCAL_AI_MEMORY_LIMIT:-8g}
+    healthcheck:
+      test: ["CMD-SHELL", "OLLAMA_HOST=127.0.0.1:11434 ollama list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend
@@ -138,3 +161,4 @@ volumes:
   app-db-data:
   keycloak-db-data:
   backend-private-data:
+  local-ai-data:

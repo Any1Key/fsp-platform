@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.PHONY: up down build logs ps verify screenshots doctor autonomous demo-reset resource-baseline
+.PHONY: up down build logs ps verify screenshots doctor autonomous demo-reset resource-baseline local-ai-up
 
 up:
 	docker compose up -d
@@ -23,3 +23,5 @@ demo-reset:
 	./scripts/demo-reset.sh
 resource-baseline:
 	./scripts/resource-baseline.sh
+local-ai-up:
+	./scripts/local-ai-profile.sh

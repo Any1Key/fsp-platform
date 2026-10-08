@@ -11,6 +11,14 @@ The application must not require a GPU and should be demonstrable on approximate
 
 Measure the **core profile** separately from optional local-AI generation. Core includes frontend, backend, PostgreSQL, Keycloak and required supporting services.
 
+The repository also defines an opt-in `local-ai` Compose profile. It is
+CPU-bounded to four CPUs and 8 GiB by default, with one parallel request and
+one loaded model. It is not started by `docker compose up` and is intentionally
+excluded from `scripts/resource-baseline.sh`; use the local-AI runbook in
+`docs/LOCAL_AI.md` and capture its container stats separately. A local-model
+smoke run is operational evidence for the optional profile, not evidence that
+the core system requires AI or a GPU.
+
 ## Load scenarios
 
 ### Smoke

@@ -101,7 +101,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] employer approve/edit/reject feedback
 - [x] async jobs/rate limit/timeout
 - [x] AI-off fallback tests
-- [ ] optional CPU-local runtime profile if host supports it
+- [x] optional CPU-local runtime profile if host supports it
 
 ## M11 — Vacancies/applications/challenges
 - [ ] vacancy CRUD + mandatory salary

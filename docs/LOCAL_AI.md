@@ -106,6 +106,41 @@ remains available. Possible future adapters:
 
 The exact runtime/model is replaceable. Prefer a small quantized instruction model (roughly 3B–8B class) if acceptable on the actual Synology CPU. Model inference is asynchronous, single-worker, rate-limited, and timeout-bounded.
 
+### Optional Compose runtime profile
+
+The repository includes an explicit `local-ai` Compose profile backed by the
+pinned CPU-capable `ollama/ollama:0.40.0` image. It is not part of the core
+startup path and the backend has no Compose dependency on it. The profile
+defaults to four CPUs, 8 GiB memory, one parallel request and one loaded model;
+these are resource ceilings, not a claim that a particular model will meet a
+latency target. No GPU, CUDA, device request or vendor runtime is configured.
+
+To use it on a host with enough CPU/RAM, copy the optional values into `.env`,
+choose a locally approved model, and run:
+
+```sh
+# .env
+LOCAL_AI_ENABLED=true
+LOCAL_AI_MODEL=<approved-local-model>
+
+# shell
+make local-ai-up
+```
+
+`make local-ai-up` starts the core services and the optional service, pulls
+only the configured model into the separate `local-ai-data` volume, and
+restarts the backend so the enabled adapter can receive new jobs. It does not
+send candidate resumes, chat, contact details or minor documents to the model.
+If the model is missing or the runtime is stopped, the existing job failure
+path and manual task authoring remain available. To return to the default
+AI-off deployment, set `LOCAL_AI_ENABLED=false` and restart the backend; the
+core profile does not require stopping or deleting the optional volume.
+
+The optional service is deliberately excluded from
+`scripts/resource-baseline.sh`. Measure it separately with
+`docker compose --profile local-ai ps` and `docker stats`; core CPU/RAM and
+local-model generation latency must not be combined into one release claim.
+
 The AI-off fallback is an end-to-end manual path, not only a status message:
 the disabled suggestion response is immediate, has `status=disabled`,
 `draft=null`, and no `job_id`; it does not enqueue a local-AI job. The employer
