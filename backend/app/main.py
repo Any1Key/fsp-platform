@@ -90,6 +90,11 @@ from .vacancies import (
     publish_vacancy,
     update_vacancy,
 )
+from .vacancy_applications import (
+    apply_to_vacancy,
+    list_candidate_applications,
+    list_published_vacancies,
+)
 
 app = FastAPI(
     title="FSP Talent Platform API",
@@ -276,6 +281,57 @@ class VacancyResponse(BaseModel):
     published_at: datetime | None
     created_at: datetime
     updated_at: datetime
+
+
+class CandidateVacancyResponse(BaseModel):
+    id: str
+    title: str
+    description: str
+    company_name: str
+    location: str | None
+    work_mode: Literal["office", "hybrid", "remote"] | None
+    employment_type: Literal["full_time", "part_time", "project"] | None
+    salary_min_rub: int
+    salary_max_rub: int
+    specialization: VacancyTaxonomyResponse | None
+    grade: VacancyTaxonomyResponse | None
+    vacancy_status: Literal["published"]
+    published_at: datetime
+    application_id: str | None
+    application_status: Literal[
+        "submitted", "reviewing", "shortlisted", "rejected", "withdrawn"
+    ] | None
+    applied_at: datetime | None
+
+
+class CandidateApplicationVacancyResponse(BaseModel):
+    id: str
+    title: str
+    description: str
+    company_name: str
+    location: str | None
+    work_mode: Literal["office", "hybrid", "remote"] | None
+    employment_type: Literal["full_time", "part_time", "project"] | None
+    salary_min_rub: int
+    salary_max_rub: int
+    specialization: VacancyTaxonomyResponse | None
+    grade: VacancyTaxonomyResponse | None
+    vacancy_status: Literal["draft", "published", "closed"]
+    published_at: datetime | None
+
+
+class ApplicationStatusHistoryResponse(BaseModel):
+    status: Literal["submitted", "reviewing", "shortlisted", "rejected", "withdrawn"]
+    changed_at: datetime
+
+
+class CandidateApplicationResponse(BaseModel):
+    id: str
+    status: Literal["submitted", "reviewing", "shortlisted", "rejected", "withdrawn"]
+    applied_at: datetime
+    updated_at: datetime
+    vacancy: CandidateApplicationVacancyResponse
+    status_history: list[ApplicationStatusHistoryResponse]
 
 
 class CreateInvitationRequest(BaseModel):
@@ -1240,6 +1296,61 @@ def close_employer_vacancy(
     """Close instead of physically deleting so future application history survives."""
 
     return VacancyResponse.model_validate(close_vacancy(db, principal, vacancy_id))
+
+
+@app.get(
+    "/api/v1/candidate/vacancies",
+    tags=["candidate vacancies"],
+    response_model=list[CandidateVacancyResponse],
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_vacancies(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[CandidateVacancyResponse]:
+    """Return published vacancies with only the candidate's own application state."""
+
+    return [
+        CandidateVacancyResponse.model_validate(item)
+        for item in list_published_vacancies(db, principal)
+    ]
+
+
+@app.post(
+    "/api/v1/candidate/vacancies/{vacancy_id}/applications",
+    tags=["candidate applications"],
+    response_model=CandidateApplicationResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        404: {"model": ErrorResponse, "description": "Vacancy not found"},
+        409: {"model": ErrorResponse, "description": "Application cannot be created"},
+    },
+)
+def candidate_apply_to_vacancy(
+    vacancy_id: str,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CandidateApplicationResponse:
+    return CandidateApplicationResponse.model_validate(
+        apply_to_vacancy(db, principal, vacancy_id)
+    )
+
+
+@app.get(
+    "/api/v1/candidate/applications",
+    tags=["candidate applications"],
+    response_model=list[CandidateApplicationResponse],
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_applications(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[CandidateApplicationResponse]:
+    return [
+        CandidateApplicationResponse.model_validate(item)
+        for item in list_candidate_applications(db, principal)
+    ]
 
 
 @app.get(

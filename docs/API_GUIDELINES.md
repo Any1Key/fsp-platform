@@ -94,6 +94,21 @@ employer account email, tokens, candidate data, or protected attributes. A
 candidate receives `ROLE_REQUIRED`; invalid input uses `VALIDATION_ERROR`,
 `COMPANY_NAME_REQUIRED`, or `COMPANY_PROFILE_UPDATE_REQUIRED` as applicable.
 
+## Candidate vacancies and applications
+
+The candidate-only `GET /api/v1/candidate/vacancies` route returns published
+salary-bearing vacancies and the authenticated candidate's own application
+state. `POST /api/v1/candidate/vacancies/{vacancy_id}/applications` requires
+processing consent, accepts only a currently published vacancy, and creates a
+single `submitted` application. A duplicate returns `APPLICATION_EXISTS`; a
+draft or closed vacancy returns `VACANCY_NOT_PUBLISHED`.
+
+`GET /api/v1/candidate/applications` returns only the authenticated candidate's
+applications, with the safe vacancy summary, current status and append-only
+status history. These routes never expose employer contact details or
+protected candidate fields. An application alone does not create a match or
+unlock chat; that transition remains behind the accepted-application boundary.
+
 ## Employer hiring pipeline
 
 Employer-only `GET` and `PUT /api/v1/employer/hiring-pipeline` configure the

@@ -140,6 +140,14 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "VACANCY_CLOSED",
         "A closed vacancy cannot be published again.",
     ),
+    "vacancy_not_published": (
+        "VACANCY_NOT_PUBLISHED",
+        "Applications can be submitted only to published vacancies.",
+    ),
+    "application_exists": (
+        "APPLICATION_EXISTS",
+        "You have already applied to this vacancy.",
+    ),
     "hiring_pipeline_stage_count_invalid": (
         "HIRING_PIPELINE_STAGE_COUNT_INVALID",
         "A hiring pipeline must contain between two and twelve stages.",

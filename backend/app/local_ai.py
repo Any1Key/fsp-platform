@@ -500,6 +500,52 @@ def run_task_draft_job(
         db.commit()
 
 
+def _mark_task_draft_job_failed(job_id: str, bind: Any) -> None:
+    """Best-effort terminal state for failures outside the job body."""
+
+    factory = sessionmaker(bind=bind, autoflush=False, expire_on_commit=False)
+    try:
+        with factory() as db:
+            db.execute(
+                text(
+                    "UPDATE employer_task_draft_job SET status = 'failed', "
+                    "result = :result, completed_at = :completed_at "
+                    "WHERE id = :job_id AND status IN ('queued', 'running')"
+                ),
+                {
+                    "job_id": job_id,
+                    "result": json.dumps(
+                        _result_payload(
+                            LocalAiDraftResult(
+                                status="failed",
+                                source="local",
+                                reason="local_ai_job_failed",
+                            )
+                        ),
+                        ensure_ascii=False,
+                    ),
+                    "completed_at": datetime.now(UTC),
+                },
+            )
+            db.commit()
+    except Exception:  # noqa: BLE001  # Failure reporting must not poison the worker.
+        return
+
+
+def _run_task_draft_job_safely(
+    job_id: str,
+    adapter: LocalAiPort,
+    bind: Any,
+    timeout_seconds: float,
+) -> None:
+    """Keep an unexpected job-boundary error from killing the shared worker."""
+
+    try:
+        run_task_draft_job(job_id, adapter, bind, timeout_seconds)
+    except Exception:  # noqa: BLE001  # Optional AI work must fail closed.
+        _mark_task_draft_job_failed(job_id, bind)
+
+
 def schedule_task_draft_job(
     job_id: str,
     adapter: LocalAiPort,
@@ -508,7 +554,9 @@ def schedule_task_draft_job(
 ) -> None:
     """Submit optional work to the single CPU-local inference worker."""
 
-    _LOCAL_AI_EXECUTOR.submit(run_task_draft_job, job_id, adapter, bind, timeout_seconds)
+    _LOCAL_AI_EXECUTOR.submit(
+        _run_task_draft_job_safely, job_id, adapter, bind, timeout_seconds
+    )
 
 
 def build_local_ai_port() -> LocalAiPort:

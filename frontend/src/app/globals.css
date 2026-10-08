@@ -556,6 +556,45 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .vacancyFooter small { max-width: 55%; color: #b7b7c1; font-size: 9px; line-height: 1.5; }
 .vacancyActions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .vacancyActions .authButton { padding: 8px 10px; font-size: 9px; }
+.candidateVacanciesPanel {
+  flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14);
+  padding-top: 16px; color: #ededed;
+}
+.candidateVacanciesPanel.muted { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.candidateVacanciesHeading, .candidateApplicationsHeading { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.candidateVacanciesHeading > div, .candidateApplicationsHeading > div { display: grid; gap: 5px; }
+.candidateVacanciesHeading h2, .candidateApplicationsHeading h3 { margin: 0; font-size: 15px; }
+.candidateVacanciesHeading p { margin: 0; color: #b7b7c1; font-size: 10px; line-height: 1.5; }
+.candidateVacanciesLayout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr); gap: 12px; align-items: start; }
+.candidateVacancyList, .candidateApplicationsPanel { display: grid; gap: 9px; min-width: 0; }
+.candidateVacancyCard, .candidateApplicationCard {
+  display: grid; gap: 10px; border: 1px solid rgba(169,161,255,.26); border-radius: 13px;
+  padding: 13px; background: rgba(27,28,33,.42);
+}
+.candidateVacancyCardTop { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.candidateVacancyCardTop > div { min-width: 0; }
+.candidateVacancyCompany { display: block; color: #a9a1ff; font-size: 9px; letter-spacing: .04em; }
+.candidateVacancyCard h3 { margin: 5px 0 0; font-size: 13px; overflow-wrap: anywhere; }
+.candidateVacancySalary { color: #8be0b2; font-size: 11px; white-space: nowrap; }
+.candidateVacancyMeta { display: flex; flex-wrap: wrap; gap: 6px; }
+.candidateVacancyMeta span { border: 1px solid rgba(169,161,255,.25); border-radius: 999px; padding: 5px 7px; color: #c3bdff; font-size: 8px; }
+.candidateVacancyCard p { margin: 0; color: #d5d5dc; font-size: 10px; line-height: 1.55; white-space: pre-line; }
+.candidateVacancyFooter { display: flex; justify-content: space-between; gap: 10px; align-items: center; border-top: 1px solid rgba(255,255,255,.08); padding-top: 9px; }
+.candidateVacancyFooter .authButton { padding: 8px 9px; font-size: 9px; }
+.candidateVacancyHint, .candidateVacanciesMessage, .candidateApplicationCard small { color: #b7b7c1; font-size: 9px; line-height: 1.45; }
+.candidateApplicationStatus { display: inline-flex; width: fit-content; border-radius: 999px; padding: 5px 7px; font-size: 8px; letter-spacing: .03em; }
+.candidateApplicationStatus.submitted, .candidateApplicationStatus.reviewing { color: #ffd28a; background: rgba(255,210,138,.12); }
+.candidateApplicationStatus.shortlisted { color: #8be0b2; background: rgba(139,224,178,.12); }
+.candidateApplicationStatus.rejected, .candidateApplicationStatus.withdrawn { color: #ffb6bd; background: rgba(255,182,189,.12); }
+.candidateApplicationsPanel { border: 1px solid rgba(169,161,255,.2); border-radius: 13px; padding: 13px; background: rgba(27,28,33,.28); }
+.candidateApplicationCard { gap: 8px; padding: 11px; background: rgba(255,255,255,.025); }
+.candidateApplicationCard > div:first-child { display: grid; gap: 4px; }
+.candidateApplicationCard > div:first-child strong { font-size: 11px; overflow-wrap: anywhere; }
+.candidateApplicationTimeline { display: grid; gap: 5px; border-top: 1px solid rgba(255,255,255,.08); padding-top: 8px; }
+.candidateApplicationTimeline span { display: flex; align-items: center; gap: 6px; color: #d5d5dc; font-size: 9px; }
+.candidateApplicationTimeline i { width: 5px; height: 5px; border-radius: 50%; background: #a9a1ff; }
+.candidateVacancyEmpty { display: grid; gap: 5px; border: 1px dashed rgba(169,161,255,.42); border-radius: 12px; padding: 15px 12px; color: #d5d5dc; font-size: 10px; line-height: 1.45; }
+.candidateVacancyEmpty span { color: #b7b7c1; font-size: 9px; }
 .radarPanel {
   flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14);
   padding-top: 16px; color: #ededed;
@@ -683,6 +722,11 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .vacancyFooter small { max-width: none; }
   .vacancyActions { width: 100%; justify-content: stretch; flex-direction: column; }
   .vacancyActions .authButton { width: 100%; }
+  .candidateVacanciesHeading, .candidateApplicationsHeading { align-items: flex-start; flex-direction: column; }
+  .candidateVacanciesLayout { grid-template-columns: 1fr; }
+  .candidateVacancyCardTop, .candidateVacancyFooter { align-items: flex-start; flex-direction: column; }
+  .candidateVacancySalary { white-space: normal; }
+  .candidateVacancyFooter .authButton { width: 100%; }
   .radarHeading, .radarFooter { align-items: flex-start; flex-direction: column; }
   .radarFilters { grid-template-columns: 1fr; }
   .radarFilters .radarCheckbox { grid-column: auto; }

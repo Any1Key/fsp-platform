@@ -18,6 +18,7 @@ import { EmployerTaskEvaluations } from "./employer-task-evaluations";
 import { EmployerTalentRadar } from "./employer-talent-radar";
 import { CandidateInvitations } from "./candidate-invitations";
 import { CandidateTaskAssignments } from "./candidate-task-assignments";
+import { CandidateVacancies } from "./candidate-vacancies";
 import { EmployerInvitations } from "./employer-invitations";
 import { InternalChat } from "./internal-chat";
 
@@ -160,6 +161,7 @@ export function AuthStatus() {
         {auth.session.role === "candidate" && (
           <>
             <CandidateDashboard token={keycloak.current?.token ?? ""} refreshKey={assessmentRefreshKey} />
+            <CandidateVacancies token={keycloak.current?.token ?? ""} />
             <CandidateInvitations token={keycloak.current?.token ?? ""} onMatchCreated={() => setTaskRefreshKey((value) => value + 1)} />
             <CandidateTaskAssignments token={keycloak.current?.token ?? ""} refreshKey={taskRefreshKey} />
             <InternalChat token={keycloak.current?.token ?? ""} />

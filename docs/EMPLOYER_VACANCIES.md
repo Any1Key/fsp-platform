@@ -16,9 +16,10 @@ server applies this rule even if a client skips browser validation and returns
 
 The vacancy currently stores title, description, optional location/work mode/
 employment type, optional taxonomy specialization and grade, salary, status,
-and lifecycle timestamps. Published rows are intentionally not exposed through
-a candidate route in this slice; candidate browse and application handling are
-the next M11 work units.
+and lifecycle timestamps. Published rows are exposed through the candidate-facing
+browse route described in `docs/CANDIDATE_VACANCIES.md`. Employer-side
+incoming-application review and the accepted-application match transition remain
+later M11 work units.
 
 Vacancies are scoped through the authenticated employer's company. A different
 employer receives the same not-found boundary for an item it does not own, and

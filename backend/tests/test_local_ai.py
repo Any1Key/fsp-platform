@@ -1,5 +1,6 @@
 import asyncio
 import json
+import threading
 import time
 from uuid import uuid4
 
@@ -7,7 +8,7 @@ import pytest
 from test_employer_tasks import _content, _employer_task_stage
 from test_invitations import _candidate, _employer
 
-from app import main
+from app import local_ai, main
 from app.local_ai import (
     DisabledLocalAiAdapter,
     EmployerTaskDraftContext,
@@ -525,3 +526,39 @@ def test_enabled_local_ai_timeout_is_a_failed_job_with_manual_fallback(auth_cont
     assert result["reason"] == "local_ai_timeout"
     assert result["draft"] is None
     assert client.get("/api/v1/employer/tasks", headers=employer).json() == []
+
+
+def test_local_ai_worker_failure_does_not_leave_job_queued_or_poison_executor(
+    auth_context, monkeypatch
+):
+    client, private_key, settings = auth_context
+    employer = _employer(client, private_key, settings, sub=f"local-ai-worker-{uuid4().hex}")
+    assert client.post("/api/v1/employer/hiring-need", headers=employer, json=_need()).status_code == 201
+
+    class FastAdapter:
+        async def propose_task_draft(self, context):
+            del context
+            return LocalAiDraftResult(status="completed", source="local", draft=_draft())
+
+    monkeypatch.setattr(main, "local_ai_port", FastAdapter())
+    original_runner = local_ai.run_task_draft_job
+    runner_failed = threading.Event()
+
+    def crash_runner(*args, **kwargs):
+        del args, kwargs
+        runner_failed.set()
+        raise RuntimeError("simulated worker boundary failure")
+
+    monkeypatch.setattr(local_ai, "run_task_draft_job", crash_runner)
+    first = client.post("/api/v1/employer/tasks/draft-suggestion", headers=employer)
+    assert first.status_code == 202
+    assert runner_failed.wait(timeout=10)
+
+    monkeypatch.setattr(local_ai, "run_task_draft_job", original_runner)
+    failed = _poll_suggestion(client, employer, first)
+    assert failed["status"] == "failed"
+    assert failed["reason"] == "local_ai_job_failed"
+
+    second = client.post("/api/v1/employer/tasks/draft-suggestion", headers=employer)
+    completed = _poll_suggestion(client, employer, second)
+    assert completed["status"] == "completed"

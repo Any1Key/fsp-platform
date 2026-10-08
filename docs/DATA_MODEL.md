@@ -125,8 +125,11 @@ membership-scoped. Report audit metadata excludes message and contact contents.
   draft/published/closed status, publication timestamp and audit timestamps.
 - salary min/max RUB is constrained by `0 < min <= max` at both the API and
   database boundaries.
-- application
-- application status history
+- `application`: vacancy, candidate profile, current status and lifecycle
+  timestamps; one candidate can have at most one application for a vacancy.
+- `application_status_history`: append-only status entries for the
+  candidate-visible application timeline. The first entry is `submitted`;
+  employer review transitions are a later M11 slice.
 - match event if accepted
 
 ## Employer hiring pipeline

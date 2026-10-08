@@ -105,7 +105,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 
 ## M11 — Vacancies/applications/challenges
 - [x] vacancy CRUD + mandatory salary
-- [ ] candidate vacancy list/application/status
+- [x] candidate vacancy list/application/status
 - [ ] accepted application → match
 - [ ] periodic short challenges
 - [ ] evidence freshness
