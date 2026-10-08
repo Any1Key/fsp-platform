@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from sqlalchemy import create_engine, text
@@ -99,6 +100,8 @@ def test_periodic_challenge_runs_end_to_end_and_schedules_next_cycle(auth_contex
     assert released.json()["result"]["score"] == 90
     assert released.json()["result"]["rubric_scores"]
     assert released.json()["result"]["evidence_fresh_until"]
+    assert released.json()["result"]["freshness"]["status"] == "fresh"
+    assert released.json()["result"]["freshness"]["days_remaining"] >= 6
 
     after = client.get("/api/v1/candidate/dashboard", headers=candidate)
     assert after.status_code == 200
@@ -110,6 +113,7 @@ def test_periodic_challenge_runs_end_to_end_and_schedules_next_cycle(auth_contex
     assert candidate_cycles[1]["result"]["score"] == 90
     assert candidate_cycles[1]["result"]["feedback"].startswith("Clear")
     assert "rubric_scores" not in candidate_cycles[1]["result"]
+    assert candidate_cycles[1]["result"]["freshness"]["status"] == "fresh"
 
     scheduled = client.post(
         f"/api/v1/candidate/challenges/{candidate_cycles[0]['id']}/submissions",
@@ -131,6 +135,71 @@ def test_periodic_challenge_runs_end_to_end_and_schedules_next_cycle(auth_contex
             assert connection.execute(text("SELECT COUNT(*) FROM challenge_result")).scalar_one() == 1
     finally:
         engine.dispose()
+
+
+def test_evidence_freshness_transitions_to_stale_without_mutating_score_or_dashboard(auth_context):
+    client, _private_key, settings, candidate, employer, match_id = _match(auth_context)
+    before = client.get("/api/v1/candidate/dashboard", headers=candidate)
+    created = client.post("/api/v1/employer/challenges", headers=employer, json=_challenge(match_id))
+    assert created.status_code == 201, created.text
+    assignment_id = created.json()["id"]
+    submitted = client.post(
+        f"/api/v1/candidate/challenges/{assignment_id}/submissions",
+        headers=candidate,
+        json={"response_text": "Bound the retry budget and added a rollback."},
+    )
+    assert submitted.status_code == 201, submitted.text
+    released = client.put(
+        f"/api/v1/employer/challenges/{assignment_id}/result",
+        headers=employer,
+        json={
+            "rubric_scores": [
+                {"name": "Diagnosis", "points_awarded": 50},
+                {"name": "Mitigation", "points_awarded": 30},
+            ],
+            "release_to_candidate": True,
+        },
+    )
+    assert released.status_code == 200, released.text
+    score = released.json()["result"]["score"]
+
+    engine = create_engine(settings.database_url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text("UPDATE challenge_result SET evidence_fresh_until = :expired"),
+                {"expired": datetime.now(UTC) + timedelta(days=2)},
+            )
+    finally:
+        engine.dispose()
+
+    candidate_cycles = client.get("/api/v1/candidate/challenges", headers=candidate)
+    assert candidate_cycles.status_code == 200, candidate_cycles.text
+    result = next(item["result"] for item in candidate_cycles.json() if item["result"] is not None)
+    assert result["score"] == score
+    assert result["freshness"]["status"] == "expiring"
+    assert 1 <= result["freshness"]["days_remaining"] <= 2
+
+    engine = create_engine(settings.database_url)
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text("UPDATE challenge_result SET evidence_fresh_until = :expired"),
+                {"expired": datetime.now(UTC) - timedelta(minutes=1)},
+            )
+    finally:
+        engine.dispose()
+
+    candidate_cycles = client.get("/api/v1/candidate/challenges", headers=candidate)
+    assert candidate_cycles.status_code == 200, candidate_cycles.text
+    result = next(item["result"] for item in candidate_cycles.json() if item["result"] is not None)
+    assert result["score"] == score
+    assert result["freshness"] == {
+        "status": "stale",
+        "days_remaining": 0,
+        "evidence_fresh_until": result["evidence_fresh_until"],
+    }
+    assert client.get("/api/v1/candidate/dashboard", headers=candidate).json() == before.json()
 
 
 def test_periodic_challenge_is_match_and_role_scoped(auth_context):

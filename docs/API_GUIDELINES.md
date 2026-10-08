@@ -208,6 +208,25 @@ confidence/freshness, gaps, and the bounded FSP contribution. Optional filters
 are `q`, `specialization`, `grade`, `skill`, `fsp` (`all`, `with_history`, or
 `without_history`), `include_unconfirmed`, and `limit`.
 
+## Periodic challenge freshness
+
+`GET /api/v1/candidate/challenges` and `GET /api/v1/employer/challenges` keep
+their existing role and match/company scope. A released challenge `result`
+contains `evidence_fresh_until` plus a server-derived `freshness` object:
+
+```json
+{
+  "status": "fresh",
+  "days_remaining": 12,
+  "evidence_fresh_until": "2026-10-20T12:00:00Z"
+}
+```
+
+The status is `expiring` when three or fewer days remain and `stale` after the
+timestamp passes. Candidate responses continue to omit rubric scores. This
+employer-specific freshness state is advisory and never mutates the platform
+grade, ProofMatch score, match, or chat permissions.
+
 The candidate projection includes only profiles with publication and
 discoverability consent. It exposes professional display fields only; email,
 OIDC subjects, date of birth/minor state, resumes, FSP participant IDs, and

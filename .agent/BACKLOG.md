@@ -108,7 +108,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] candidate vacancy list/application/status
 - [x] accepted application → match
 - [x] periodic short challenges
-- [ ] evidence freshness
+- [x] evidence freshness
 
 ## M12 — Differentiating UX
 - [ ] Verified Skill Passport

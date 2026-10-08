@@ -7,7 +7,7 @@ Periodic challenges are a separate M11 evidence loop from one-off hiring-pipelin
 1. An employer creates a 5–20 minute challenge for one of its matched candidates and chooses a cadence from 1 to 90 days.
 2. Cycle 1 is immediately available for the candidate and has a 72-hour response window.
 3. The candidate submits one response for that cycle. The candidate sees only the prompt, their own response, and released results.
-4. The employer grades against the immutable challenge rubric. A released result stores an `evidence_fresh_until` date equal to the configured cadence and schedules the next cycle at that date.
+4. The employer grades against the immutable challenge rubric. A released result stores an `evidence_fresh_until` date equal to the configured cadence and schedules the next cycle at that date. The API derives `freshness.status` (`fresh`, `expiring`, or `stale`) and non-negative `freshness.days_remaining` from that date.
 5. Each cycle remains in history. A challenge result is employer-specific evidence and never changes the platform assessment, verified grade, category, or ProofMatch score directly.
 
 ## API boundary
@@ -22,6 +22,10 @@ The server enforces both role and match ownership. Scheduled cycles cannot be an
 
 ## Privacy and freshness
 
-Challenge records contain no candidate contact, protected attributes, documents or tokens. Candidate result payloads omit rubric internals and employer drafts. `evidence_fresh_until` is an explicit lifecycle timestamp for the employer-specific result; it is not currently a global ranking input.
+Challenge records contain no candidate contact, protected attributes, documents or tokens. Candidate result payloads omit rubric internals and employer drafts. `evidence_fresh_until` is an explicit lifecycle timestamp for the employer-specific result; it is not currently a global ranking input. Evidence is `expiring` when three or fewer days remain and `stale` after the timestamp passes. Freshness is an advisory renewal signal, not a grade or access gate.
+
+Both challenge workspaces show the derived state so a candidate can see when a
+short challenge should be renewed and an employer can see which employer-owned
+evidence is still current.
 
 Evidence: `backend/tests/test_periodic_challenges.py`.

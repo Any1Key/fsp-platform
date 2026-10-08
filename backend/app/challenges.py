@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime, timedelta
+from math import ceil
 from typing import Any
 from uuid import uuid4
 
@@ -15,6 +16,7 @@ from .auth import Principal, sync_identity
 from .companies import _ensure_company
 
 CHALLENGE_DEADLINE_HOURS = 72
+FRESHNESS_EXPIRING_DAYS = 3
 
 
 def _now() -> datetime:
@@ -29,6 +31,26 @@ def _aware(value: datetime | str) -> datetime:
 
 def _json(value: Any) -> Any:
     return json.loads(value) if isinstance(value, str) else value
+
+
+def _freshness(evidence_fresh_until: datetime | str | None) -> dict[str, Any] | None:
+    """Return a stable, user-facing state for released employer evidence."""
+
+    if evidence_fresh_until is None:
+        return None
+    fresh_until = _aware(evidence_fresh_until)
+    seconds_remaining = (fresh_until - _now()).total_seconds()
+    if seconds_remaining <= 0:
+        state = "stale"
+        days_remaining = 0
+    else:
+        days_remaining = max(1, ceil(seconds_remaining / 86400))
+        state = "expiring" if days_remaining <= FRESHNESS_EXPIRING_DAYS else "fresh"
+    return {
+        "status": state,
+        "days_remaining": days_remaining,
+        "evidence_fresh_until": fresh_until.isoformat().replace("+00:00", "Z"),
+    }
 
 
 def _validate_content(payload: dict[str, Any]) -> dict[str, Any]:
@@ -120,11 +142,13 @@ def _public(row, *, employer: bool) -> dict[str, Any]:
             status_value = "scheduled"
     result = None
     if row["result_id"] is not None and (employer or row["result_status"] == "released"):
+        freshness = _freshness(row["evidence_fresh_until"])
         result = {
             "score": row["score"],
             "feedback": row["feedback"],
             "status": row["result_status"],
-            "evidence_fresh_until": row["evidence_fresh_until"],
+            "evidence_fresh_until": freshness["evidence_fresh_until"] if freshness else None,
+            "freshness": freshness,
             "released_at": row["released_at"],
         }
         if employer:
