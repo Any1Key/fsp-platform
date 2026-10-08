@@ -61,15 +61,18 @@ from .invitations import (
     respond_to_invitation,
 )
 from .local_ai import (
+    DisabledLocalAiAdapter,
     DraftValidationError,
-    LocalAiDraftResult,
     LocalAiPort,
+    LocalAiRateLimitError,
     build_local_ai_port,
     context_from_hiring_need,
+    enqueue_task_draft_job,
+    get_task_draft_job,
     list_draft_feedback,
     record_draft_feedback,
     retrieve_approved_task_examples,
-    validate_task_draft,
+    schedule_task_draft_job,
 )
 from .minor_consent import get_document_status, upload_document
 from .pipelines import get_hiring_pipeline, update_hiring_pipeline
@@ -469,10 +472,12 @@ class EmployerTaskResponse(BaseModel):
 
 
 class LocalAiDraftSuggestionResponse(BaseModel):
-    status: Literal["disabled", "completed", "failed"]
+    status: Literal["queued", "running", "disabled", "completed", "failed"]
     source: Literal["disabled", "local"]
     reason: str | None
     draft: dict[str, Any] | None
+    job_id: str | None = None
+    retry_after_seconds: int | None = None
     approved_example_count: int
     approved_examples: list[dict[str, Any]]
     feedback_history: list[dict[str, Any]]
@@ -1199,8 +1204,9 @@ def employer_tasks(
 async def employer_task_draft_suggestion(
     principal: Annotated[Principal, Depends(employer_principal)],
     db: Annotated[Session, Depends(get_db_session)],
+    response: Response,
 ) -> LocalAiDraftSuggestionResponse:
-    """Probe optional task assistance without persisting or blocking authoring."""
+    """Return disabled fallback immediately or enqueue optional AI work."""
 
     need = get_hiring_need(db, principal)
     if need is None:
@@ -1208,29 +1214,116 @@ async def employer_task_draft_suggestion(
     context = context_from_hiring_need(need)
     examples = retrieve_approved_task_examples(db, principal, context)
     context = context_from_hiring_need(need, tuple(examples))
-    result = await local_ai_port.propose_task_draft(context)
-    if result.status == "completed":
-        try:
-            validated_draft = validate_task_draft(result.draft, context)
-        except DraftValidationError:
-            result = LocalAiDraftResult(
-                status="failed",
-                source=result.source,
-                reason="local_ai_invalid_draft",
-                draft=None,
-            )
-        else:
-            result = LocalAiDraftResult(
-                status=result.status,
-                source=result.source,
-                reason=result.reason,
-                draft=validated_draft,
-            )
+
+    if isinstance(local_ai_port, DisabledLocalAiAdapter):
+        result = await local_ai_port.propose_task_draft(context)
+        return LocalAiDraftSuggestionResponse(
+            status=result.status,
+            source=result.source,
+            reason=result.reason,
+            draft=result.draft,
+            approved_example_count=len(examples),
+            approved_examples=[
+                {
+                    "id": example.example_id,
+                    "task_version_id": example.task_version_id,
+                    "title": example.title,
+                    "specialization": example.specialization,
+                    "grade": example.grade,
+                    "target_skills": list(example.target_skills),
+                    "estimated_minutes": example.estimated_minutes,
+                    "relevance_score": example.relevance_score,
+                    "matched_required_skills": list(example.matched_required_skills),
+                    "matched_preferred_skills": list(example.matched_preferred_skills),
+                    "approved_at": example.approved_at,
+                }
+                for example in examples
+            ],
+            feedback_history=list_draft_feedback(db, principal, hiring_need_id=need["id"]),
+        )
+
+    settings = get_settings()
+    try:
+        job_id = enqueue_task_draft_job(
+            db,
+            principal,
+            hiring_need_id=need["id"],
+            context=context,
+            rate_limit_per_minute=settings.local_ai_rate_limit_per_minute,
+            max_active_jobs=settings.local_ai_max_active_jobs_per_company,
+        )
+    except LocalAiRateLimitError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="local_ai_rate_limited",
+            headers={"Retry-After": str(exc.retry_after_seconds)},
+        ) from exc
+
+    schedule_task_draft_job(
+        job_id,
+        local_ai_port,
+        db.get_bind(),
+        settings.local_ai_timeout_seconds,
+    )
+    response.status_code = status.HTTP_202_ACCEPTED
     return LocalAiDraftSuggestionResponse(
-        status=result.status,
-        source=result.source,
-        reason=result.reason,
-        draft=result.draft,
+        status="queued",
+        source="local",
+        reason=None,
+        draft=None,
+        job_id=job_id,
+        approved_example_count=len(examples),
+        approved_examples=[
+            {
+                "id": example.example_id,
+                "task_version_id": example.task_version_id,
+                "title": example.title,
+                "specialization": example.specialization,
+                "grade": example.grade,
+                "target_skills": list(example.target_skills),
+                "estimated_minutes": example.estimated_minutes,
+                "relevance_score": example.relevance_score,
+                "matched_required_skills": list(example.matched_required_skills),
+                "matched_preferred_skills": list(example.matched_preferred_skills),
+                "approved_at": example.approved_at,
+            }
+            for example in examples
+        ],
+        feedback_history=list_draft_feedback(db, principal, hiring_need_id=need["id"]),
+    )
+
+
+@app.get(
+    "/api/v1/employer/tasks/draft-suggestion/jobs/{job_id}",
+    tags=["employer tasks"],
+    response_model=LocalAiDraftSuggestionResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Local-AI job not found"},
+    },
+)
+def employer_task_draft_job(
+    job_id: str,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> LocalAiDraftSuggestionResponse:
+    """Poll one local-AI job through the same company-scoped boundary."""
+
+    job = get_task_draft_job(db, principal, job_id)
+    if job is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="local_ai_job_not_found")
+    need = get_hiring_need(db, principal)
+    if need is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="hiring_need_not_found")
+    context = context_from_hiring_need(need)
+    examples = retrieve_approved_task_examples(db, principal, context)
+    result = job["result"] or {}
+    return LocalAiDraftSuggestionResponse(
+        status=job["status"],
+        source=result.get("source", "local"),
+        reason=result.get("reason"),
+        draft=result.get("draft"),
+        job_id=job_id,
         approved_example_count=len(examples),
         approved_examples=[
             {

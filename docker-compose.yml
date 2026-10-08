@@ -71,6 +71,12 @@ services:
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-fsp-web}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       PRIVATE_STORAGE_DIR: ${PRIVATE_STORAGE_DIR:-/var/lib/fsp/private}
+      LOCAL_AI_ENABLED: ${LOCAL_AI_ENABLED:-false}
+      LOCAL_AI_BASE_URL: ${LOCAL_AI_BASE_URL:-http://local-ai:11434}
+      LOCAL_AI_MODEL: ${LOCAL_AI_MODEL:-}
+      LOCAL_AI_TIMEOUT_SECONDS: ${LOCAL_AI_TIMEOUT_SECONDS:-60}
+      LOCAL_AI_RATE_LIMIT_PER_MINUTE: ${LOCAL_AI_RATE_LIMIT_PER_MINUTE:-5}
+      LOCAL_AI_MAX_ACTIVE_JOBS_PER_COMPANY: ${LOCAL_AI_MAX_ACTIVE_JOBS_PER_COMPANY:-1}
     volumes:
       - backend-private-data:/var/lib/fsp/private
     ports:

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal, Protocol
@@ -11,13 +13,22 @@ from uuid import uuid4
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy import text
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from .auth import Principal
 from .companies import _ensure_company
 
 LocalAiStatus = Literal["disabled", "completed", "failed"]
 DraftFeedbackDecision = Literal["approved", "edited", "rejected"]
+LocalAiJobStatus = Literal["queued", "running", "completed", "failed"]
+
+
+class LocalAiRateLimitError(RuntimeError):
+    """Raised when one employer has too many optional AI jobs."""
+
+    def __init__(self, retry_after_seconds: int) -> None:
+        super().__init__("local_ai_rate_limited")
+        self.retry_after_seconds = retry_after_seconds
 
 
 @dataclass(frozen=True)
@@ -256,6 +267,248 @@ class LocalHttpAiAdapter:
                 reason="local_ai_invalid_or_unavailable",
             )
         return LocalAiDraftResult(status="completed", source="local", draft=draft)
+
+
+_LOCAL_AI_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="fsp-local-ai")
+
+
+def _example_snapshot(example: ApprovedEmployerTaskExample) -> dict[str, Any]:
+    return {
+        "example_id": example.example_id,
+        "task_version_id": example.task_version_id,
+        "title": example.title,
+        "instructions": example.instructions,
+        "specialization": example.specialization,
+        "grade": example.grade,
+        "target_skills": list(example.target_skills),
+        "estimated_minutes": example.estimated_minutes,
+        "deadline_hours": example.deadline_hours,
+        "rubric": list(example.rubric),
+        "approved_at": example.approved_at.isoformat(),
+        "relevance_score": example.relevance_score,
+        "matched_required_skills": list(example.matched_required_skills),
+        "matched_preferred_skills": list(example.matched_preferred_skills),
+    }
+
+
+def _context_snapshot(context: EmployerTaskDraftContext) -> dict[str, Any]:
+    """Serialize only sanitized employer-need data into the durable job row."""
+
+    return {
+        "team": context.team,
+        "role": context.role,
+        "specialization": context.specialization,
+        "grade": context.grade,
+        "required_skills": list(context.required_skills),
+        "preferred_skills": list(context.preferred_skills),
+        "approved_examples": [_example_snapshot(example) for example in context.approved_examples],
+    }
+
+
+def _context_from_snapshot(snapshot: dict[str, Any]) -> EmployerTaskDraftContext:
+    examples = tuple(
+        ApprovedEmployerTaskExample(
+            example_id=example["example_id"],
+            task_version_id=example["task_version_id"],
+            title=example["title"],
+            instructions=example["instructions"],
+            specialization=example["specialization"],
+            grade=example["grade"],
+            target_skills=tuple(example["target_skills"]),
+            estimated_minutes=example["estimated_minutes"],
+            deadline_hours=example["deadline_hours"],
+            rubric=tuple(example["rubric"]),
+            approved_at=datetime.fromisoformat(example["approved_at"]),
+            relevance_score=example["relevance_score"],
+            matched_required_skills=tuple(example["matched_required_skills"]),
+            matched_preferred_skills=tuple(example["matched_preferred_skills"]),
+        )
+        for example in snapshot.get("approved_examples", [])
+    )
+    return EmployerTaskDraftContext(
+        team=snapshot["team"],
+        role=snapshot["role"],
+        specialization=snapshot["specialization"],
+        grade=snapshot["grade"],
+        required_skills=tuple(snapshot["required_skills"]),
+        preferred_skills=tuple(snapshot["preferred_skills"]),
+        approved_examples=examples,
+    )
+
+
+def _result_payload(result: LocalAiDraftResult) -> dict[str, Any]:
+    return {
+        "status": result.status,
+        "source": result.source,
+        "reason": result.reason,
+        "draft": result.draft,
+    }
+
+
+def _decode_json(value: Any) -> Any:
+    return json.loads(value) if isinstance(value, str) else value
+
+
+def enqueue_task_draft_job(
+    db: Session,
+    principal: Principal,
+    *,
+    hiring_need_id: str,
+    context: EmployerTaskDraftContext,
+    rate_limit_per_minute: int,
+    max_active_jobs: int,
+) -> str:
+    """Create a durable, company-scoped local-AI job after limit checks."""
+
+    identity_id, company_id = _ensure_company(db, principal)
+    now = datetime.now(UTC)
+    window_start = now.timestamp() - 60
+    recent_count = int(
+        db.execute(
+            text(
+                "SELECT COUNT(*) FROM employer_task_draft_job "
+                "WHERE company_id = :company_id AND created_at >= :window_start"
+            ),
+            {"company_id": company_id, "window_start": datetime.fromtimestamp(window_start, UTC)},
+        ).scalar_one()
+    )
+    if recent_count >= max(1, rate_limit_per_minute):
+        raise LocalAiRateLimitError(60)
+
+    active_count = int(
+        db.execute(
+            text(
+                "SELECT COUNT(*) FROM employer_task_draft_job "
+                "WHERE company_id = :company_id AND status IN ('queued', 'running')"
+            ),
+            {"company_id": company_id},
+        ).scalar_one()
+    )
+    if active_count >= max(1, max_active_jobs):
+        raise LocalAiRateLimitError(5)
+
+    job_id = str(uuid4())
+    db.execute(
+        text(
+            "INSERT INTO employer_task_draft_job "
+            "(id, company_id, hiring_need_id, created_by_identity_id, status, "
+            "context_snapshot, attempts, created_at) "
+            "VALUES (:id, :company_id, :need_id, :identity_id, 'queued', "
+            ":context_snapshot, 0, :created_at)"
+        ),
+        {
+            "id": job_id,
+            "company_id": company_id,
+            "need_id": hiring_need_id,
+            "identity_id": identity_id,
+            "context_snapshot": json.dumps(_context_snapshot(context), ensure_ascii=False),
+            "created_at": now,
+        },
+    )
+    db.commit()
+    return job_id
+
+
+def get_task_draft_job(db: Session, principal: Principal, job_id: str) -> dict[str, Any] | None:
+    """Return a job only when it belongs to the employer's company."""
+
+    _, company_id = _ensure_company(db, principal)
+    row = db.execute(
+        text(
+            "SELECT id, status, context_snapshot, result, created_at, started_at, completed_at, attempts "
+            "FROM employer_task_draft_job WHERE id = :job_id AND company_id = :company_id"
+        ),
+        {"job_id": job_id, "company_id": company_id},
+    ).mappings().one_or_none()
+    if row is None:
+        return None
+    return {
+        **dict(row),
+        "context_snapshot": _decode_json(row["context_snapshot"]),
+        "result": _decode_json(row["result"]) if row["result"] is not None else None,
+    }
+
+
+def run_task_draft_job(
+    job_id: str,
+    adapter: LocalAiPort,
+    bind: Any,
+    timeout_seconds: float,
+) -> None:
+    """Claim and execute one job outside the request thread."""
+
+    factory = sessionmaker(bind=bind, autoflush=False, expire_on_commit=False)
+    with factory() as db:
+        row = db.execute(
+            text(
+                "SELECT context_snapshot FROM employer_task_draft_job "
+                "WHERE id = :job_id AND status = 'queued'"
+            ),
+            {"job_id": job_id},
+        ).mappings().one_or_none()
+        if row is None:
+            return
+        claimed = db.execute(
+            text(
+                "UPDATE employer_task_draft_job SET status = 'running', "
+                "started_at = :started_at, attempts = attempts + 1 "
+                "WHERE id = :job_id AND status = 'queued'"
+            ),
+            {"job_id": job_id, "started_at": datetime.now(UTC)},
+        )
+        if claimed.rowcount != 1:
+            return
+        db.commit()
+
+        try:
+            context = _context_from_snapshot(_decode_json(row["context_snapshot"]))
+            result = asyncio.run(
+                asyncio.wait_for(adapter.propose_task_draft(context), timeout=timeout_seconds)
+            )
+            if result.status == "completed":
+                try:
+                    draft = validate_task_draft(result.draft, context)
+                except DraftValidationError:
+                    result = LocalAiDraftResult(
+                        status="failed", source=result.source, reason="local_ai_invalid_draft"
+                    )
+                else:
+                    result = LocalAiDraftResult(
+                        status="completed", source=result.source, reason=result.reason, draft=draft
+                    )
+        except TimeoutError:
+            result = LocalAiDraftResult(
+                status="failed", source="local", reason="local_ai_timeout"
+            )
+        except Exception:  # noqa: BLE001  # Optional AI failures stay out of request logs.
+            result = LocalAiDraftResult(
+                status="failed", source="local", reason="local_ai_job_failed"
+            )
+
+        db.execute(
+            text(
+                "UPDATE employer_task_draft_job SET status = :status, result = :result, "
+                "completed_at = :completed_at WHERE id = :job_id AND status = 'running'"
+            ),
+            {
+                "job_id": job_id,
+                "status": "completed" if result.status == "completed" else "failed",
+                "result": json.dumps(_result_payload(result), ensure_ascii=False),
+                "completed_at": datetime.now(UTC),
+            },
+        )
+        db.commit()
+
+
+def schedule_task_draft_job(
+    job_id: str,
+    adapter: LocalAiPort,
+    bind: Any,
+    timeout_seconds: float,
+) -> None:
+    """Submit optional work to the single CPU-local inference worker."""
+
+    _LOCAL_AI_EXECUTOR.submit(run_task_draft_job, job_id, adapter, bind, timeout_seconds)
 
 
 def build_local_ai_port() -> LocalAiPort:

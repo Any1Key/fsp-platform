@@ -39,6 +39,13 @@ type DraftFeedback = {
   feedback_note: string | null;
   created_at: string;
 };
+type DraftSuggestionResponse = {
+  status: "queued" | "running" | "disabled" | "completed" | "failed";
+  approved_examples: ApprovedExample[];
+  draft: GeneratedDraft | null;
+  feedback_history: DraftFeedback[];
+  job_id?: string | null;
+};
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const emptyRubric = (): Rubric[] => [
@@ -143,12 +150,16 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error("local_ai_unavailable");
-      const result = (await response.json()) as {
-        status: "disabled" | "completed" | "failed";
-        approved_examples: ApprovedExample[];
-        draft: GeneratedDraft | null;
-        feedback_history: DraftFeedback[];
-      };
+      let result = (await response.json()) as DraftSuggestionResponse;
+      for (let attempt = 0; result.job_id && (result.status === "queued" || result.status === "running") && attempt < 60; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
+        const jobResponse = await fetch(`${apiUrl}/api/v1/employer/tasks/draft-suggestion/jobs/${result.job_id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!jobResponse.ok) throw new Error("local_ai_job_unavailable");
+        result = (await jobResponse.json()) as DraftSuggestionResponse;
+      }
+      if (result.status === "queued" || result.status === "running") throw new Error("local_ai_timeout");
       setApprovedExamples(result.approved_examples ?? []);
       setSuggestedDraft(result.status === "completed" ? result.draft : null);
       setSuggestedDraftApplied(false);

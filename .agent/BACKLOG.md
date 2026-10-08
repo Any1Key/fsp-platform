@@ -99,7 +99,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] approved employer-task memory/retrieval
 - [x] constrained JSON task/rubric draft
 - [x] employer approve/edit/reject feedback
-- [ ] async jobs/rate limit/timeout
+- [x] async jobs/rate limit/timeout
 - [ ] AI-off fallback tests
 - [ ] optional CPU-local runtime profile if host supports it
 

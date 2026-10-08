@@ -1,4 +1,6 @@
+import asyncio
 import json
+import time
 from uuid import uuid4
 
 import pytest
@@ -51,6 +53,25 @@ def _context():
         required_skills=("python",),
         preferred_skills=("rest-apis",),
     )
+
+
+def _poll_suggestion(client, headers, response):
+    """Resolve an enabled adapter job through the public polling contract."""
+
+    assert response.status_code == 202, response.text
+    body = response.json()
+    assert body["job_id"]
+    for _ in range(100):
+        if body["status"] not in {"queued", "running"}:
+            return body
+        time.sleep(0.01)
+        polled = client.get(
+            f"/api/v1/employer/tasks/draft-suggestion/jobs/{body['job_id']}",
+            headers=headers,
+        )
+        assert polled.status_code == 200, polled.text
+        body = polled.json()
+    raise AssertionError(f"local-AI job did not finish: {body}")
 
 
 @pytest.mark.asyncio
@@ -170,6 +191,8 @@ def test_employer_task_draft_suggestion_exposes_ai_off_fallback(auth_context):
         "source": "disabled",
         "reason": "local_ai_disabled",
         "draft": None,
+        "job_id": None,
+        "retry_after_seconds": None,
         "approved_example_count": 0,
         "approved_examples": [],
         "feedback_history": [],
@@ -189,8 +212,7 @@ def test_employer_can_approve_edit_or_reject_a_draft_and_history_is_scoped(auth_
 
     monkeypatch.setattr(main, "local_ai_port", DraftAdapter())
     suggestion = client.post("/api/v1/employer/tasks/draft-suggestion", headers=employer)
-    assert suggestion.status_code == 200, suggestion.text
-    generated = suggestion.json()["draft"]
+    generated = _poll_suggestion(client, employer, suggestion)["draft"]
 
     approved = client.post(
         "/api/v1/employer/tasks/draft-suggestion/feedback",
@@ -228,8 +250,8 @@ def test_employer_can_approve_edit_or_reject_a_draft_and_history_is_scoped(auth_
     suggestion_after_feedback = client.post(
         "/api/v1/employer/tasks/draft-suggestion", headers=employer
     )
-    assert suggestion_after_feedback.status_code == 200
-    assert [item["decision"] for item in suggestion_after_feedback.json()["feedback_history"]] == [
+    suggestion_after_feedback = _poll_suggestion(client, employer, suggestion_after_feedback)
+    assert [item["decision"] for item in suggestion_after_feedback["feedback_history"]] == [
         "rejected",
         "edited",
         "approved",
@@ -297,10 +319,10 @@ def test_draft_suggestion_does_not_expose_an_invalid_adapter_draft(auth_context,
         headers=employer,
     )
 
-    assert suggestion.status_code == 200
-    assert suggestion.json()["status"] == "failed"
-    assert suggestion.json()["reason"] == "local_ai_invalid_draft"
-    assert suggestion.json()["draft"] is None
+    suggestion = _poll_suggestion(client, employer, suggestion)
+    assert suggestion["status"] == "failed"
+    assert suggestion["reason"] == "local_ai_invalid_draft"
+    assert suggestion["draft"] is None
 
 
 def test_candidate_cannot_probe_employer_task_draft_assistance(auth_context):
@@ -403,8 +425,63 @@ def test_retrieval_is_bounded_and_passes_examples_to_the_adapter(auth_context, m
     suggestion = client.post(
         "/api/v1/employer/tasks/draft-suggestion", headers=employer
     )
-    assert suggestion.status_code == 200, suggestion.text
-    assert suggestion.json()["status"] == "completed"
-    assert suggestion.json()["approved_example_count"] == 5
+    suggestion = _poll_suggestion(client, employer, suggestion)
+    assert suggestion["status"] == "completed"
+    assert suggestion["approved_example_count"] == 5
     assert len(captured["examples"]) == 5
     assert all(example.specialization == "backend-engineering" for example in captured["examples"])
+
+
+def test_enabled_local_ai_is_rate_limited_and_job_is_company_scoped(auth_context, monkeypatch):
+    client, private_key, settings = auth_context
+    limited = settings.model_copy(
+        update={"local_ai_rate_limit_per_minute": 1, "local_ai_max_active_jobs_per_company": 2}
+    )
+    monkeypatch.setattr(main, "get_settings", lambda: limited)
+    employer = _employer(client, private_key, limited, sub=f"local-ai-rate-{uuid4().hex}")
+    assert client.post("/api/v1/employer/hiring-need", headers=employer, json=_need()).status_code == 201
+
+    class FastAdapter:
+        async def propose_task_draft(self, context):
+            return LocalAiDraftResult(status="completed", source="local", draft=_draft())
+
+    monkeypatch.setattr(main, "local_ai_port", FastAdapter())
+    first = client.post("/api/v1/employer/tasks/draft-suggestion", headers=employer)
+    assert first.status_code == 202
+    second = client.post("/api/v1/employer/tasks/draft-suggestion", headers=employer)
+    assert second.status_code == 429
+    assert second.headers["retry-after"] == "60"
+    completed = _poll_suggestion(client, employer, first)
+    assert completed["status"] == "completed"
+
+    other = _employer(client, private_key, settings, sub=f"local-ai-rate-other-{uuid4().hex}")
+    assert client.post("/api/v1/employer/hiring-need", headers=other, json=_need()).status_code == 201
+    other_job = client.post("/api/v1/employer/tasks/draft-suggestion", headers=other)
+    assert other_job.status_code == 202
+    assert client.get(
+        f"/api/v1/employer/tasks/draft-suggestion/jobs/{first.json()['job_id']}",
+        headers=other,
+    ).status_code == 404
+    _poll_suggestion(client, other, other_job)
+
+
+def test_enabled_local_ai_timeout_is_a_failed_job_with_manual_fallback(auth_context, monkeypatch):
+    client, private_key, settings = auth_context
+    short_timeout = settings.model_copy(update={"local_ai_timeout_seconds": 0.01})
+    monkeypatch.setattr(main, "get_settings", lambda: short_timeout)
+    employer = _employer(client, private_key, short_timeout, sub=f"local-ai-timeout-{uuid4().hex}")
+    assert client.post("/api/v1/employer/hiring-need", headers=employer, json=_need()).status_code == 201
+
+    class SlowAdapter:
+        async def propose_task_draft(self, context):
+            del context
+            await asyncio.sleep(0.1)
+            return LocalAiDraftResult(status="completed", source="local", draft=_draft())
+
+    monkeypatch.setattr(main, "local_ai_port", SlowAdapter())
+    queued = client.post("/api/v1/employer/tasks/draft-suggestion", headers=employer)
+    result = _poll_suggestion(client, employer, queued)
+    assert result["status"] == "failed"
+    assert result["reason"] == "local_ai_timeout"
+    assert result["draft"] is None
+    assert client.get("/api/v1/employer/tasks", headers=employer).json() == []

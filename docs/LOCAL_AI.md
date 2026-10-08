@@ -76,23 +76,35 @@ it includes `title`, `instructions`, `target_skills`, `expected_grade`,
 `estimated_minutes`, `deadline_hours`, `rubric`, and advisory
 `difficulty_rationale`. Required skills must be included, target skills must
 come from the current need, and the grade must match the need. Human review and
-explicit publication remain mandatory. Background jobs/rate limiting remain a
-separate follow-up unit.
+explicit publication remain mandatory. Generation is now a separate durable
+job path: when an optional adapter is enabled,
+`POST /api/v1/employer/tasks/draft-suggestion` stores a sanitized
+company-scoped job and returns `202` with a job ID; the employer polls
+`GET /api/v1/employer/tasks/draft-suggestion/jobs/{job_id}`. A single optional
+CPU-local worker claims jobs from the table, applies the configured timeout,
+and persists either the validated draft or a safe failure reason. The request
+thread never waits for model inference. Disabled mode remains an immediate
+deterministic response.
+
+The queue enforces both a per-company active-job limit and a rolling request
+limit (`LOCAL_AI_MAX_ACTIVE_JOBS_PER_COMPANY` and
+`LOCAL_AI_RATE_LIMIT_PER_MINUTE`). A limit returns `429` with `Retry-After`;
+it never blocks manual task authoring. Jobs and polling are company-scoped, so
+one employer cannot inspect another employer's generation context or result.
 
 ## Runtime architecture
 
-The backend now exposes an async `LocalAiPort` in `backend/app/local_ai.py`.
-The current deployment constructs `DisabledLocalAiAdapter`, which returns the
-same explicit `disabled` result for every request and never emits a task draft.
-Employer task authoring probes this boundary through
-`POST /api/v1/employer/tasks/draft-suggestion`; the response is employer-scoped
-and manual authoring remains available. Possible future adapters:
+The backend exposes an async `LocalAiPort` in `backend/app/local_ai.py` and a
+PostgreSQL-backed `employer_task_draft_job` queue. The current deployment
+constructs `DisabledLocalAiAdapter`, which returns the same explicit `disabled`
+result for every request and never emits a task draft. Employer task authoring
+probes this boundary through `POST /api/v1/employer/tasks/draft-suggestion`;
+enabled generation is polled through the job endpoint and manual authoring
+remains available. Possible future adapters:
 - local OpenAI-compatible HTTP endpoint;
 - llama.cpp/Ollama-style local runtime.
 
-The exact runtime/model is replaceable. Prefer a small quantized instruction model (roughly 3B–8B class) if acceptable on the actual Synology CPU. Model inference is asynchronous and rate-limited.
-
-Do not block core HTTP requests waiting indefinitely for generation. Use a PostgreSQL-backed job table or equivalent simple queue for MVP.
+The exact runtime/model is replaceable. Prefer a small quantized instruction model (roughly 3B–8B class) if acceptable on the actual Synology CPU. Model inference is asynchronous, single-worker, rate-limited, and timeout-bounded.
 
 ## Fallback behavior
 
