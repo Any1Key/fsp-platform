@@ -96,6 +96,7 @@ Snapshot preserves result context during refinement.
 - salary min/max RUB
 - offer description
 - employer contact method
+- optional `source_application_id` for an internal vacancy-acceptance bridge
 - status
 - timestamps
 - match/contact-unlock timestamp
@@ -128,9 +129,10 @@ membership-scoped. Report audit metadata excludes message and contact contents.
 - `application`: vacancy, candidate profile, current status and lifecycle
   timestamps; one candidate can have at most one application for a vacancy.
 - `application_status_history`: append-only status entries for the
-  candidate-visible application timeline. The first entry is `submitted`;
-  employer review transitions are a later M11 slice.
-- match event if accepted
+  candidate-visible application timeline. The first entry is `submitted`; the
+  vacancy owner may move it through review states to `accepted` or `rejected`.
+- accepting an application creates the same `talent_match`/conversation/event
+  boundary as an accepted reverse-recruitment invitation.
 
 ## Employer hiring pipeline
 - hiring_pipeline

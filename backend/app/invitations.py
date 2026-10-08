@@ -26,7 +26,7 @@ def _invitation_row(db: Session, invitation_id: str):
             "SELECT i.id, i.employer_identity_id, i.company_id, i.candidate_profile_id, "
             "i.salary_min_rub, i.salary_max_rub, i.offer_description, "
             "i.company_name_snapshot, i.contact_method_snapshot, i.status, "
-            "i.pipeline_snapshot, "
+            "i.pipeline_snapshot, i.source_application_id, "
             "i.created_at, i.updated_at, i.responded_at, i.matched_at, i.contact_unlocked_at, "
             "cp.display_name AS candidate_display_name, tm.id AS match_id "
             "FROM invitation i "
@@ -65,6 +65,84 @@ def _public_invitation(row) -> dict[str, Any]:
         "match_id": row["match_id"],
         "pipeline_stages": pipeline_stages,
     }
+
+
+def create_match_for_invitation(
+    db: Session,
+    *,
+    invitation_id: str,
+    employer_identity_id: str,
+    candidate_profile_id: str,
+    actor_identity_id: str,
+    now: datetime | None = None,
+) -> str:
+    """Create the shared match side effects without committing the caller's transaction."""
+
+    existing_match = db.execute(
+        text("SELECT id FROM talent_match WHERE invitation_id = :invitation_id"),
+        {"invitation_id": invitation_id},
+    ).scalar_one_or_none()
+    if existing_match is not None:
+        return existing_match
+
+    match_id = str(uuid4())
+    matched_at = now or datetime.now(UTC)
+    db.execute(
+        text(
+            "UPDATE invitation SET status = 'accepted', responded_at = :now, matched_at = :now, "
+            "contact_unlocked_at = :now, updated_at = CURRENT_TIMESTAMP WHERE id = :invitation_id"
+        ),
+        {"now": matched_at, "invitation_id": invitation_id},
+    )
+    db.execute(
+        text(
+            "INSERT INTO talent_match (id, invitation_id, employer_identity_id, candidate_profile_id, "
+            "created_at, contact_unlocked_at) VALUES "
+            "(:id, :invitation_id, :employer_identity_id, :candidate_profile_id, :now, :now)"
+        ),
+        {
+            "id": match_id,
+            "invitation_id": invitation_id,
+            "employer_identity_id": employer_identity_id,
+            "candidate_profile_id": candidate_profile_id,
+            "now": matched_at,
+        },
+    )
+    ensure_assignments_for_match(db, match_id)
+    create_conversation_for_match(
+        db,
+        match_id=match_id,
+        employer_identity_id=employer_identity_id,
+        candidate_profile_id=candidate_profile_id,
+    )
+    event_payload = {"invitation_id": invitation_id, "match_id": match_id}
+    for event_type in ("MATCH_CREATED", "CONTACT_UNLOCKED"):
+        db.execute(
+            text(
+                "INSERT INTO domain_event "
+                "(id, event_type, aggregate_type, aggregate_id, payload) "
+                "VALUES (:id, :event_type, 'talent_match', :aggregate_id, :payload)"
+            ),
+            {
+                "id": str(uuid4()),
+                "event_type": event_type,
+                "aggregate_id": match_id,
+                "payload": json.dumps(event_payload, separators=(",", ":")),
+            },
+        )
+        db.execute(
+            text(
+                "INSERT INTO audit_event (id, actor_identity_id, event_type, details) "
+                "VALUES (:id, :actor_identity_id, :event_type, :details)"
+            ),
+            {
+                "id": str(uuid4()),
+                "actor_identity_id": actor_identity_id,
+                "event_type": event_type.lower(),
+                "details": json.dumps(event_payload, separators=(",", ":")),
+            },
+        )
+    return match_id
 
 
 def _require_salary(salary_min_rub: int, salary_max_rub: int) -> None:
@@ -195,6 +273,7 @@ def list_employer_invitations(db: Session, principal: Principal) -> list[dict[st
     rows = db.execute(
         text(
             "SELECT i.id FROM invitation i WHERE i.employer_identity_id = :identity_id "
+            "AND i.source_application_id IS NULL "
             "ORDER BY i.created_at DESC, i.id DESC"
         ),
         {"identity_id": identity["id"]},
@@ -207,6 +286,7 @@ def list_candidate_invitations(db: Session, principal: Principal) -> list[dict[s
     rows = db.execute(
         text(
             "SELECT i.id FROM invitation i WHERE i.candidate_profile_id = :profile_id "
+            "AND i.source_application_id IS NULL "
             "ORDER BY i.created_at DESC, i.id DESC"
         ),
         {"profile_id": profile_id},
@@ -250,62 +330,14 @@ def respond_to_invitation(
         db.commit()
         return _public_invitation(_invitation_row(db, invitation_id))
 
-    match_id = str(uuid4())
-    db.execute(
-        text(
-            "UPDATE invitation SET status = 'accepted', responded_at = :now, matched_at = :now, "
-            "contact_unlocked_at = :now, updated_at = CURRENT_TIMESTAMP WHERE id = :invitation_id"
-        ),
-        {"now": now, "invitation_id": invitation_id},
-    )
-    db.execute(
-        text(
-            "INSERT INTO talent_match (id, invitation_id, employer_identity_id, candidate_profile_id, "
-            "created_at, contact_unlocked_at) VALUES "
-            "(:id, :invitation_id, :employer_identity_id, :candidate_profile_id, :now, :now)"
-        ),
-        {
-            "id": match_id,
-            "invitation_id": invitation_id,
-            "employer_identity_id": row["employer_identity_id"],
-            "candidate_profile_id": profile_id,
-            "now": now,
-        },
-    )
-    ensure_assignments_for_match(db, match_id)
-    create_conversation_for_match(
+    create_match_for_invitation(
         db,
-        match_id=match_id,
+        invitation_id=invitation_id,
         employer_identity_id=row["employer_identity_id"],
         candidate_profile_id=profile_id,
+        actor_identity_id=row["candidate_identity_id"],
+        now=now,
     )
-    event_payload = {"invitation_id": invitation_id, "match_id": match_id}
-    for event_type in ("MATCH_CREATED", "CONTACT_UNLOCKED"):
-        db.execute(
-            text(
-                "INSERT INTO domain_event "
-                "(id, event_type, aggregate_type, aggregate_id, payload) "
-                "VALUES (:id, :event_type, 'talent_match', :aggregate_id, :payload)"
-            ),
-            {
-                "id": str(uuid4()),
-                "event_type": event_type,
-                "aggregate_id": match_id,
-                "payload": json.dumps(event_payload, separators=(",", ":")),
-            },
-        )
-        db.execute(
-            text(
-                "INSERT INTO audit_event (id, actor_identity_id, event_type, details) "
-                "VALUES (:id, :actor_identity_id, :event_type, :details)"
-            ),
-            {
-                "id": str(uuid4()),
-                "actor_identity_id": row["candidate_identity_id"],
-                "event_type": event_type.lower(),
-                "details": json.dumps(event_payload, separators=(",", ":")),
-            },
-        )
     db.commit()
     return _public_invitation(_invitation_row(db, invitation_id))
 

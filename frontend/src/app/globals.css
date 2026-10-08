@@ -561,6 +561,22 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   padding-top: 16px; color: #ededed;
 }
 .candidateVacanciesPanel.muted { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.applicationReviewPanel { display: grid; gap: 16px; border: 1px solid rgba(169,161,255,.3); border-radius: 16px; padding: 18px; background: rgba(20,21,26,.76); }
+.applicationReviewPanel.muted, .applicationReviewPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.applicationReviewPanel.error { color: #ffb6bd; }
+.applicationReviewHeading, .applicationReviewCardTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.applicationReviewHeading h2 { margin: 6px 0; color: #fff; font-size: 22px; }
+.applicationReviewHeading p { margin: 0; color: #b7b7c1; font-size: 12px; line-height: 1.5; }
+.applicationReviewList { display: grid; gap: 10px; }
+.applicationReviewCard { display: grid; gap: 10px; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 14px; background: rgba(255,255,255,.035); }
+.applicationReviewCard h3 { margin: 5px 0 0; color: #fff; font-size: 16px; }
+.applicationReviewCard small { color: #9e9eaa; }
+.applicationReviewActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.applicationReviewActions .authButton { font-size: 11px; }
+.applicationReviewEmpty { display: grid; gap: 5px; color: #b7b7c1; }
+.applicationReviewEmpty strong { color: #fff; }
+.candidateMatchNotice { color: #b8f2d0; }
+.dangerButton { border-color: rgba(255,136,148,.45); color: #ffb6bd; }
 .candidateVacanciesHeading, .candidateApplicationsHeading { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
 .candidateVacanciesHeading > div, .candidateApplicationsHeading > div { display: grid; gap: 5px; }
 .candidateVacanciesHeading h2, .candidateApplicationsHeading h3 { margin: 0; font-size: 15px; }
@@ -727,6 +743,9 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .candidateVacancyCardTop, .candidateVacancyFooter { align-items: flex-start; flex-direction: column; }
   .candidateVacancySalary { white-space: normal; }
   .candidateVacancyFooter .authButton { width: 100%; }
+  .applicationReviewHeading, .applicationReviewCardTop { flex-direction: column; }
+  .applicationReviewActions { flex-direction: column; }
+  .applicationReviewActions .authButton { width: 100%; }
   .radarHeading, .radarFooter { align-items: flex-start; flex-direction: column; }
   .radarFilters { grid-template-columns: 1fr; }
   .radarFilters .radarCheckbox { grid-column: auto; }

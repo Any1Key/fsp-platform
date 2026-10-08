@@ -238,3 +238,129 @@ def test_candidate_applications_are_isolated_between_candidates(auth_context):
     assert client.get("/api/v1/candidate/applications", headers=second).json() == []
     second_listing = client.get("/api/v1/candidate/vacancies", headers=second).json()
     assert second_listing[0]["application_id"] is None
+
+
+def test_employer_accepting_application_creates_match_and_unlocks_chat(auth_context):
+    client, private_key, settings = auth_context
+    employer = _headers(
+        private_key,
+        settings,
+        sub="kc-application-match-employer",
+        email="owner@application-match.ru",
+        role="employer",
+    )
+    outsider = _headers(
+        private_key,
+        settings,
+        sub="kc-application-match-outsider",
+        email="other@application-match.ru",
+        role="employer",
+    )
+    candidate = _headers(
+        private_key,
+        settings,
+        sub="kc-application-match-candidate",
+        email="candidate@application-match.ru",
+        role="candidate",
+    )
+
+    company = client.patch(
+        "/api/v1/employer/company",
+        headers=employer,
+        json={
+            "name": "Application Match Labs",
+            "public_contact_method": "team@application-match.ru",
+        },
+    )
+    assert company.status_code == 200
+    vacancy = client.post(
+        "/api/v1/employer/vacancies",
+        headers=employer,
+        json=_vacancy_payload(title="Application match backend engineer"),
+    )
+    assert vacancy.status_code == 201
+    vacancy_id = vacancy.json()["id"]
+    assert client.post(
+        f"/api/v1/employer/vacancies/{vacancy_id}/publish", headers=employer
+    ).status_code == 200
+    assert client.patch(
+        "/api/v1/candidate/privacy",
+        headers=candidate,
+        json={"processing_consent": True},
+    ).status_code == 200
+    application = client.post(
+        f"/api/v1/candidate/vacancies/{vacancy_id}/applications", headers=candidate
+    )
+    assert application.status_code == 201
+    application_id = application.json()["id"]
+    assert client.get("/api/v1/chat/conversations", headers=candidate).json() == []
+
+    incoming = client.get("/api/v1/employer/applications", headers=employer)
+    assert incoming.status_code == 200
+    assert len(incoming.json()) == 1
+    assert incoming.json()[0]["id"] == application_id
+    assert incoming.json()[0]["status"] == "submitted"
+    assert incoming.json()[0]["candidate"]["display_name"] == "Кандидат"
+    assert "public_contact_method" not in incoming.json()[0]
+    assert client.get("/api/v1/employer/applications", headers=outsider).json() == []
+    assert client.put(
+        f"/api/v1/employer/applications/{application_id}",
+        headers=outsider,
+        json={"status": "accepted"},
+    ).status_code == 404
+
+    reviewing = client.put(
+        f"/api/v1/employer/applications/{application_id}",
+        headers=employer,
+        json={"status": "reviewing"},
+    )
+    assert reviewing.status_code == 200
+    accepted = client.put(
+        f"/api/v1/employer/applications/{application_id}",
+        headers=employer,
+        json={"status": "accepted"},
+    )
+    assert accepted.status_code == 200, accepted.text
+    accepted_body = accepted.json()
+    assert accepted_body["status"] == "accepted"
+    assert accepted_body["match_id"]
+
+    candidate_application = client.get(
+        "/api/v1/candidate/applications", headers=candidate
+    ).json()[0]
+    assert candidate_application["status"] == "accepted"
+    assert candidate_application["match_id"] == accepted_body["match_id"]
+    assert [item["status"] for item in candidate_application["status_history"]] == [
+        "submitted",
+        "reviewing",
+        "accepted",
+    ]
+    candidate_conversations = client.get(
+        "/api/v1/chat/conversations", headers=candidate
+    )
+    employer_conversations = client.get(
+        "/api/v1/chat/conversations", headers=employer
+    )
+    assert candidate_conversations.status_code == 200
+    assert employer_conversations.status_code == 200
+    assert len(candidate_conversations.json()) == 1
+    assert len(employer_conversations.json()) == 1
+
+    repeated = client.put(
+        f"/api/v1/employer/applications/{application_id}",
+        headers=employer,
+        json={"status": "accepted"},
+    )
+    assert repeated.status_code == 200
+    assert repeated.json()["match_id"] == accepted_body["match_id"]
+    assert len(client.get("/api/v1/chat/conversations", headers=employer).json()) == 1
+    assert client.get("/api/v1/employer/invitations", headers=employer).json() == []
+    assert client.get("/api/v1/candidate/invitations", headers=candidate).json() == []
+
+    terminal = client.put(
+        f"/api/v1/employer/applications/{application_id}",
+        headers=employer,
+        json={"status": "rejected"},
+    )
+    assert terminal.status_code == 409
+    assert terminal.json()["error"]["code"] == "APPLICATION_NOT_PENDING"

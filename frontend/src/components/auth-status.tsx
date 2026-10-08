@@ -12,6 +12,7 @@ import { CandidateFsp } from "./candidate-fsp";
 import { EmployerCompanyProfile } from "./employer-company-profile";
 import { EmployerHiringNeed } from "./employer-hiring-need";
 import { EmployerVacancies } from "./employer-vacancies";
+import { EmployerApplications } from "./employer-applications";
 import { EmployerHiringPipeline } from "./employer-hiring-pipeline";
 import { EmployerTaskAuthoring } from "./employer-task-authoring";
 import { EmployerTaskEvaluations } from "./employer-task-evaluations";
@@ -181,6 +182,7 @@ export function AuthStatus() {
             <EmployerCompanyProfile token={keycloak.current?.token ?? ""} />
             <EmployerHiringNeed token={keycloak.current?.token ?? ""} onSaved={() => setTalentRadarRefreshKey((value) => value + 1)} />
             <EmployerVacancies token={keycloak.current?.token ?? ""} />
+            <EmployerApplications token={keycloak.current?.token ?? ""} />
             <EmployerHiringPipeline token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} />
             <EmployerTaskAuthoring token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} />
             <EmployerTaskEvaluations token={keycloak.current?.token ?? ""} refreshKey={taskRefreshKey} />

@@ -5,7 +5,11 @@
 Primary reverse-recruitment path:
 `employer invitation → candidate views → candidate accepts → MATCH_CREATED`
 
-Candidate-initiated vacancy applications may produce the same matched state when the employer accepts the application.
+Candidate-initiated vacancy applications produce the same matched state when
+the vacancy owner accepts the application. The application status transition,
+private invitation bridge, `talent_match`, conversation, and unlock events are
+committed together, so an accepted application cannot expose chat without a
+corresponding match.
 
 ## Before match
 

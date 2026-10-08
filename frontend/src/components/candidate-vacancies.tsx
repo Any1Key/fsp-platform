@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type ApplicationStatus = "submitted" | "reviewing" | "shortlisted" | "rejected" | "withdrawn";
+type ApplicationStatus = "submitted" | "reviewing" | "shortlisted" | "accepted" | "rejected" | "withdrawn";
 type Taxonomy = { slug: string; name: string } | null;
 type Vacancy = {
   id: string;
@@ -25,6 +25,7 @@ type Application = {
   status: ApplicationStatus;
   applied_at: string;
   updated_at: string;
+  match_id: string | null;
   vacancy: Vacancy & { vacancy_status: "draft" | "published" | "closed" };
   status_history: { status: ApplicationStatus; changed_at: string }[];
 };
@@ -34,6 +35,7 @@ const statusLabels: Record<ApplicationStatus, string> = {
   submitted: "Отклик отправлен",
   reviewing: "На рассмотрении",
   shortlisted: "Следующий этап",
+  accepted: "Принято · match создан",
   rejected: "Не подошло",
   withdrawn: "Отозван",
 };
@@ -180,6 +182,7 @@ export function CandidateVacancies({ token }: { token: string }) {
                 <strong>{application.vacancy.title}</strong>
               </div>
               <span className={`candidateApplicationStatus ${application.status}`}>{statusText(application.status)}</span>
+              {application.match_id && <small className="candidateMatchNotice">✓ Рабочий чат разблокирован</small>}
               <small>Отправлен {new Date(application.applied_at).toLocaleDateString("ru-RU")}</small>
               <div className="candidateApplicationTimeline">
                 {application.status_history.map((item) => (

@@ -17,9 +17,20 @@ server applies this rule even if a client skips browser validation and returns
 The vacancy currently stores title, description, optional location/work mode/
 employment type, optional taxonomy specialization and grade, salary, status,
 and lifecycle timestamps. Published rows are exposed through the candidate-facing
-browse route described in `docs/CANDIDATE_VACANCIES.md`. Employer-side
-incoming-application review and the accepted-application match transition remain
-later M11 work units.
+browse route described in `docs/CANDIDATE_VACANCIES.md`.
+
+Employer application review is company-scoped:
+
+- `GET /api/v1/employer/applications` lists incoming applications for all owned
+  vacancies with safe candidate display names and status history;
+- `PUT /api/v1/employer/applications/{id}` accepts `reviewing`, `shortlisted`,
+  `rejected`, or `accepted`.
+
+Accepting an application creates the existing invitation-backed match boundary
+in the same transaction. It creates one internal conversation, emits the
+`MATCH_CREATED` and `CONTACT_UNLOCKED` events, and makes the candidate's
+employer-task assignments available. The application-sourced invitation is an
+internal persistence bridge and is not shown in direct invitation inboxes.
 
 Vacancies are scoped through the authenticated employer's company. A different
 employer receives the same not-found boundary for an item it does not own, and

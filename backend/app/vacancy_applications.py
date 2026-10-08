@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
 from fastapi import HTTPException, status
@@ -11,6 +11,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .auth import Principal, sync_identity
+from .invitations import create_match_for_invitation
+from .pipelines import pipeline_snapshot_for_company, snapshot_json
+
+ApplicationReviewStatus = Literal["reviewing", "shortlisted", "rejected", "accepted"]
 
 
 def _candidate_profile_id(db: Session, principal: Principal) -> str:
@@ -99,11 +103,13 @@ def _application_row(db: Session, profile_id: str, application_id: str):
             "v.employment_type, v.salary_min_rub, v.salary_max_rub, "
             "v.status AS vacancy_status, v.published_at, "
             "s.slug AS specialization_slug, s.name AS specialization_name, "
-            "g.slug AS grade_slug, g.name AS grade_name "
+            "g.slug AS grade_slug, g.name AS grade_name, tm.id AS match_id "
             "FROM application a JOIN vacancy v ON v.id = a.vacancy_id "
             "JOIN company c ON c.id = v.company_id "
             "LEFT JOIN specialization s ON s.id = v.specialization_id "
             "LEFT JOIN grade g ON g.id = v.grade_id "
+            "LEFT JOIN invitation si ON si.source_application_id = a.id "
+            "LEFT JOIN talent_match tm ON tm.invitation_id = si.id "
             "WHERE a.id = :application_id AND a.candidate_profile_id = :profile_id"
         ),
         {"application_id": application_id, "profile_id": profile_id},
@@ -111,24 +117,27 @@ def _application_row(db: Session, profile_id: str, application_id: str):
 
 
 def _application_public(db: Session, row) -> dict[str, Any]:
-    history = db.execute(
-        text(
-            "SELECT status, changed_at FROM application_status_history "
-            "WHERE application_id = :application_id ORDER BY changed_at ASC, id ASC"
-        ),
-        {"application_id": row["application_id"]},
-    ).mappings().all()
+    history = _status_history(db, row["application_id"])
     return {
         "id": row["application_id"],
         "status": row["application_status"],
         "applied_at": row["applied_at"],
         "updated_at": row["updated_at"],
+        "match_id": row["match_id"],
         "vacancy": _vacancy_summary(row),
-        "status_history": [
-            {"status": item["status"], "changed_at": item["changed_at"]}
-            for item in history
-        ],
+        "status_history": history,
     }
+
+
+def _status_history(db: Session, application_id: str) -> list[dict[str, Any]]:
+    history = db.execute(
+        text(
+            "SELECT status, changed_at FROM application_status_history "
+            "WHERE application_id = :application_id ORDER BY sequence ASC"
+        ),
+        {"application_id": application_id},
+    ).mappings().all()
+    return [{"status": item["status"], "changed_at": item["changed_at"]} for item in history]
 
 
 def list_published_vacancies(db: Session, principal: Principal) -> list[dict[str, Any]]:
@@ -182,8 +191,8 @@ def apply_to_vacancy(
         )
         db.execute(
             text(
-                "INSERT INTO application_status_history (id, application_id, status) "
-                "VALUES (:id, :application_id, 'submitted')"
+                "INSERT INTO application_status_history (id, application_id, status, sequence) "
+                "VALUES (:id, :application_id, 'submitted', 1)"
             ),
             {"id": str(uuid4()), "application_id": application_id},
         )
@@ -206,14 +215,172 @@ def list_candidate_applications(db: Session, principal: Principal) -> list[dict[
             "v.employment_type, v.salary_min_rub, v.salary_max_rub, "
             "v.status AS vacancy_status, v.published_at, "
             "s.slug AS specialization_slug, s.name AS specialization_name, "
-            "g.slug AS grade_slug, g.name AS grade_name "
+            "g.slug AS grade_slug, g.name AS grade_name, tm.id AS match_id "
             "FROM application a JOIN vacancy v ON v.id = a.vacancy_id "
             "JOIN company c ON c.id = v.company_id "
             "LEFT JOIN specialization s ON s.id = v.specialization_id "
             "LEFT JOIN grade g ON g.id = v.grade_id "
+            "LEFT JOIN invitation si ON si.source_application_id = a.id "
+            "LEFT JOIN talent_match tm ON tm.invitation_id = si.id "
             "WHERE a.candidate_profile_id = :profile_id "
             "ORDER BY a.updated_at DESC, a.created_at DESC"
         ),
         {"profile_id": profile_id},
     ).mappings().all()
     return [_application_public(db, row) for row in rows]
+
+
+def _employer_application_rows(db: Session, principal: Principal):
+    identity = sync_identity(db, principal)
+    return db.execute(
+        text(
+            "SELECT a.id AS application_id, a.status AS application_status, "
+            "a.created_at AS applied_at, a.updated_at, v.id AS vacancy_id, v.title, "
+            "v.description, c.name AS company_name, c.public_contact_method, "
+            "v.location, v.work_mode, v.employment_type, v.salary_min_rub, v.salary_max_rub, "
+            "v.status AS vacancy_status, v.published_at, "
+            "s.slug AS specialization_slug, s.name AS specialization_name, "
+            "g.slug AS grade_slug, g.name AS grade_name, "
+            "cp.id AS candidate_profile_id, cp.display_name AS candidate_display_name, "
+            "tm.id AS match_id "
+            "FROM application a JOIN vacancy v ON v.id = a.vacancy_id "
+            "JOIN company c ON c.id = v.company_id "
+            "JOIN candidate_profile cp ON cp.id = a.candidate_profile_id "
+            "LEFT JOIN specialization s ON s.id = v.specialization_id "
+            "LEFT JOIN grade g ON g.id = v.grade_id "
+            "LEFT JOIN invitation si ON si.source_application_id = a.id "
+            "LEFT JOIN talent_match tm ON tm.invitation_id = si.id "
+            "WHERE c.owner_identity_id = :identity_id "
+            "ORDER BY a.updated_at DESC, a.created_at DESC"
+        ),
+        {"identity_id": identity["id"]},
+    ).mappings().all()
+
+
+def _employer_application_public(db: Session, row) -> dict[str, Any]:
+    return {
+        "id": row["application_id"],
+        "status": row["application_status"],
+        "applied_at": row["applied_at"],
+        "updated_at": row["updated_at"],
+        "match_id": row["match_id"],
+        "candidate": {
+            "id": row["candidate_profile_id"],
+            "display_name": row["candidate_display_name"] or "Кандидат",
+        },
+        "vacancy": _vacancy_summary(row),
+        "status_history": _status_history(db, row["application_id"]),
+    }
+
+
+def list_employer_applications(db: Session, principal: Principal) -> list[dict[str, Any]]:
+    return [_employer_application_public(db, row) for row in _employer_application_rows(db, principal)]
+
+
+def update_employer_application(
+    db: Session,
+    principal: Principal,
+    application_id: str,
+    next_status: ApplicationReviewStatus,
+) -> dict[str, Any]:
+    identity = sync_identity(db, principal)
+    row = db.execute(
+        text(
+            "SELECT a.id AS application_id, a.status AS application_status, "
+            "a.created_at AS applied_at, a.updated_at, a.vacancy_id, a.candidate_profile_id, "
+            "v.title, v.description, c.id AS company_id, c.name AS company_name, "
+            "c.public_contact_method, c.owner_identity_id, v.location, v.work_mode, "
+            "v.employment_type, v.salary_min_rub, v.salary_max_rub, v.status AS vacancy_status, "
+            "v.published_at, s.slug AS specialization_slug, s.name AS specialization_name, "
+            "g.slug AS grade_slug, g.name AS grade_name, "
+            "cp.display_name AS candidate_display_name, cp.identity_id AS candidate_identity_id, "
+            "tm.id AS match_id "
+            "FROM application a JOIN vacancy v ON v.id = a.vacancy_id "
+            "JOIN company c ON c.id = v.company_id "
+            "JOIN candidate_profile cp ON cp.id = a.candidate_profile_id "
+            "LEFT JOIN specialization s ON s.id = v.specialization_id "
+            "LEFT JOIN grade g ON g.id = v.grade_id "
+            "LEFT JOIN invitation si ON si.source_application_id = a.id "
+            "LEFT JOIN talent_match tm ON tm.invitation_id = si.id "
+            "WHERE a.id = :application_id AND c.owner_identity_id = :identity_id"
+        ),
+        {"application_id": application_id, "identity_id": identity["id"]},
+    ).mappings().one_or_none()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="application_not_found")
+
+    if row["application_status"] == next_status:
+        return _employer_application_public(db, row)
+    if row["application_status"] in {"accepted", "rejected", "withdrawn"}:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="application_not_pending")
+
+    if next_status == "accepted":
+        invitation_id = str(uuid4())
+        pipeline_stages = pipeline_snapshot_for_company(db, row["company_id"])
+        db.execute(
+            text(
+                "INSERT INTO invitation ("
+                "id, employer_identity_id, company_id, candidate_profile_id, salary_min_rub, "
+                "salary_max_rub, offer_description, company_name_snapshot, contact_method_snapshot, "
+                "status, pipeline_snapshot, source_application_id"
+                ") VALUES ("
+                ":id, :employer_identity_id, :company_id, :candidate_profile_id, :salary_min_rub, "
+                ":salary_max_rub, :offer_description, :company_name_snapshot, :contact_method_snapshot, "
+                "'pending', :pipeline_snapshot, :source_application_id"
+                ")"
+            ),
+            {
+                "id": invitation_id,
+                "employer_identity_id": identity["id"],
+                "company_id": row["company_id"],
+                "candidate_profile_id": row["candidate_profile_id"],
+                "salary_min_rub": row["salary_min_rub"],
+                "salary_max_rub": row["salary_max_rub"],
+                "offer_description": f"Заявка на вакансию «{row['title']}» принята работодателем.",
+                "company_name_snapshot": row["company_name"],
+                "contact_method_snapshot": row["public_contact_method"] or "Внутренний чат",
+                "pipeline_snapshot": snapshot_json(pipeline_stages),
+                "source_application_id": application_id,
+            },
+        )
+        match_id = create_match_for_invitation(
+            db,
+            invitation_id=invitation_id,
+            employer_identity_id=identity["id"],
+            candidate_profile_id=row["candidate_profile_id"],
+            actor_identity_id=identity["id"],
+        )
+    else:
+        match_id = None
+
+    db.execute(
+        text(
+            "UPDATE application SET status = :next_status, updated_at = CURRENT_TIMESTAMP "
+            "WHERE id = :application_id"
+        ),
+        {"next_status": next_status, "application_id": application_id},
+    )
+    next_sequence = db.execute(
+        text(
+            "SELECT COALESCE(MAX(sequence), 0) + 1 FROM application_status_history "
+            "WHERE application_id = :application_id"
+        ),
+        {"application_id": application_id},
+    ).scalar_one()
+    db.execute(
+        text(
+            "INSERT INTO application_status_history (id, application_id, status, sequence) "
+            "VALUES (:id, :application_id, :status, :sequence)"
+        ),
+        {
+            "id": str(uuid4()),
+            "application_id": application_id,
+            "status": next_status,
+            "sequence": next_sequence,
+        },
+    )
+    db.commit()
+    updated = next(item for item in _employer_application_rows(db, principal) if item["application_id"] == application_id)
+    if match_id is not None:
+        assert updated["match_id"] == match_id
+    return _employer_application_public(db, updated)

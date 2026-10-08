@@ -6,11 +6,11 @@ The first candidate-facing M11 slice provides a separate, salary-bearing path fr
 
 - `GET /api/v1/candidate/vacancies` returns only `published` vacancies. It includes title, description, salary, location/work mode/employment type, optional specialization and grade, and the safe company name. Employer contact details, candidate contact details, protected attributes and documents are never included. Each row also reports the authenticated candidate's own application state, if one exists.
 - `POST /api/v1/candidate/vacancies/{vacancy_id}/applications` creates one application with initial status `submitted`. Processing consent is required. The vacancy must still be published; a duplicate candidate/vacancy pair returns `APPLICATION_EXISTS`.
-- `GET /api/v1/candidate/applications` returns only the authenticated candidate's applications, including the vacancy summary, current status and append-only status history.
+- `GET /api/v1/candidate/applications` returns only the authenticated candidate's applications, including the vacancy summary, current status, append-only status history, and `match_id` after employer acceptance.
 
-Application statuses are `submitted`, `reviewing`, `shortlisted`, `rejected`, and `withdrawn`. This slice creates only `submitted`; employer-side review and status transitions are a later M11 unit.
+Application statuses are `submitted`, `reviewing`, `shortlisted`, `accepted`, `rejected`, and `withdrawn`. A candidate starts at `submitted`; the vacancy owner controls review and can accept the application.
 
-An application does not create a match, unlock contacts, or enable chat. The later accepted-application work unit will use the existing server-side match/contact boundary described in `docs/CHAT_AND_MATCHING.md`.
+When the vacancy owner accepts an application, the API atomically creates a match, unlocks the authorized internal conversation, and returns its `match_id`. The candidate sees the accepted state and chat unlock; no contacts are exposed in the application response.
 
 ## Privacy and lifecycle
 

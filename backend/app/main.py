@@ -93,7 +93,9 @@ from .vacancies import (
 from .vacancy_applications import (
     apply_to_vacancy,
     list_candidate_applications,
+    list_employer_applications,
     list_published_vacancies,
+    update_employer_application,
 )
 
 app = FastAPI(
@@ -299,7 +301,7 @@ class CandidateVacancyResponse(BaseModel):
     published_at: datetime
     application_id: str | None
     application_status: Literal[
-        "submitted", "reviewing", "shortlisted", "rejected", "withdrawn"
+        "submitted", "reviewing", "shortlisted", "accepted", "rejected", "withdrawn"
     ] | None
     applied_at: datetime | None
 
@@ -321,17 +323,46 @@ class CandidateApplicationVacancyResponse(BaseModel):
 
 
 class ApplicationStatusHistoryResponse(BaseModel):
-    status: Literal["submitted", "reviewing", "shortlisted", "rejected", "withdrawn"]
+    status: Literal[
+        "submitted", "reviewing", "shortlisted", "accepted", "rejected", "withdrawn"
+    ]
     changed_at: datetime
 
 
 class CandidateApplicationResponse(BaseModel):
     id: str
-    status: Literal["submitted", "reviewing", "shortlisted", "rejected", "withdrawn"]
+    status: Literal[
+        "submitted", "reviewing", "shortlisted", "accepted", "rejected", "withdrawn"
+    ]
     applied_at: datetime
     updated_at: datetime
+    match_id: str | None
     vacancy: CandidateApplicationVacancyResponse
     status_history: list[ApplicationStatusHistoryResponse]
+
+
+class EmployerApplicationCandidateResponse(BaseModel):
+    id: str
+    display_name: str
+
+
+class EmployerApplicationResponse(BaseModel):
+    id: str
+    status: Literal[
+        "submitted", "reviewing", "shortlisted", "accepted", "rejected", "withdrawn"
+    ]
+    applied_at: datetime
+    updated_at: datetime
+    match_id: str | None
+    candidate: EmployerApplicationCandidateResponse
+    vacancy: CandidateApplicationVacancyResponse
+    status_history: list[ApplicationStatusHistoryResponse]
+
+
+class EmployerApplicationStatusRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["reviewing", "shortlisted", "rejected", "accepted"]
 
 
 class CreateInvitationRequest(BaseModel):
@@ -1296,6 +1327,45 @@ def close_employer_vacancy(
     """Close instead of physically deleting so future application history survives."""
 
     return VacancyResponse.model_validate(close_vacancy(db, principal, vacancy_id))
+
+
+@app.get(
+    "/api/v1/employer/applications",
+    tags=["employer applications"],
+    response_model=list[EmployerApplicationResponse],
+    responses={403: {"model": ErrorResponse, "description": "Employer role required"}},
+)
+def employer_applications(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[EmployerApplicationResponse]:
+    """Return incoming applications for vacancies owned by this employer."""
+
+    return [
+        EmployerApplicationResponse.model_validate(item)
+        for item in list_employer_applications(db, principal)
+    ]
+
+
+@app.put(
+    "/api/v1/employer/applications/{application_id}",
+    tags=["employer applications"],
+    response_model=EmployerApplicationResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Application not found"},
+        409: {"model": ErrorResponse, "description": "Application is no longer pending"},
+    },
+)
+def update_employer_application_status(
+    application_id: str,
+    request: EmployerApplicationStatusRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> EmployerApplicationResponse:
+    return EmployerApplicationResponse.model_validate(
+        update_employer_application(db, principal, application_id, request.status)
+    )
 
 
 @app.get(

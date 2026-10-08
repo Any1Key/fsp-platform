@@ -148,6 +148,14 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "APPLICATION_EXISTS",
         "You have already applied to this vacancy.",
     ),
+    "application_not_found": (
+        "APPLICATION_NOT_FOUND",
+        "The application was not found or is not owned by this employer.",
+    ),
+    "application_not_pending": (
+        "APPLICATION_NOT_PENDING",
+        "This application is already in a terminal state.",
+    ),
     "hiring_pipeline_stage_count_invalid": (
         "HIRING_PIPELINE_STAGE_COUNT_INVALID",
         "A hiring pipeline must contain between two and twelve stages.",

@@ -1,4 +1,6 @@
+import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect, text
@@ -6,10 +8,52 @@ from sqlalchemy import create_engine, inspect, text
 from alembic import command
 
 
+def _load_application_acceptance_migration():
+    path = Path(__file__).parents[1] / "alembic/versions/20261008_0024_application_acceptance.py"
+    spec = importlib.util.spec_from_file_location("application_acceptance_migration", path)
+    assert spec and spec.loader
+    migration = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(migration)
+    return migration
+
+
 def _alembic_config(database_url: str) -> Config:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     config.set_main_option("sqlalchemy.url", database_url)
     return config
+
+
+def test_application_acceptance_postgresql_path_preserves_foreign_key_dependencies(
+    monkeypatch,
+):
+    migration = _load_application_acceptance_migration()
+    operations = []
+
+    class FakeOperations:
+        def get_bind(self):
+            return SimpleNamespace(dialect=SimpleNamespace(name="postgresql"))
+
+        def drop_constraint(self, name, *, table_name, type_):
+            operations.append(("drop", name, table_name, type_))
+
+        def create_check_constraint(self, name, table_name, expression):
+            operations.append(("create", name, table_name, expression))
+
+        def batch_alter_table(self, *args, **kwargs):
+            raise AssertionError("PostgreSQL migrations must not recreate FK-referenced tables")
+
+    monkeypatch.setattr(migration, "op", FakeOperations())
+
+    migration._replace_status_check(
+        "application",
+        "ck_application_status",
+        "status IN ('submitted', 'accepted')",
+    )
+
+    assert operations == [
+        ("drop", "ck_application_status", "application", "check"),
+        ("create", "ck_application_status", "application", "status IN ('submitted', 'accepted')"),
+    ]
 
 
 def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monkeypatch):
