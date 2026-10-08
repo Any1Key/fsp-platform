@@ -562,3 +562,34 @@ def test_local_ai_worker_failure_does_not_leave_job_queued_or_poison_executor(
     second = client.post("/api/v1/employer/tasks/draft-suggestion", headers=employer)
     completed = _poll_suggestion(client, employer, second)
     assert completed["status"] == "completed"
+
+
+def test_local_ai_worker_timeout_preserves_timeout_reason(auth_context, monkeypatch):
+    client, private_key, settings = auth_context
+    employer = _employer(client, private_key, settings, sub=f"local-ai-worker-timeout-{uuid4().hex}")
+    assert client.post("/api/v1/employer/hiring-need", headers=employer, json=_need()).status_code == 201
+
+    class FastAdapter:
+        async def propose_task_draft(self, context):
+            del context
+            return LocalAiDraftResult(status="completed", source="local", draft=_draft())
+
+    monkeypatch.setattr(main, "local_ai_port", FastAdapter())
+
+    original_runner = local_ai.run_task_draft_job
+    runner_timed_out = threading.Event()
+
+    def timeout_runner(*args, **kwargs):
+        del args, kwargs
+        runner_timed_out.set()
+        raise TimeoutError("simulated worker timeout")
+
+    monkeypatch.setattr(local_ai, "run_task_draft_job", timeout_runner)
+    queued = client.post("/api/v1/employer/tasks/draft-suggestion", headers=employer)
+    assert queued.status_code == 202
+    assert runner_timed_out.wait(timeout=10)
+
+    monkeypatch.setattr(local_ai, "run_task_draft_job", original_runner)
+    result = _poll_suggestion(client, employer, queued)
+    assert result["status"] == "failed"
+    assert result["reason"] == "local_ai_timeout"

@@ -87,6 +87,7 @@ from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 from .profile_pdf import render_profile_pdf
 from .protected_candidate import MinorState, get_protected_profile, update_protected_profile
 from .resume import get_resume, review_resume, upload_resume
+from .skill_passport import get_skill_passport
 from .task_assignments import list_candidate_assignments, submit_candidate_assignment
 from .taxonomy import list_taxonomy
 from .vacancies import (
@@ -815,6 +816,59 @@ class CandidateDashboardResponse(BaseModel):
     current_assessment: CandidateCurrentAssessmentResponse | None
     retest_available_at: datetime | None
     attempt_history: list[CandidateDashboardAttemptResponse]
+
+
+class SkillPassportProfileResponse(BaseModel):
+    display_name: str | None
+    headline: str | None
+
+
+class SkillPassportCategoryResponse(BaseModel):
+    specialization: str
+    grade: str | None
+    declared_grade: str
+    grade_state: Literal["verified", "not_confirmed"]
+    score: float
+    assessed_at: datetime
+    freshness: Literal["fresh", "aging", "stale"]
+
+
+class SkillPassportFspResponse(BaseModel):
+    status: Literal["not_linked", "linked"]
+    history_status: Literal["no_history", "has_history"]
+    achievement_count: int = Field(ge=0)
+
+
+class SkillPassportFreshnessResponse(BaseModel):
+    fresh: int = Field(ge=0)
+    aging: int = Field(ge=0)
+    stale: int = Field(ge=0)
+    future: int = Field(ge=0)
+    not_available: int = Field(ge=0)
+
+
+class SkillPassportEvidenceResponse(BaseModel):
+    id: str
+    source: Literal["platform_assessment", "fsp", "profile"]
+    status: Literal["verified", "unconfirmed", "declared"]
+    title: str
+    skills: list[str]
+    score: float | None
+    confidence: float = Field(ge=0, le=1)
+    measured_at: datetime | None
+    freshness: Literal["fresh", "aging", "stale", "future", "not_available"]
+    provenance: str
+    details: str
+
+
+class SkillPassportResponse(BaseModel):
+    profile: SkillPassportProfileResponse
+    status: Literal["not_started", "verified", "unconfirmed"]
+    category: SkillPassportCategoryResponse | None
+    fsp: SkillPassportFspResponse
+    freshness: SkillPassportFreshnessResponse
+    retest_available_at: datetime | None
+    evidence: list[SkillPassportEvidenceResponse]
 
 
 class TaxonomySkillResponse(BaseModel):
@@ -2455,6 +2509,23 @@ def candidate_dashboard(
             CandidateDashboardAttemptResponse.model_validate(public_history_item(attempt))
             for attempt in reversed(attempts)
         ],
+    )
+
+
+@app.get(
+    "/api/v1/candidate/skill-passport",
+    tags=["candidate skill passport"],
+    response_model=SkillPassportResponse,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_skill_passport(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> SkillPassportResponse:
+    """Return the authenticated candidate's unified, safe evidence projection."""
+
+    return SkillPassportResponse.model_validate(
+        get_skill_passport(db, principal, assessment_service)
     )
 
 

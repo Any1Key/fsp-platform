@@ -6,7 +6,7 @@ import { PrivacySettings } from "./privacy-settings";
 import { CandidateProfile } from "./candidate-profile";
 import { CandidateProtectedProfile } from "./candidate-protected-profile";
 import { CandidateResume } from "./candidate-resume";
-import { CandidateDashboard } from "./candidate-dashboard";
+import { CandidateSkillPassport } from "./candidate-skill-passport";
 import { CandidateAssessment } from "./candidate-assessment";
 import { CandidateFsp } from "./candidate-fsp";
 import { EmployerCompanyProfile } from "./employer-company-profile";
@@ -163,7 +163,7 @@ export function AuthStatus() {
         </button>
         {auth.session.role === "candidate" && (
           <>
-            <CandidateDashboard token={keycloak.current?.token ?? ""} refreshKey={assessmentRefreshKey} />
+            <CandidateSkillPassport token={keycloak.current?.token ?? ""} refreshKey={assessmentRefreshKey} />
             <CandidateVacancies token={keycloak.current?.token ?? ""} />
             <CandidateInvitations token={keycloak.current?.token ?? ""} onMatchCreated={() => setTaskRefreshKey((value) => value + 1)} />
             <CandidateTaskAssignments token={keycloak.current?.token ?? ""} refreshKey={taskRefreshKey} />

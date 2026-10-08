@@ -500,7 +500,9 @@ def run_task_draft_job(
         db.commit()
 
 
-def _mark_task_draft_job_failed(job_id: str, bind: Any) -> None:
+def _mark_task_draft_job_failed(
+    job_id: str, bind: Any, *, reason: str = "local_ai_job_failed"
+) -> None:
     """Best-effort terminal state for failures outside the job body."""
 
     factory = sessionmaker(bind=bind, autoflush=False, expire_on_commit=False)
@@ -519,7 +521,7 @@ def _mark_task_draft_job_failed(job_id: str, bind: Any) -> None:
                             LocalAiDraftResult(
                                 status="failed",
                                 source="local",
-                                reason="local_ai_job_failed",
+                                reason=reason,
                             )
                         ),
                         ensure_ascii=False,
@@ -542,6 +544,10 @@ def _run_task_draft_job_safely(
 
     try:
         run_task_draft_job(job_id, adapter, bind, timeout_seconds)
+    except TimeoutError:
+        # Keep timeout semantics even when the timeout is raised at the
+        # worker boundary rather than inside the adapter execution block.
+        _mark_task_draft_job_failed(job_id, bind, reason="local_ai_timeout")
     except Exception:  # noqa: BLE001  # Optional AI work must fail closed.
         _mark_task_draft_job_failed(job_id, bind)
 

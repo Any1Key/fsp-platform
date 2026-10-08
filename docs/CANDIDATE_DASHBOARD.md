@@ -31,7 +31,9 @@ contract are kept independent of that repository choice.
 
 Evidence: `backend/tests/test_candidate_dashboard.py` covers empty, verified,
 unconfirmed, self-scope and employer-denial behavior. The responsive UI is
-mounted from `frontend/src/components/auth-status.tsx`. The same candidate
+The legacy assessment-only UI is retained for the route contract, while the
+candidate workspace now mounts the richer Verified Skill Passport from
+`frontend/src/components/candidate-skill-passport.tsx`. The same candidate
 workspace includes the base assessment flow: specialization/declared-grade
 selection, unique generated form, progressive explanations, system scoring,
 and a history refresh after submission. See

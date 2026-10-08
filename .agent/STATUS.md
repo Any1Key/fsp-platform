@@ -1,19 +1,19 @@
 # Status
 
 Current phase: IMPLEMENTATION  
-Current milestone: M06 — employer company profile
+Current milestone: M12 — Verified Skill Passport
 Last verified run: none (external supervisor required)
 
-The current work block adds the employer-owned company profile boundary: a
-persistence-backed self-scoped API and responsive employer editor. It is the
-first prerequisite for employer hiring needs and Talent Radar; matching,
-invitations, and employer trust fields remain intentionally separate.
+The current work block adds the candidate-owned Verified Skill Passport
+projection: a self-scoped API and responsive candidate view that combines
+system assessment, FSP snapshots, and clearly declared profile skills with
+freshness/provenance states. It is a read-time projection over existing
+evidence boundaries and adds no duplicate storage.
 
 Requirement status for this block: IMPLEMENTED pending supervisor evidence:
-EMP-001. The previous FSP contribution remains implemented; CORE-003 and
-MATCH-002 remain TODO until employer discovery consumes the contribution in the
-ProofMatch ranking flow.
+INNOV-001. External supervisor owns verification and READY state.
 
-Important open scope: synthetic grade validation, FSP evidence, ProofMatch,
-invitations/match/chat, employer pipeline, load testing, and complete
-responsive journey remain unimplemented.
+Important open scope: M12 Blind Discovery, Talent Radar polish, Career Graph,
+employer trust/anti-fraud, and ATS integration remain unimplemented, along with
+the M13–M17 validation, accessibility, security-audit, submission, and final
+audit work.

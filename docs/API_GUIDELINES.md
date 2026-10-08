@@ -252,6 +252,21 @@ contacts, protected DOB/minor state or consent metadata. Employers receive
 `ROLE_REQUIRED`. See `docs/CANDIDATE_DASHBOARD.md` for the bootstrap storage
 boundary and UI states.
 
+## Candidate Verified Skill Passport
+
+`GET /api/v1/candidate/skill-passport` is a candidate-only, read-time
+projection of the authenticated candidate's evidence. It combines the latest
+system-scored platform assessment, mapped FSP achievement snapshots, and
+candidate-entered profile skills while returning source, status, confidence,
+provenance, measured time, and freshness for each evidence card. It also
+returns explicit `not_started`, `unconfirmed`, and `no_history` states.
+
+The route accepts no candidate ID and does not return contacts, email, DOB or
+minor-document data, answer keys, assessment prompts, or integrity telemetry.
+Platform assessment freshness is a display signal (fresh through 365 days,
+aging through 730 days, then stale); it never changes eligibility or grade.
+FSP history remains additive and missing history contributes no penalty.
+
 ## Candidate assessment attempts
 
 The base assessment routes require a candidate role. `POST
