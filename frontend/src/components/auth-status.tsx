@@ -20,6 +20,8 @@ import { EmployerTalentRadar } from "./employer-talent-radar";
 import { CandidateInvitations } from "./candidate-invitations";
 import { CandidateTaskAssignments } from "./candidate-task-assignments";
 import { CandidateVacancies } from "./candidate-vacancies";
+import { CandidateChallenges } from "./candidate-challenges";
+import { EmployerChallenges } from "./employer-challenges";
 import { EmployerInvitations } from "./employer-invitations";
 import { InternalChat } from "./internal-chat";
 
@@ -165,6 +167,7 @@ export function AuthStatus() {
             <CandidateVacancies token={keycloak.current?.token ?? ""} />
             <CandidateInvitations token={keycloak.current?.token ?? ""} onMatchCreated={() => setTaskRefreshKey((value) => value + 1)} />
             <CandidateTaskAssignments token={keycloak.current?.token ?? ""} refreshKey={taskRefreshKey} />
+            <CandidateChallenges token={keycloak.current?.token ?? ""} refreshKey={taskRefreshKey} />
             <InternalChat token={keycloak.current?.token ?? ""} />
             <CandidateAssessment
               token={keycloak.current?.token ?? ""}
@@ -186,6 +189,7 @@ export function AuthStatus() {
             <EmployerHiringPipeline token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} />
             <EmployerTaskAuthoring token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} />
             <EmployerTaskEvaluations token={keycloak.current?.token ?? ""} refreshKey={taskRefreshKey} />
+            <EmployerChallenges token={keycloak.current?.token ?? ""} refreshKey={invitationRefreshKey} />
             <EmployerTalentRadar token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} onInvitationCreated={() => setInvitationRefreshKey((value) => value + 1)} />
             <EmployerInvitations token={keycloak.current?.token ?? ""} refreshKey={invitationRefreshKey} />
             <InternalChat token={keycloak.current?.token ?? ""} />

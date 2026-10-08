@@ -107,7 +107,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] vacancy CRUD + mandatory salary
 - [x] candidate vacancy list/application/status
 - [x] accepted application → match
-- [ ] periodic short challenges
+- [x] periodic short challenges
 - [ ] evidence freshness
 
 ## M12 — Differentiating UX

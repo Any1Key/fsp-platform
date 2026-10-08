@@ -30,6 +30,13 @@ from .auth import (
     sync_identity,
 )
 from .candidates import get_profile, update_profile
+from .challenges import (
+    create_challenge,
+    grade_challenge,
+    list_candidate_challenges,
+    list_employer_challenges,
+    submit_challenge,
+)
 from .chat import (
     exchange_contact,
     get_conversation,
@@ -742,6 +749,40 @@ class EmployerTaskAssignmentResponse(BaseModel):
     task: EmployerTaskAssignmentTaskResponse
     submissions: list[TaskSubmissionResponse]
     evaluation: EmployerEvaluationResponse | None
+
+
+class ChallengeRubricDimensionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=120)
+    points: int = Field(gt=0, le=1000)
+    description: str | None = Field(default=None, max_length=500)
+
+
+class CreateChallengeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    match_id: str = Field(min_length=1, max_length=36)
+    title: str = Field(min_length=1, max_length=160)
+    instructions: str = Field(min_length=1, max_length=12000)
+    target_skill: str = Field(min_length=1, max_length=80)
+    estimated_minutes: int = Field(ge=5, le=20)
+    cadence_days: int = Field(ge=1, le=90)
+    rubric: list[ChallengeRubricDimensionRequest] = Field(min_length=1, max_length=12)
+
+
+class ChallengeSubmissionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    response_text: str = Field(min_length=1, max_length=20000)
+
+
+class ChallengeResultRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    rubric_scores: list[EmployerEvaluationRubricScoreRequest] = Field(min_length=1, max_length=12)
+    feedback: str | None = Field(default=None, max_length=5000)
+    release_to_candidate: bool = False
 
 
 class CandidateDashboardProfileResponse(BaseModel):
@@ -2063,6 +2104,99 @@ def evaluate_employer_task(
             request.release_to_candidate,
         )
     )
+
+
+@app.post(
+    "/api/v1/employer/challenges",
+    tags=["employer challenges"],
+    response_model=dict[str, Any],
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Match not found"},
+        422: {"model": ErrorResponse, "description": "Challenge definition is invalid"},
+    },
+)
+def create_employer_challenge(
+    request: CreateChallengeRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> dict[str, Any]:
+    return create_challenge(db, principal, request.model_dump())
+
+
+@app.get(
+    "/api/v1/employer/challenges",
+    tags=["employer challenges"],
+    response_model=list[dict[str, Any]],
+    responses={403: {"model": ErrorResponse, "description": "Employer role required"}},
+)
+def employer_challenges(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[dict[str, Any]]:
+    return list_employer_challenges(db, principal)
+
+
+@app.put(
+    "/api/v1/employer/challenges/{assignment_id}/result",
+    tags=["employer challenges"],
+    response_model=dict[str, Any],
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Challenge assignment not found"},
+        409: {"model": ErrorResponse, "description": "A candidate submission is required"},
+        422: {"model": ErrorResponse, "description": "Challenge rubric is invalid"},
+    },
+)
+def grade_employer_challenge(
+    assignment_id: str,
+    request: ChallengeResultRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> dict[str, Any]:
+    return grade_challenge(
+        db,
+        principal,
+        assignment_id,
+        [score.model_dump() for score in request.rubric_scores],
+        request.feedback,
+        request.release_to_candidate,
+    )
+
+
+@app.get(
+    "/api/v1/candidate/challenges",
+    tags=["candidate challenges"],
+    response_model=list[dict[str, Any]],
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_challenges(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[dict[str, Any]]:
+    return list_candidate_challenges(db, principal)
+
+
+@app.post(
+    "/api/v1/candidate/challenges/{assignment_id}/submissions",
+    tags=["candidate challenges"],
+    response_model=dict[str, Any],
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        404: {"model": ErrorResponse, "description": "Challenge assignment not found"},
+        409: {"model": ErrorResponse, "description": "Challenge cycle is not available"},
+        422: {"model": ErrorResponse, "description": "Submission is invalid"},
+    },
+)
+def submit_candidate_challenge(
+    assignment_id: str,
+    request: ChallengeSubmissionRequest,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> dict[str, Any]:
+    return submit_challenge(db, principal, assignment_id, request.response_text)
 
 
 @app.get(

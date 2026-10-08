@@ -172,11 +172,11 @@ to platform assessment results and cannot mutate the global verified grade.
 - employer_feedback on generated draft
 
 ## Challenges
-- challenge
-- assignment
-- submission
-- rubric/result
-- evidence freshness effects
+- `challenge` — company-owned prompt bound to an accepted `talent_match`, with a 5–20 minute duration, 1–90 day cadence and immutable rubric snapshot;
+- `challenge_assignment` — one scheduled cycle per challenge, uniquely numbered, with assigned/due timestamps and lifecycle status;
+- `challenge_submission` — one candidate response per cycle;
+- `challenge_result` — employer-owned rubric score, release state, feedback and `evidence_fresh_until` timestamp;
+- released results schedule the next assignment cycle but remain employer-specific evidence and do not mutate platform assessment results.
 
 ## Audit
 - `audit_event`: actor identity, event type, non-PII JSON details and timestamp. Audit consent grants/withdrawals, discoverability changes and privacy export requests alongside future domain transitions.

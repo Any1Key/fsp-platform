@@ -264,6 +264,66 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "EMPLOYER_EVALUATION_SCORE_OUT_OF_RANGE",
         "A rubric score must be between zero and that dimension's maximum points.",
     ),
+    "challenge_fields_required": (
+        "CHALLENGE_FIELDS_REQUIRED",
+        "A challenge needs a title, instructions, and target skill.",
+    ),
+    "challenge_duration_invalid": (
+        "CHALLENGE_DURATION_INVALID",
+        "A periodic challenge must take between five and 20 minutes.",
+    ),
+    "challenge_cadence_invalid": (
+        "CHALLENGE_CADENCE_INVALID",
+        "Challenge cadence must be between one and 90 days.",
+    ),
+    "challenge_rubric_invalid": (
+        "CHALLENGE_RUBRIC_INVALID",
+        "A challenge rubric needs unique dimensions with positive points.",
+    ),
+    "challenge_match_not_found": (
+        "CHALLENGE_MATCH_NOT_FOUND",
+        "The challenge can target only a match owned by this employer.",
+    ),
+    "challenge_not_found": (
+        "CHALLENGE_NOT_FOUND",
+        "The challenge was not found or is not owned by this employer.",
+    ),
+    "challenge_assignment_not_found": (
+        "CHALLENGE_ASSIGNMENT_NOT_FOUND",
+        "The challenge cycle was not found or is not available to this account.",
+    ),
+    "challenge_not_started": (
+        "CHALLENGE_NOT_STARTED",
+        "This challenge cycle is scheduled for a later date.",
+    ),
+    "challenge_deadline_passed": (
+        "CHALLENGE_DEADLINE_PASSED",
+        "The challenge deadline has passed and no submission is accepted.",
+    ),
+    "challenge_submission_exists": (
+        "CHALLENGE_SUBMISSION_EXISTS",
+        "Only one submission is accepted per challenge cycle.",
+    ),
+    "challenge_response_required": (
+        "CHALLENGE_RESPONSE_REQUIRED",
+        "A non-empty challenge response is required.",
+    ),
+    "challenge_submission_required": (
+        "CHALLENGE_SUBMISSION_REQUIRED",
+        "A candidate submission is required before grading the challenge.",
+    ),
+    "challenge_result_exists": (
+        "CHALLENGE_RESULT_EXISTS",
+        "This challenge cycle already has a result.",
+    ),
+    "challenge_rubric_mismatch": (
+        "CHALLENGE_RUBRIC_MISMATCH",
+        "Challenge scores must include each rubric dimension exactly once.",
+    ),
+    "challenge_score_out_of_range": (
+        "CHALLENGE_SCORE_OUT_OF_RANGE",
+        "A challenge score must be between zero and that dimension's maximum points.",
+    ),
     "hiring_need_required_for_talent_radar": (
         "HIRING_NEED_REQUIRED_FOR_TALENT_RADAR",
         "Create a hiring need before opening Talent Radar.",
