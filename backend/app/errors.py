@@ -116,6 +116,30 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "HIRING_NEED_UPDATE_REQUIRED",
         "At least one hiring need field is required.",
     ),
+    "vacancy_fields_required": (
+        "VACANCY_FIELDS_REQUIRED",
+        "A vacancy needs a title and description.",
+    ),
+    "vacancy_update_required": (
+        "VACANCY_UPDATE_REQUIRED",
+        "At least one vacancy field is required.",
+    ),
+    "vacancy_salary_invalid": (
+        "VACANCY_SALARY_INVALID",
+        "Vacancy salary minimum and maximum must be positive and the minimum cannot exceed the maximum.",
+    ),
+    "vacancy_taxonomy_invalid": (
+        "VACANCY_TAXONOMY_INVALID",
+        "The vacancy specialization or grade is not available.",
+    ),
+    "vacancy_not_found": (
+        "VACANCY_NOT_FOUND",
+        "The vacancy was not found or is not owned by this employer.",
+    ),
+    "vacancy_closed": (
+        "VACANCY_CLOSED",
+        "A closed vacancy cannot be published again.",
+    ),
     "hiring_pipeline_stage_count_invalid": (
         "HIRING_PIPELINE_STAGE_COUNT_INVALID",
         "A hiring pipeline must contain between two and twelve stages.",

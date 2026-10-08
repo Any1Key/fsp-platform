@@ -519,6 +519,43 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .skillPreference legend { padding: 0 4px; color: #c3bdff; font-size: 10px; }
 .skillChoice { display: flex !important; grid-template-columns: auto 1fr; grid-template-columns: none; gap: 8px !important; align-items: center; }
 .skillChoice input { width: auto; accent-color: var(--brand-primary); }
+.vacancyPanel {
+  flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14);
+  padding-top: 16px; color: #ededed;
+}
+.vacancyPanel.muted, .vacancyPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.vacancyPanel.error { color: #ffb6bd; }
+.vacancyToolbar { display: grid; grid-template-columns: minmax(190px, .35fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.vacancyList { display: grid; gap: 7px; align-content: start; }
+.vacancyListItem, .vacancyNewButton {
+  display: grid; gap: 5px; border: 1px solid rgba(169,161,255,.23); border-radius: 10px;
+  padding: 10px; background: rgba(255,255,255,.04); color: #ededed; text-align: left;
+  cursor: pointer; font: inherit;
+}
+.vacancyListItem:hover, .vacancyListItem:focus-visible, .vacancyListItem.active { border-color: #a9a1ff; background: rgba(64,47,255,.17); }
+.vacancyListItem strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+.vacancyListItem small, .vacancyNewButton { color: #b7b7c1; font-size: 9px; }
+.vacancyNewButton { display: block; border-style: dashed; text-align: center; }
+.vacancyEmpty { display: grid; gap: 5px; border: 1px dashed rgba(169,161,255,.42); border-radius: 12px; padding: 15px 12px; color: #d5d5dc; font-size: 10px; line-height: 1.45; }
+.vacancyEmpty span { color: #b7b7c1; font-size: 9px; }
+.vacancyForm { display: grid; gap: 10px; border: 1px solid rgba(169,161,255,.25); border-radius: 13px; padding: 13px; background: rgba(27,28,33,.5); }
+.vacancyFormTop { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.vacancyFormTop strong { font-size: 12px; }
+.vacancyStatus { border-radius: 999px; padding: 5px 7px; color: #b7b7c1; font-size: 8px; letter-spacing: .06em; }
+.vacancyStatus.draft { background: rgba(255,210,138,.12); color: #ffd28a; }
+.vacancyStatus.published { background: rgba(139,224,178,.12); color: #8be0b2; }
+.vacancyStatus.closed { background: rgba(255,182,189,.12); color: #ffb6bd; }
+.vacancyForm label { display: grid; gap: 5px; color: #d5d5dc; font-size: 10px; }
+.vacancyForm input, .vacancyForm textarea, .vacancyForm select { width: 100%; border: 1px solid #555760; border-radius: 9px; padding: 10px 11px; background: rgba(255,255,255,.06); color: white; font: inherit; font-size: 11px; outline: none; }
+.vacancyForm textarea { resize: vertical; line-height: 1.5; }
+.vacancyForm select option { color: var(--text); }
+.vacancyForm input:focus, .vacancyForm textarea:focus, .vacancyForm select:focus { border-color: #a9a1ff; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
+.vacancyForm input:disabled, .vacancyForm textarea:disabled, .vacancyForm select:disabled { cursor: not-allowed; opacity: .55; }
+.vacancyFields { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.vacancyFooter { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; border-top: 1px solid rgba(255,255,255,.08); padding-top: 10px; }
+.vacancyFooter small { max-width: 55%; color: #b7b7c1; font-size: 9px; line-height: 1.5; }
+.vacancyActions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.vacancyActions .authButton { padding: 8px 10px; font-size: 9px; }
 .radarPanel {
   flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14);
   padding-top: 16px; color: #ededed;
@@ -640,6 +677,12 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .companyHeading, .companyFooter { align-items: flex-start; flex-direction: column; }
   .companyFooter small { max-width: none; }
   .skillPreferenceGrid { grid-template-columns: 1fr; }
+  .vacancyToolbar { grid-template-columns: 1fr; }
+  .vacancyFields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vacancyFormTop, .vacancyFooter { align-items: flex-start; flex-direction: column; }
+  .vacancyFooter small { max-width: none; }
+  .vacancyActions { width: 100%; justify-content: stretch; flex-direction: column; }
+  .vacancyActions .authButton { width: 100%; }
   .radarHeading, .radarFooter { align-items: flex-start; flex-direction: column; }
   .radarFilters { grid-template-columns: 1fr; }
   .radarFilters .radarCheckbox { grid-column: auto; }

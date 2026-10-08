@@ -104,7 +104,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] optional CPU-local runtime profile if host supports it
 
 ## M11 — Vacancies/applications/challenges
-- [ ] vacancy CRUD + mandatory salary
+- [x] vacancy CRUD + mandatory salary
 - [ ] candidate vacancy list/application/status
 - [ ] accepted application → match
 - [ ] periodic short challenges

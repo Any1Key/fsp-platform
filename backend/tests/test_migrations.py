@@ -51,6 +51,7 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
             "task_assignment",
             "task_submission",
             "employer_evaluation",
+            "vacancy",
             "alembic_version",
         } <= tables
         assert {
@@ -112,6 +113,12 @@ def test_initial_migration_creates_and_removes_foundation_schema(tmp_path, monke
             "hiring_need",
             "company",
             "user_identity",
+        }
+        vacancy_foreign_keys = inspect(engine).get_foreign_keys("vacancy")
+        assert {key["referred_table"] for key in vacancy_foreign_keys} == {
+            "company",
+            "specialization",
+            "grade",
         }
 
         with engine.begin() as connection:

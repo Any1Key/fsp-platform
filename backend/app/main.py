@@ -82,6 +82,14 @@ from .protected_candidate import MinorState, get_protected_profile, update_prote
 from .resume import get_resume, review_resume, upload_resume
 from .task_assignments import list_candidate_assignments, submit_candidate_assignment
 from .taxonomy import list_taxonomy
+from .vacancies import (
+    close_vacancy,
+    create_vacancy,
+    get_vacancy,
+    list_vacancies,
+    publish_vacancy,
+    update_vacancy,
+)
 
 app = FastAPI(
     title="FSP Talent Platform API",
@@ -216,6 +224,56 @@ class CompanyProfileResponse(BaseModel):
     website: str | None
     location: str | None
     public_contact_method: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class VacancyTaxonomyResponse(BaseModel):
+    slug: str
+    name: str
+
+
+class VacancyCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1, max_length=160)
+    description: str = Field(min_length=1, max_length=12000)
+    location: str | None = Field(default=None, max_length=120)
+    work_mode: Literal["office", "hybrid", "remote"] | None = None
+    employment_type: Literal["full_time", "part_time", "project"] | None = None
+    salary_min_rub: int = Field(gt=0)
+    salary_max_rub: int = Field(gt=0)
+    specialization: str | None = Field(default=None, max_length=100)
+    grade: Literal["junior", "middle", "senior"] | None = None
+
+
+class VacancyUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = Field(default=None, min_length=1, max_length=160)
+    description: str | None = Field(default=None, min_length=1, max_length=12000)
+    location: str | None = Field(default=None, max_length=120)
+    work_mode: Literal["office", "hybrid", "remote"] | None = None
+    employment_type: Literal["full_time", "part_time", "project"] | None = None
+    salary_min_rub: int | None = Field(default=None, gt=0)
+    salary_max_rub: int | None = Field(default=None, gt=0)
+    specialization: str | None = Field(default=None, max_length=100)
+    grade: Literal["junior", "middle", "senior"] | None = None
+
+
+class VacancyResponse(BaseModel):
+    id: str
+    title: str
+    description: str
+    location: str | None
+    work_mode: Literal["office", "hybrid", "remote"] | None
+    employment_type: Literal["full_time", "part_time", "project"] | None
+    salary_min_rub: int
+    salary_max_rub: int
+    specialization: VacancyTaxonomyResponse | None
+    grade: VacancyTaxonomyResponse | None
+    status: Literal["draft", "published", "closed"]
+    published_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -1073,6 +1131,115 @@ def update_employer_company(
     if not changes:
         raise HTTPException(status_code=422, detail="company_profile_update_required")
     return CompanyProfileResponse.model_validate(update_company(db, principal, changes))
+
+
+@app.get(
+    "/api/v1/employer/vacancies",
+    tags=["employer vacancies"],
+    response_model=list[VacancyResponse],
+    responses={403: {"model": ErrorResponse, "description": "Employer role required"}},
+)
+def employer_vacancies(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[VacancyResponse]:
+    """Return only vacancies owned by the authenticated employer."""
+
+    return [VacancyResponse.model_validate(vacancy) for vacancy in list_vacancies(db, principal)]
+
+
+@app.post(
+    "/api/v1/employer/vacancies",
+    tags=["employer vacancies"],
+    response_model=VacancyResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        422: {"model": ErrorResponse, "description": "Vacancy is invalid"},
+    },
+)
+def create_employer_vacancy(
+    request: VacancyCreateRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> VacancyResponse:
+    return VacancyResponse.model_validate(create_vacancy(db, principal, request.model_dump()))
+
+
+@app.get(
+    "/api/v1/employer/vacancies/{vacancy_id}",
+    tags=["employer vacancies"],
+    response_model=VacancyResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Vacancy not found"},
+    },
+)
+def employer_vacancy(
+    vacancy_id: str,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> VacancyResponse:
+    return VacancyResponse.model_validate(get_vacancy(db, principal, vacancy_id))
+
+
+@app.patch(
+    "/api/v1/employer/vacancies/{vacancy_id}",
+    tags=["employer vacancies"],
+    response_model=VacancyResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Vacancy not found"},
+        422: {"model": ErrorResponse, "description": "Vacancy is invalid"},
+    },
+)
+def update_employer_vacancy(
+    vacancy_id: str,
+    request: VacancyUpdateRequest,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> VacancyResponse:
+    changes = request.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(status_code=422, detail="vacancy_update_required")
+    return VacancyResponse.model_validate(update_vacancy(db, principal, vacancy_id, changes))
+
+
+@app.post(
+    "/api/v1/employer/vacancies/{vacancy_id}/publish",
+    tags=["employer vacancies"],
+    response_model=VacancyResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Vacancy not found"},
+        409: {"model": ErrorResponse, "description": "Closed vacancy cannot be published"},
+    },
+)
+def publish_employer_vacancy(
+    vacancy_id: str,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> VacancyResponse:
+    return VacancyResponse.model_validate(publish_vacancy(db, principal, vacancy_id))
+
+
+@app.delete(
+    "/api/v1/employer/vacancies/{vacancy_id}",
+    tags=["employer vacancies"],
+    response_model=VacancyResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Employer role required"},
+        404: {"model": ErrorResponse, "description": "Vacancy not found"},
+    },
+)
+def close_employer_vacancy(
+    vacancy_id: str,
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> VacancyResponse:
+    """Close instead of physically deleting so future application history survives."""
+
+    return VacancyResponse.model_validate(close_vacancy(db, principal, vacancy_id))
 
 
 @app.get(

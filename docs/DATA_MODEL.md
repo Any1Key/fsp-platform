@@ -120,8 +120,11 @@ conversation is inserted in the acceptance transaction, and all reads/writes are
 membership-scoped. Report audit metadata excludes message and contact contents.
 
 ## Vacancies/applications
-- vacancy
-- salary min/max RUB
+- `vacancy`: employer company, title/description, optional location/work mode/
+  employment type, optional specialization/grade, mandatory salary min/max RUB,
+  draft/published/closed status, publication timestamp and audit timestamps.
+- salary min/max RUB is constrained by `0 < min <= max` at both the API and
+  database boundaries.
 - application
 - application status history
 - match event if accepted
