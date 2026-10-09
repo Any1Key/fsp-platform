@@ -119,7 +119,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] ATS integration contract/concept
 
 ## M13 — Validation and load
-- [ ] deterministic synthetic candidate/need/assessment dataset
+- [x] deterministic synthetic candidate/need/assessment dataset
 - [ ] labeled matching relevance
 - [ ] keyword baseline matcher
 - [ ] Precision@5/nDCG@5/Recall@10

@@ -2,14 +2,21 @@
 
 ## Synthetic dataset
 
-Generate deterministic versioned data with fixed RNG seed:
-- 80 candidates across specializations and intended Junior/Middle/Senior abilities;
+The versioned, deterministic fixture contract is implemented in
+`backend/app/validation_dataset.py` and documented in
+`docs/VALIDATION_DATASET.md`. It generates the following with a fixed RNG
+seed:
+
+- 80 candidates across all specializations and intended Junior/Middle/Senior abilities;
 - verified and unconfirmed-grade cases;
 - candidates with and without FSP history;
-- varied verified skills/freshness;
-- 20 employer needs;
-- expected relevance labels;
-- synthetic assessment-response profiles with known target grade/ability.
+- varied skill evidence and freshness states;
+- 20 employer needs; and
+- one expected relevance label per candidate/need pair plus synthetic
+  assessment-response profiles with known target grade/ability.
+
+This establishes the fixture for later validation units; it does not claim
+that the matching or load metrics below have been run.
 
 ## Matching metrics
 
