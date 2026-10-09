@@ -208,6 +208,12 @@ confidence/freshness, gaps, and the bounded FSP contribution. Optional filters
 are `q`, `specialization`, `grade`, `skill`, `fsp` (`all`, `with_history`, or
 `without_history`), `include_unconfirmed`, and `limit`.
 
+Each candidate also includes `fit_band` (`ready_now`, `strong_fit`,
+`potential_fit`, or `explore`) as a human-readable explanation band derived
+from the existing score and grade state. An unconfirmed candidate is always
+`potential_fit`; the field is advisory presentation data and never an
+automatic hiring or rejection decision.
+
 ## Periodic challenge freshness
 
 `GET /api/v1/candidate/challenges` and `GET /api/v1/employer/challenges` keep

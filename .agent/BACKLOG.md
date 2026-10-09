@@ -113,7 +113,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 ## M12 — Differentiating UX
 - [x] Verified Skill Passport
 - [x] Blind Discovery
-- [ ] Talent Radar polish
+- [x] Talent Radar polish
 - [ ] Career Graph
 - [ ] employer trust/anti-fraud MVP/concept
 - [ ] ATS integration contract/concept

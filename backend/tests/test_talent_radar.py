@@ -124,6 +124,7 @@ def test_talent_radar_projects_categories_scores_evidence_and_gaps(auth_context)
     verified = next(candidate for candidate in body["candidates"] if candidate["display_name"] == verified_id)
     unconfirmed = next(candidate for candidate in body["candidates"] if candidate["display_name"] == unconfirmed_id)
     assert verified["eligibility"] == "verified"
+    assert verified["fit_band"] == "strong_fit"
     assert verified["category"]["label"] == "Backend Engineering · Middle"
     assert verified["score_breakdown"]["specialization_fit"] == 20.0
     assert verified["score_breakdown"]["fsp_bonus"] == 0
@@ -134,6 +135,7 @@ def test_talent_radar_projects_categories_scores_evidence_and_gaps(auth_context)
     assert verified["evidence"]["required"][1]["present"] is False
     assert any("rest-apis" in gap for gap in verified["gaps"])
     assert unconfirmed["eligibility"] == "unconfirmed"
+    assert unconfirmed["fit_band"] == "potential_fit"
     assert unconfirmed["category"]["state"] == "not_confirmed"
     assert unconfirmed["confidence"]["grade"] < verified["confidence"]["grade"]
     assert "email" not in verified

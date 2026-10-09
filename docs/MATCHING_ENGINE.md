@@ -121,6 +121,14 @@ Every result returns:
 - FSP contribution;
 - employer-specific stage result when applicable.
 
+The employer Talent Radar renders the band as `Ready now`, `Strong fit`,
+`Potential fit`, or `Explore` alongside the numeric score. An unconfirmed
+candidate is always shown as `Potential fit` even when the evidence score is
+otherwise strong; this keeps grade state visible and prevents the label from
+being read as a hiring decision. The candidate detail explanation exposes the
+component weights, confidence dimensions, evidence provenance, and gaps from
+the same read-only snapshot.
+
 Example:
 ```json
 {
@@ -149,6 +157,11 @@ Before candidate cards, show category-level supply such as:
 - number with high-confidence verified evidence;
 - FSP-history count;
 - freshness distribution.
+
+The implemented employer UI presents this supply strip before the ranked cards,
+then provides a responsive `View proof` explanation dialog. It keeps salary
+invitation actions separate from evidence inspection and never renders
+contacts, protected attributes, documents, or opaque candidate IDs.
 
 This makes reverse discovery visibly different from a normal resume board.
 

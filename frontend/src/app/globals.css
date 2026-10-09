@@ -703,6 +703,11 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .radarScore { display: grid; justify-items: end; flex: 0 0 auto; }
 .radarScore strong { color: #a9a1ff; font-size: 25px; line-height: 1; }
 .radarScore span { color: #b7b7c1; font-size: 8px; }
+.radarScore em { font-style: normal; margin-top: 5px; }
+.fitBand { border-radius: 999px; padding: 4px 6px; font-size: 8px; }
+.fitBand.ready_now, .fitBand.strong_fit { color: #8be0b2; background: rgba(139,224,178,.12); }
+.fitBand.potential_fit { color: #ffd28a; background: rgba(255,210,138,.12); }
+.fitBand.explore { color: #c3bdff; background: rgba(169,161,255,.12); }
 .radarCategory { display: flex; justify-content: space-between; gap: 10px; align-items: center; border-top: 1px solid rgba(255,255,255,.08); border-bottom: 1px solid rgba(255,255,255,.08); padding: 9px 0; }
 .radarCategory span { color: #c3bdff; font-size: 10px; }
 .radarCategory small { color: #b7b7c1; font-size: 8px; text-align: right; }
@@ -711,9 +716,54 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .radarReasons { display: grid; gap: 4px; margin: 0; padding-left: 15px; color: #d5d5dc; font-size: 9px; line-height: 1.45; }
 .radarFooter { align-items: end; border-top: 1px solid rgba(255,255,255,.08); padding-top: 9px; }
 .radarFooter > span { color: #ffd28a; font-size: 8px; line-height: 1.45; }
-.radarFooter .authButton { padding: 8px 9px; font-size: 9px; }
+.radarCardActions, .radarFilterActions, .radarDialogActions { display: flex; flex-wrap: wrap; gap: 7px; }
+.radarFooter .authButton, .radarFilterActions .authButton { padding: 8px 9px; font-size: 9px; }
 .radarFooter .authButton:disabled { cursor: not-allowed; }
 .radarPrivacyNote { border-top: 1px solid rgba(255,255,255,.08); padding-top: 9px; }
+.radarHeadingMeta { display: grid; justify-items: end; gap: 5px; }
+.radarRefreshing { color: #c3bdff; font-size: 8px; }
+.radarSectionKicker { color: #a9a1ff; font-size: 8px; letter-spacing: .08em; }
+.radarSupply { display: grid; gap: 9px; border: 1px solid rgba(169,161,255,.24); border-radius: 13px; padding: 12px; background: rgba(64,47,255,.055); }
+.radarSupplyHeading { display: flex; justify-content: space-between; gap: 12px; align-items: end; }
+.radarSupplyHeading > div { display: grid; gap: 4px; }
+.radarSupplyHeading strong { font-size: 11px; }
+.radarSupplyHeading small { color: #b7b7c1; font-size: 9px; }
+.radarSupplyGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.radarSupplyCard { display: grid; gap: 5px; min-width: 0; border: 1px solid rgba(169,161,255,.2); border-radius: 10px; padding: 9px; background: rgba(27,28,33,.42); }
+.radarSupplyCard strong { color: #ededed; font-size: 9px; overflow-wrap: anywhere; }
+.radarSupplyCard > span { color: #c3bdff; font-size: 10px; }
+.radarSupplyCard small { color: #b7b7c1; font-size: 8px; line-height: 1.4; }
+.radarVerifiedDot, .radarUnconfirmedDot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #8be0b2; }
+.radarUnconfirmedDot { background: #ffd28a; }
+.radarCandidateState.unconfirmed { color: #ffd28a; }
+.radarDialogBackdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(11,12,18,.72); backdrop-filter: blur(8px); }
+.radarDialog { width: min(680px, 100%); max-height: min(760px, calc(100vh - 48px)); overflow: auto; display: grid; gap: 15px; border: 1px solid rgba(169,161,255,.46); border-radius: 18px; padding: 18px; background: #24252d; color: #ededed; box-shadow: 0 25px 80px rgba(0,0,0,.42); }
+.radarDialogHeading { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.radarDialogHeading > div { display: grid; gap: 5px; min-width: 0; }
+.radarDialogHeading h3 { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
+.radarDialogHeading p { margin: 0; color: #b7b7c1; font-size: 10px; }
+.radarCloseButton { width: 30px; height: 30px; border: 1px solid rgba(169,161,255,.35); border-radius: 8px; background: transparent; color: #d5d5dc; font: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
+.radarCloseButton:hover, .radarCloseButton:focus-visible { border-color: #a9a1ff; color: white; }
+.radarDialogScore { display: grid; grid-template-columns: auto auto 1fr; gap: 8px; align-items: baseline; border: 1px solid rgba(139,224,178,.28); border-radius: 12px; padding: 11px; background: rgba(139,224,178,.06); }
+.radarDialogScore strong { color: #8be0b2; font-size: 28px; }
+.radarDialogScore span { color: #d5d5dc; font-size: 9px; }
+.radarDialogScore small { justify-self: end; max-width: 280px; color: #b7b7c1; font-size: 9px; line-height: 1.45; text-align: right; }
+.radarBreakdown, .radarDialogGrid > div, .radarDialogEvidence { display: grid; gap: 8px; }
+.radarBreakdown h4, .radarDialogGrid h4, .radarDialogEvidence h4 { margin: 0; color: #c3bdff; font-size: 10px; letter-spacing: .06em; }
+.radarBreakdownRow { display: grid; grid-template-columns: minmax(130px, 1fr) 38px minmax(110px, .7fr); gap: 9px; align-items: center; color: #d5d5dc; font-size: 9px; }
+.radarBreakdownRow strong { color: #ededed; font-size: 9px; text-align: right; }
+.radarBreakdownTrack { height: 6px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.1); }
+.radarBreakdownTrack i { display: block; height: 100%; border-radius: inherit; background: #a9a1ff; }
+.radarDialogGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.radarDialogGrid > div { border: 1px solid rgba(255,255,255,.1); border-radius: 11px; padding: 11px; }
+.radarDialogGrid p { display: flex; justify-content: space-between; gap: 12px; margin: 0; color: #b7b7c1; font-size: 9px; }
+.radarDialogGrid p strong { color: #8be0b2; }
+.radarDialogGrid ul { display: grid; gap: 5px; margin: 0; padding-left: 15px; color: #ffd28a; font-size: 9px; line-height: 1.45; }
+.radarEvidenceList { display: flex; flex-wrap: wrap; gap: 6px; }
+.radarEvidenceList span { display: grid; gap: 3px; border: 1px solid rgba(139,224,178,.28); border-radius: 8px; padding: 6px 8px; color: #8be0b2; font-size: 9px; }
+.radarEvidenceList small { color: #b7b7c1; font-size: 8px; }
+.radarDialogActions { justify-content: flex-end; border-top: 1px solid rgba(255,255,255,.1); padding-top: 12px; }
+.radarDialogActions .authButton { font-size: 9px; }
 .proofCard {
   background: white; color: var(--text); border-radius: 24px; padding: 30px;
   box-shadow: 0 25px 90px rgba(0,0,0,.28); transform: rotate(-1deg);
@@ -809,13 +859,21 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .applicationReviewActions { flex-direction: column; }
   .applicationReviewActions .authButton { width: 100%; }
   .radarHeading, .radarFooter { align-items: flex-start; flex-direction: column; }
+  .radarHeadingMeta { justify-items: start; }
   .radarFilters { grid-template-columns: 1fr; }
   .radarFilters .radarCheckbox { grid-column: auto; }
-  .radarFilters .authButton { width: 100%; }
-  .radarSummary, .radarCandidates { grid-template-columns: 1fr; }
+  .radarFilterActions, .radarCardActions, .radarDialogActions { width: 100%; }
+  .radarFilterActions .authButton, .radarCardActions .authButton, .radarDialogActions .authButton { width: auto; flex: 1 1 140px; }
+  .radarSummary, .radarCandidates, .radarSupplyGrid { grid-template-columns: 1fr; }
   .radarCategory { align-items: flex-start; flex-direction: column; }
   .radarCategory small { text-align: left; }
-  .radarFooter .authButton { width: 100%; }
+  .radarDialogBackdrop { padding: 12px; place-items: end center; }
+  .radarDialog { max-height: calc(100vh - 24px); padding: 14px; border-radius: 15px; }
+  .radarDialogScore { grid-template-columns: auto 1fr; }
+  .radarDialogScore small { grid-column: 1 / -1; justify-self: start; max-width: none; text-align: left; }
+  .radarBreakdownRow { grid-template-columns: minmax(100px, 1fr) 34px; }
+  .radarBreakdownTrack { grid-column: 1 / -1; }
+  .radarDialogGrid { grid-template-columns: 1fr; }
   .principles { grid-template-columns: 1fr; padding: 32px 20px 60px; }
   .shell { background: linear-gradient(180deg, #1b1c21 0 50rem, var(--surface) 50rem); }
 }

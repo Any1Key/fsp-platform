@@ -10,6 +10,8 @@ type RadarCandidate = {
   location: string | null;
   eligibility: "verified" | "unconfirmed";
   match_score: number;
+  fit_band: "ready_now" | "strong_fit" | "potential_fit" | "explore";
+  score_breakdown: Record<string, number>;
   category: {
     label: string | null;
     specialization: string | null;
@@ -18,7 +20,7 @@ type RadarCandidate = {
     state: string;
   };
   confidence: { overall: number; grade: number; evidence: number; freshness: number };
-  assessment: { score: number | null; status: string };
+  assessment: { score: number | null; status: string; assessed_at?: string | null };
   evidence: { required: SkillEvidence[]; preferred: SkillEvidence[] };
   fsp: { score: number; history_status: string };
   reasons: string[];
@@ -38,6 +40,8 @@ type RadarResponse = {
   blind_discovery: boolean;
   categories: {
     key: string;
+    specialization_name?: string | null;
+    grade_name?: string | null;
     candidate_count: number;
     verified_count: number;
     unconfirmed_count: number;
@@ -63,6 +67,23 @@ function percent(value: number) {
   return `${Math.round(value * 100)}%`;
 }
 
+const fitBandLabels: Record<RadarCandidate["fit_band"], string> = {
+  ready_now: "Ready now",
+  strong_fit: "Strong fit",
+  potential_fit: "Potential fit",
+  explore: "Explore",
+};
+
+const scoreLabels: Record<string, string> = {
+  specialization_fit: "Specialization fit",
+  grade_fit: "Grade fit",
+  required_skill_coverage: "Required skills",
+  preferred_skill_coverage: "Preferred skills",
+  assessment_strength: "Assessment strength",
+  evidence_confidence_freshness: "Evidence confidence + freshness",
+  fsp_bonus: "FSP evidence bonus",
+};
+
 export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated }: { token: string; refreshKey?: number; onInvitationCreated?: () => void }) {
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [draft, setDraft] = useState<Filters>(initialFilters);
@@ -75,6 +96,16 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
   const [offer, setOffer] = useState("");
   const [inviteBusy, setInviteBusy] = useState(false);
   const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<RadarCandidate | null>(null);
+
+  useEffect(() => {
+    if (!selectedCandidate) return;
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setSelectedCandidate(null);
+    }
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [selectedCandidate]);
 
   async function load(nextFilters: Filters = filters) {
     setLoading(true);
@@ -126,10 +157,26 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
   }
 
   function openInvitation(candidate: RadarCandidate) {
+    setSelectedCandidate(null);
     setInvitingCandidate(candidate);
     setOffer(`Приглашаем присоединиться к команде как ${candidate.category.label ?? "специалист"}.`);
     setInviteMessage(null);
   }
+
+  function resetFilters() {
+    setDraft(initialFilters);
+    void load(initialFilters);
+  }
+
+  const activeFilterCount = [
+    filters.query,
+    filters.specialization,
+    filters.grade,
+    filters.skill,
+    filters.fsp !== "all" ? filters.fsp : "",
+    !filters.include_unconfirmed ? "verified" : "",
+    filters.blind ? "blind" : "",
+  ].filter(Boolean).length;
 
   async function sendInvitation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -171,14 +218,17 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
   }
 
   return (
-    <section className="radarPanel" aria-labelledby="talent-radar-title">
+    <section className="radarPanel" aria-labelledby="talent-radar-title" aria-busy={loading}>
       <div className="radarHeading">
         <div>
           <span className="authLabel">PROOFMATCH · EVIDENCE GRAPH</span>
           <h2 id="talent-radar-title">Talent Radar</h2>
           <p>{radar.need.role} · {radar.need.specialization.name} · {radar.need.grade.name}</p>
         </div>
-        <span className="profileStatus">{radar.total_candidates} CANDIDATES</span>
+        <div className="radarHeadingMeta">
+          <span className="profileStatus">{radar.total_candidates} CANDIDATES</span>
+          {loading && <span className="radarRefreshing" role="status">Обновляем snapshot…</span>}
+        </div>
       </div>
 
       <form className="radarFilters" onSubmit={(event) => { event.preventDefault(); void load(draft); }}>
@@ -189,7 +239,10 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
         <label>FSP evidence<select value={draft.fsp} onChange={(event) => update("fsp", event.target.value as Filters["fsp"])}><option value="all">Все кандидаты</option><option value="with_history">Только с историей</option><option value="without_history">Без истории тоже</option></select></label>
         <label className="radarCheckbox"><input type="checkbox" checked={draft.include_unconfirmed} onChange={(event) => update("include_unconfirmed", event.target.checked)} /> Показывать grade not confirmed</label>
         <label className="radarCheckbox"><input type="checkbox" checked={draft.blind} onChange={(event) => update("blind", event.target.checked)} /> Blind Discovery: скрывать identity до match</label>
-        <button className="authButton primaryButton" type="submit" disabled={loading}>{loading ? "Обновляем…" : "Применить фильтры"}</button>
+        <div className="radarFilterActions">
+          <button className="authButton primaryButton" type="submit" disabled={loading}>{loading ? "Обновляем…" : "Применить фильтры"}</button>
+          <button className="authButton secondaryButton" type="button" disabled={loading || activeFilterCount === 0} onClick={resetFilters}>Сбросить{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}</button>
+        </div>
       </form>
 
       {radar.blind_discovery && <div className="radarBlindNote"><strong>BLIND DISCOVERY</strong><span>Видны только category, ProofMatch и verified evidence. Salary-bearing invitation можно отправить анонимно; identity откроется работодателю только после acceptance кандидатом.</span></div>}
@@ -200,6 +253,22 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
         <div><span>СОСТОЯНИЕ</span><strong>{radar.snapshot.filters.include_unconfirmed ? "Verified + unconfirmed" : "Verified only"}</strong></div>
       </div>
 
+      <div className="radarSupply" aria-label="Candidate supply by category">
+        <div className="radarSupplyHeading">
+          <div><span className="radarSectionKicker">CATEGORY SUPPLY</span><strong>Кого видно в этом snapshot</strong></div>
+          <small>{radar.categories.length} {radar.categories.length === 1 ? "категория" : "категории"}</small>
+        </div>
+        <div className="radarSupplyGrid">
+          {radar.categories.map((category) => (
+            <div className="radarSupplyCard" key={category.key}>
+              <strong>{category.key}</strong>
+              <span>{category.candidate_count} {category.candidate_count === 1 ? "candidate" : "candidates"}</span>
+              <small><i className="radarVerifiedDot" /> {category.verified_count} verified · <i className="radarUnconfirmedDot" /> {category.unconfirmed_count} not confirmed</small>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {radar.candidates.length === 0 ? (
         <div className="radarEmpty"><strong>Подходящих кандидатов пока нет</strong><span>Измените фильтр или сохраните больше подтверждённых свидетельств.</span></div>
       ) : (
@@ -207,13 +276,13 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
           {radar.candidates.map((candidate) => (
             <article className="radarCandidate" key={candidate.candidate_id}>
               <div className="radarCandidateTop">
-                <div><span className="radarCandidateState">{candidate.eligibility === "verified" ? "✓ VERIFIED" : "! GRADE NOT CONFIRMED"}</span><h3>{candidate.display_name}</h3><p>{candidate.headline ?? "Профессиональный профиль"}{candidate.location ? ` · ${candidate.location}` : ""}</p></div>
-                <div className="radarScore"><strong>{Math.round(candidate.match_score)}</strong><span>ProofMatch</span></div>
+                <div><span className={`radarCandidateState ${candidate.eligibility === "verified" ? "verified" : "unconfirmed"}`}>{candidate.eligibility === "verified" ? "✓ VERIFIED" : "! GRADE NOT CONFIRMED"}</span><h3>{candidate.display_name}</h3><p>{candidate.headline ?? "Профессиональный профиль"}{candidate.location ? ` · ${candidate.location}` : ""}</p></div>
+                <div className="radarScore"><strong>{Math.round(candidate.match_score)}</strong><span>ProofMatch</span><em className={`fitBand ${candidate.fit_band}`}>{fitBandLabels[candidate.fit_band]}</em></div>
               </div>
               <div className="radarCategory"><span>{candidate.category.label ?? "Категория ещё не подтверждена"}</span><small>Уверенность {percent(candidate.confidence.overall)} · свежесть {percent(candidate.confidence.freshness)}</small></div>
               <div className="radarEvidenceChips">{candidate.evidence.required.filter((item) => item.present).map((item) => <span key={item.skill}>✓ {item.skill}</span>)}{candidate.fsp.score > 0 && <span>FSP +{candidate.fsp.score}</span>}</div>
               <ul className="radarReasons">{candidate.reasons.slice(0, 3).map((reason) => <li key={reason}>{reason}</li>)}</ul>
-              <div className="radarFooter"><span>{candidate.gaps[0]}</span><button className="authButton secondaryButton" type="button" disabled={candidate.eligibility !== "verified"} title={candidate.eligibility === "verified" ? "Send a salary-bearing invitation" : "A confirmed platform grade is required"} onClick={() => openInvitation(candidate)}>{candidate.eligibility === "verified" ? "Пригласить" : "Нужен verified grade"}</button></div>
+              <div className="radarFooter"><span>{candidate.gaps[0]}</span><div className="radarCardActions"><button className="authButton secondaryButton" type="button" onClick={() => setSelectedCandidate(candidate)}>View proof</button><button className="authButton primaryButton" type="button" disabled={candidate.eligibility !== "verified"} title={candidate.eligibility === "verified" ? "Send a salary-bearing invitation" : "A confirmed platform grade is required"} onClick={() => openInvitation(candidate)}>{candidate.eligibility === "verified" ? "Пригласить" : "Нужен verified grade"}</button></div></div>
               {invitingCandidate?.candidate_id === candidate.candidate_id && (
                 <form className="inviteForm" onSubmit={(event) => void sendInvitation(event)}>
                   <strong>Salary-bearing invitation</strong>
@@ -228,6 +297,22 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
         </div>
       )}
       <small className="radarPrivacyNote">Контакты, дата рождения и документы кандидата скрыты до действительного match.</small>
+
+      {selectedCandidate && (
+        <div className="radarDialogBackdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedCandidate(null); }}>
+          <section className="radarDialog" role="dialog" aria-modal="true" aria-labelledby="radar-dialog-title">
+            <div className="radarDialogHeading">
+              <div><span className="authLabel">PROOFMATCH EXPLANATION</span><h3 id="radar-dialog-title">{selectedCandidate.display_name}</h3><p>{selectedCandidate.category.label ?? "Категория ещё не подтверждена"} · {fitBandLabels[selectedCandidate.fit_band]}</p></div>
+              <button className="radarCloseButton" type="button" aria-label="Закрыть объяснение" onClick={() => setSelectedCandidate(null)}>×</button>
+            </div>
+            <div className="radarDialogScore"><strong>{Math.round(selectedCandidate.match_score)}</strong><span>из 100 · ProofMatch</span><small>{selectedCandidate.eligibility === "verified" ? "Категория подтверждена assessment-результатом." : "Grade ещё не подтверждён; кандидат остаётся доступен для исследования."}</small></div>
+            <div className="radarBreakdown"><h4>Score breakdown</h4>{Object.entries(selectedCandidate.score_breakdown).map(([key, value]) => <div className="radarBreakdownRow" key={key}><span>{scoreLabels[key] ?? key}</span><strong>{value.toFixed(1)}</strong><div className="radarBreakdownTrack"><i style={{ width: `${Math.min(100, (value / (key === "fsp_bonus" ? 10 : key === "specialization_fit" ? 20 : key === "grade_fit" ? 15 : key === "required_skill_coverage" ? 25 : key === "preferred_skill_coverage" ? 10 : key === "assessment_strength" ? 15 : 5)) * 100)}%` }} /></div></div>)}</div>
+            <div className="radarDialogGrid"><div><h4>Confidence</h4><p>Grade <strong>{percent(selectedCandidate.confidence.grade)}</strong></p><p>Evidence <strong>{percent(selectedCandidate.confidence.evidence)}</strong></p><p>Freshness <strong>{percent(selectedCandidate.confidence.freshness)}</strong></p></div><div><h4>Evidence gaps</h4><ul>{selectedCandidate.gaps.map((gap) => <li key={gap}>{gap}</li>)}</ul></div></div>
+            <div className="radarDialogEvidence"><h4>Verified evidence</h4><div className="radarEvidenceList">{[...selectedCandidate.evidence.required, ...selectedCandidate.evidence.preferred].filter((item) => item.present).map((item) => <span key={item.skill}>✓ {item.skill}<small>{item.edges.some((edge) => edge.source === "fsp_achievement") ? "FSP registry" : "Candidate profile"}</small></span>)}{selectedCandidate.evidence.required.every((item) => !item.present) && selectedCandidate.evidence.preferred.every((item) => !item.present) && <small>Пока нет совпавших skill evidence.</small>}</div></div>
+            <div className="radarDialogActions"><button className="authButton secondaryButton" type="button" onClick={() => setSelectedCandidate(null)}>Закрыть</button><button className="authButton primaryButton" type="button" disabled={selectedCandidate.eligibility !== "verified"} onClick={() => openInvitation(selectedCandidate)}>{selectedCandidate.eligibility === "verified" ? "Пригласить с зарплатой" : "Нужен verified grade"}</button></div>
+          </section>
+        </div>
+      )}
     </section>
   );
 }

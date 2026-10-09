@@ -8,6 +8,7 @@ export default defineConfig({
   reporter: [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]],
   use: {
     baseURL: process.env.FRONTEND_BASE_URL || "http://frontend:3000",
+    ...(process.env.TALENT_RADAR_STORAGE_STATE ? { storageState: process.env.TALENT_RADAR_STORAGE_STATE } : {}),
     trace: "retain-on-failure"
   },
   projects: [

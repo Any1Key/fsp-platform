@@ -174,6 +174,20 @@ def _grade_fit(candidate_grade: str | None, target_grade: str) -> float:
     return {0: 1.0, 1: 0.55}.get(difference, 0.0)
 
 
+def _fit_band(score: float, *, verified: bool) -> str:
+    """Return a human-readable explanation band, never a hiring decision."""
+
+    if not verified:
+        return "potential_fit"
+    if score >= 80:
+        return "ready_now"
+    if score >= 60:
+        return "strong_fit"
+    if score >= 35:
+        return "potential_fit"
+    return "explore"
+
+
 def _candidate_card(
     db: Session,
     row: Any,
@@ -287,6 +301,7 @@ def _candidate_card(
         },
         "eligibility": "verified" if verified else "unconfirmed",
         "match_score": score,
+        "fit_band": _fit_band(score, verified=verified),
         "score_breakdown": components,
         "confidence": {
             "overall": round(confidence_freshness, 2),
