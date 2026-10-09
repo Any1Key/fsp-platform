@@ -1,5 +1,10 @@
 # Agent changelog
 
+- 2026-10-09: implemented the M13 assessment-validation report contract with
+  explicit grade agreement and aggregate discrimination metrics, deterministic
+  JSON artifact output, regression tests, and refreshed synthetic evidence.
+  Supervisor verification remains pending.
+
 - 2026-10-07: implemented the M03 data-driven taxonomy catalog slice with
   seeded specializations/grades/skills, specialization-skill mappings,
   typed read API, migration tests, and category-key documentation. Candidate

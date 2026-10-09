@@ -13,11 +13,13 @@ from __future__ import annotations
 
 import json
 import random
+from argparse import ArgumentParser
 from collections import Counter, defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from math import sqrt
+from pathlib import Path
 from typing import Any
 
 from .assessments import GRADES, AssessmentService
@@ -75,12 +77,15 @@ class AssessmentValidationReport:
     sample_size: int
     confusion_matrix: dict[str, dict[str, int]]
     macro_f1: float
+    grade_agreement: float
     predicted_distribution: dict[str, int]
     grade_collapse: bool
     grade_collapse_threshold: float
     equivalent_form_score_difference: float
     retest_agreement: float
     item_metrics: dict[str, dict[str, float | int]]
+    mean_item_discrimination: float
+    positive_item_discrimination_rate: float
     critical_domain_reliability: dict[str, float]
     form_uniqueness_rate: float
 
@@ -161,6 +166,7 @@ def run_validation(
     confusion = _confusion_matrix(primary)
     predictions = [observation.predicted_grade for observation in primary]
     item_observations = [item for observation in primary for item in observation.items]
+    item_metrics = _item_metrics(item_observations)
     return AssessmentValidationReport(
         validation_version=VALIDATION_VERSION,
         seed=seed,
@@ -169,6 +175,9 @@ def run_validation(
         sample_size=len(primary),
         confusion_matrix=confusion,
         macro_f1=round(_macro_f1(confusion), 4),
+        grade_agreement=round(
+            sum(confusion[grade][grade] for grade in GRADES) / len(primary), 4
+        ),
         predicted_distribution={grade: predictions.count(grade) for grade in GRADES},
         grade_collapse=grade_collapse_detected(predictions),
         grade_collapse_threshold=GRADE_COLLAPSE_SHARE,
@@ -182,7 +191,17 @@ def run_validation(
             / len(retests),
             4,
         ),
-        item_metrics=_item_metrics(item_observations),
+        item_metrics=item_metrics,
+        mean_item_discrimination=round(
+            sum(metric["discrimination"] for metric in item_metrics.values())
+            / len(item_metrics),
+            4,
+        ),
+        positive_item_discrimination_rate=round(
+            sum(metric["discrimination"] > 0 for metric in item_metrics.values())
+            / len(item_metrics),
+            4,
+        ),
         critical_domain_reliability=_critical_domain_reliability(item_observations),
         form_uniqueness_rate=round(
             len(set(all_signatures)) / len(all_signatures), 4
@@ -309,8 +328,32 @@ def _critical_domain_reliability(items: Iterable[ItemObservation]) -> dict[str, 
     }
 
 
-def main() -> None:
-    print(json.dumps(run_validation().to_dict(), ensure_ascii=False, indent=2, sort_keys=True))
+def write_report(report: AssessmentValidationReport, path: str | Path) -> None:
+    """Write one deterministic report artifact without synthetic identifiers."""
+
+    Path(path).write_text(
+        json.dumps(report.to_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    parser = ArgumentParser(description="Run synthetic calibrated-assessment validation")
+    parser.add_argument("--seed", default=DEFAULT_SEED)
+    parser.add_argument("--candidates-per-grade", type=int, default=DEFAULT_CANDIDATES_PER_GRADE)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="optional path for the JSON report artifact; stdout is always retained",
+    )
+    args = parser.parse_args(argv)
+    report = run_validation(
+        seed=args.seed,
+        candidates_per_grade=args.candidates_per_grade,
+    )
+    if args.output:
+        write_report(report, args.output)
+    print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":

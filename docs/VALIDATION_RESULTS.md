@@ -29,10 +29,11 @@ external supervisor verification. Per-need values are included in the JSON
 output produced by the command above. The implementation and tests are in
 `backend/app/matching_metrics.py` and `backend/tests/test_matching_metrics.py`.
 
-Command, run from `backend/` on 2026-10-07:
+Command, run from `backend/` on 2026-10-09:
 
 ```sh
-PYTHONPATH=. .venv/bin/python -m app.assessment_validation
+PYTHONPATH=. .venv/bin/python -m app.assessment_validation \
+  --output /tmp/fsp-assessment-validation.json
 ```
 
 This is the actual JSON output from the fixed-seed default run. It is synthetic
@@ -43,35 +44,38 @@ represent production candidate outcomes.
 {
   "candidates_per_grade": 24,
   "confusion_matrix": {
-    "Junior": {"Junior": 22, "Middle": 2, "Senior": 0},
-    "Middle": {"Junior": 2, "Middle": 19, "Senior": 3},
-    "Senior": {"Junior": 0, "Middle": 2, "Senior": 22}
+    "Junior": {"Junior": 20, "Middle": 4, "Senior": 0},
+    "Middle": {"Junior": 0, "Middle": 10, "Senior": 14},
+    "Senior": {"Junior": 0, "Middle": 0, "Senior": 24}
   },
   "critical_domain_reliability": {
     "api_fundamentals": 0.6806,
     "security_operations": 0.6058
   },
-  "equivalent_form_score_difference": 12.8965,
+  "equivalent_form_score_difference": 15.3753,
   "form_uniqueness_rate": 1.0,
+  "grade_agreement": 0.75,
   "grade_collapse": false,
   "grade_collapse_threshold": 0.8,
   "item_metrics": {
-    "api-1": {"difficulty": 0.3235, "discrimination": 0.6232, "observations": 68, "pass_rate": 0.6765},
+    "api-1": {"difficulty": 0.3235, "discrimination": 0.6213, "observations": 68, "pass_rate": 0.6765},
     "api-2": {"difficulty": 0.25, "discrimination": -0.6736, "observations": 4, "pass_rate": 0.75},
-    "arch-1": {"difficulty": 0.3281, "discrimination": 0.6498, "observations": 64, "pass_rate": 0.6719},
-    "arch-2": {"difficulty": 0.375, "discrimination": 0.7945, "observations": 8, "pass_rate": 0.625},
-    "runtime-1": {"difficulty": 0.4127, "discrimination": 0.5549, "observations": 63, "pass_rate": 0.5873},
+    "arch-1": {"difficulty": 0.3281, "discrimination": 0.6543, "observations": 64, "pass_rate": 0.6719},
+    "arch-2": {"difficulty": 0.375, "discrimination": 0.7946, "observations": 8, "pass_rate": 0.625},
+    "runtime-1": {"difficulty": 0.4127, "discrimination": 0.5582, "observations": 63, "pass_rate": 0.5873},
     "runtime-2": {"difficulty": 0.2222, "discrimination": -0.0185, "observations": 9, "pass_rate": 0.7778},
-    "sec-1": {"difficulty": 0.3077, "discrimination": 0.6988, "observations": 65, "pass_rate": 0.6923},
-    "sec-2": {"difficulty": 0.4722, "discrimination": 0.6238, "observations": 72, "pass_rate": 0.5278},
-    "sql-1": {"difficulty": 0.2727, "discrimination": 0.7183, "observations": 66, "pass_rate": 0.7273},
-    "sql-2": {"difficulty": 0.375, "discrimination": 0.6435, "observations": 72, "pass_rate": 0.625},
-    "test-1": {"difficulty": 0.3788, "discrimination": 0.7212, "observations": 66, "pass_rate": 0.6212},
+    "sec-1": {"difficulty": 0.3077, "discrimination": 0.7105, "observations": 65, "pass_rate": 0.6923},
+    "sec-2": {"difficulty": 0.4722, "discrimination": 0.6222, "observations": 72, "pass_rate": 0.5278},
+    "sql-1": {"difficulty": 0.2727, "discrimination": 0.7154, "observations": 66, "pass_rate": 0.7273},
+    "sql-2": {"difficulty": 0.375, "discrimination": 0.6451, "observations": 72, "pass_rate": 0.625},
+    "test-1": {"difficulty": 0.3788, "discrimination": 0.7153, "observations": 66, "pass_rate": 0.6212},
     "test-2": {"difficulty": 0.1667, "discrimination": 0.0638, "observations": 6, "pass_rate": 0.8333}
   },
-  "macro_f1": 0.8744,
-  "predicted_distribution": {"Junior": 24, "Middle": 23, "Senior": 25},
-  "retest_agreement": 0.7083,
+  "macro_f1": 0.7365,
+  "mean_item_discrimination": 0.4507,
+  "positive_item_discrimination_rate": 0.8333,
+  "predicted_distribution": {"Junior": 20, "Middle": 14, "Senior": 38},
+  "retest_agreement": 0.625,
   "sample_size": 72,
   "seed": "fsp-assessment-calibration-2026-10-07",
   "specialization": "Backend Engineering",

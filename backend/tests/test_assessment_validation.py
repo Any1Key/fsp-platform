@@ -1,9 +1,12 @@
+import json
+
 from app.assessment_validation import (
     DEFAULT_SEED,
     GRADES,
     generate_synthetic_candidates,
     grade_collapse_detected,
     run_validation,
+    write_report,
 )
 
 
@@ -16,10 +19,13 @@ def test_synthetic_validation_is_reproducible_and_reports_discrimination() -> No
     assert set(first.confusion_matrix) == set(GRADES)
     assert all(set(row) == set(GRADES) for row in first.confusion_matrix.values())
     assert first.macro_f1 >= 0.75
+    assert first.grade_agreement >= 0.75
     assert first.grade_collapse is False
     assert first.form_uniqueness_rate == 1.0
     assert first.equivalent_form_score_difference > 0
     assert first.retest_agreement >= 0.5
+    assert 0 < first.positive_item_discrimination_rate <= 1
+    assert first.mean_item_discrimination > 0
     assert set(first.critical_domain_reliability) == {
         "api_fundamentals",
         "security_operations",
@@ -48,3 +54,17 @@ def test_synthetic_profiles_are_labeled_without_personal_data() -> None:
         < sum(candidate.ability for candidate in candidates if candidate.target_grade == "Middle")
         < sum(candidate.ability for candidate in candidates if candidate.target_grade == "Senior")
     )
+
+
+def test_validation_report_writer_persists_the_machine_readable_contract(tmp_path) -> None:
+    report = run_validation(seed=DEFAULT_SEED, candidates_per_grade=4)
+    output = tmp_path / "assessment-validation.json"
+
+    write_report(report, output)
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload == report.to_dict()
+    assert "synthetic-junior-000" not in output.read_text(encoding="utf-8")
+    assert payload["grade_agreement"] == 0.6667
+    assert "mean_item_discrimination" in payload
+    assert "positive_item_discrimination_rate" in payload

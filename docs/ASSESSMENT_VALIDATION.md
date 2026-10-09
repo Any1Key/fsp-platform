@@ -11,17 +11,20 @@ grades.
 From `backend/` with the project virtual environment:
 
 ```sh
-PYTHONPATH=. .venv/bin/python -m app.assessment_validation
+PYTHONPATH=. .venv/bin/python -m app.assessment_validation \
+  --output /tmp/fsp-assessment-validation.json
 ```
 
 The JSON report uses the fixed seed `fsp-assessment-calibration-2026-10-07`
 and 24 labeled profiles per intended grade by default. Tests can pass another
-seed or sample size through `run_validation()`.
+seed or sample size through `run_validation()`. `--output` writes the same
+machine-readable payload that is printed to stdout.
 
 ## What is measured
 
-- `confusion_matrix` and `macro_f1`: validation-band agreement for the
-  synthetic Junior/Middle/Senior labels.
+- `confusion_matrix`, `grade_agreement`, and `macro_f1`: validation-band
+  agreement for the synthetic Junior/Middle/Senior labels. Grade agreement is
+  the diagonal accuracy; macro-F1 averages one-vs-rest F1 across grades.
 - `equivalent_form_score_difference`: mean absolute score difference between
   two independently parameterized forms for each profile.
 - `retest_agreement`: fraction of those paired forms that produce the same
@@ -30,6 +33,9 @@ seed or sample size through `run_validation()`.
   point-biserial discrimination by template family. The observation count is
   included because uncommon families need more labeled runs before calibration
   decisions are made.
+- `mean_item_discrimination` and `positive_item_discrimination_rate`:
+  descriptive aggregates over the family metrics. Negative or low-observation
+  families remain visible instead of being hidden or corrected by quotas.
 - `critical_domain_reliability`: observed correct-response rate for the API
   and security domains used as critical-domain signals in this harness.
 - `form_uniqueness_rate`: distinct family/variant signatures across primary and
