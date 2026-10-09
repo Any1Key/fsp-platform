@@ -120,7 +120,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 
 ## M13 — Validation and load
 - [x] deterministic synthetic candidate/need/assessment dataset
-- [ ] labeled matching relevance
+- [x] labeled matching relevance
 - [ ] keyword baseline matcher
 - [ ] Precision@5/nDCG@5/Recall@10
 - [ ] assessment confusion matrix/macro-F1/stability/discrimination

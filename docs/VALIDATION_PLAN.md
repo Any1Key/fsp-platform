@@ -18,6 +18,11 @@ seed:
 This establishes the fixture for later validation units; it does not claim
 that the matching or load metrics below have been run.
 
+The complete candidate/need relevance labels are materialized into a stable
+offline case artifact by `backend/app/matching_validation.py`, documented in
+`docs/MATCHING_VALIDATION.md`. This validates label and state coverage only;
+the keyword baseline and ranking metrics remain separate validation units.
+
 ## Matching metrics
 
 - Precision@5
