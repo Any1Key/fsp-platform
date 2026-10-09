@@ -94,6 +94,29 @@ employer account email, tokens, candidate data, or protected attributes. A
 candidate receives `ROLE_REQUIRED`; invalid input uses `VALIDATION_ERROR`,
 `COMPANY_NAME_REQUIRED`, or `COMPANY_PROFILE_UPDATE_REQUIRED` as applicable.
 
+## Employer trust / anti-fraud
+
+`GET /api/v1/employer/trust` is employer-only and returns a derived trust
+projection. The `verified_email` badge is based only on the verified Keycloak
+claim. Domain, website consistency, profile completeness, account age,
+invitation outcomes, duplicate offers, and offer-language checks are returned
+as explicitly labeled `heuristic` signals. The response also shows the
+employer's rolling 24-hour invitation usage and current limit.
+
+`POST /api/v1/candidate/invitations/{invitation_id}/report` is candidate-only.
+It accepts `fake_vacancy`, `fee_request`, `misleading_offer`, `spam`, or
+`other`, with optional details. The server verifies that the invitation is
+addressed to the authenticated candidate and makes repeated reports from that
+candidate idempotent. Report details are not copied into audit metadata.
+
+`GET /api/v1/reviewer/trust/reports` and `PATCH
+/api/v1/reviewer/trust/reports/{report_id}` are restricted to `reviewer` and
+`admin` roles. Open reports form the review queue; a report can be marked
+`reviewed` or `closed`. An open report or at least two independent high-risk
+heuristics lowers the outbound invitation limit from 20 to 3 per 24 hours.
+One heuristic alone never blocks or rejects an invitation, and trust does not
+participate in candidate ranking or protected-attribute processing.
+
 ## Candidate vacancies and applications
 
 The candidate-only `GET /api/v1/candidate/vacancies` route returns published

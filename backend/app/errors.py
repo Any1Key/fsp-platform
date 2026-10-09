@@ -80,6 +80,26 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "COMPANY_PROFILE_UPDATE_REQUIRED",
         "At least one company profile field is required.",
     ),
+    "company_not_found": (
+        "COMPANY_NOT_FOUND",
+        "The company trust profile was not found.",
+    ),
+    "employer_invitation_rate_limited": (
+        "EMPLOYER_INVITATION_RATE_LIMITED",
+        "This employer has reached the current invitation limit while trust review is pending.",
+    ),
+    "employer_trust_report_reason_invalid": (
+        "EMPLOYER_TRUST_REPORT_REASON_INVALID",
+        "Choose a supported reason for the employer report.",
+    ),
+    "employer_trust_report_status_invalid": (
+        "EMPLOYER_TRUST_REPORT_STATUS_INVALID",
+        "Choose a supported employer report status.",
+    ),
+    "employer_trust_report_not_found": (
+        "EMPLOYER_TRUST_REPORT_NOT_FOUND",
+        "The employer trust report was not found.",
+    ),
     "hiring_need_fields_required": (
         "HIRING_NEED_FIELDS_REQUIRED",
         "Team, role, specialization and target grade are required.",
@@ -551,6 +571,8 @@ def normalize_http_error(status_code: int, detail: Any) -> tuple[str, str]:
         return "RESOURCE_NOT_FOUND", "The requested resource was not found."
     if status_code == 409:
         return "CONFLICT", "The request conflicts with the current resource state."
+    if status_code == 429:
+        return "RATE_LIMITED", "The request limit has been reached; try again later."
     if status_code == 422:
         return "VALIDATION_ERROR", "Request validation failed."
     if status_code >= 500:

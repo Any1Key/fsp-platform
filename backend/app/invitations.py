@@ -16,6 +16,7 @@ from .auth import Principal, sync_identity
 from .chat import create_conversation_for_match
 from .pipelines import pipeline_snapshot_for_company, snapshot_json
 from .task_assignments import ensure_assignments_for_match
+from .trust import enforce_invitation_limit, get_trust_profile, public_trust_summary
 
 InvitationAction = Literal["accepted", "declined"]
 
@@ -39,7 +40,7 @@ def _invitation_row(db: Session, invitation_id: str):
     ).mappings().one_or_none()
 
 
-def _public_invitation(row, *, employer_view: bool = False) -> dict[str, Any]:
+def _public_invitation(db: Session, row, *, employer_view: bool = False) -> dict[str, Any]:
     pipeline_stages = row["pipeline_snapshot"] or []
     if isinstance(pipeline_stages, str):
         pipeline_stages = json.loads(pipeline_stages)
@@ -73,6 +74,13 @@ def _public_invitation(row, *, employer_view: bool = False) -> dict[str, Any]:
         "contact_unlocked_at": row["contact_unlocked_at"],
         "match_id": row["match_id"],
         "pipeline_stages": pipeline_stages,
+        "employer_trust": public_trust_summary(
+            get_trust_profile(
+                db,
+                row["company_id"],
+                offer=(row["salary_min_rub"], row["salary_max_rub"], row["offer_description"]),
+            )
+        ),
     }
 
 
@@ -215,6 +223,11 @@ def create_invitation(
             detail="invitation_offer_required",
         )
     identity, company = _employer_company(db, principal)
+    enforce_invitation_limit(
+        db,
+        company["id"],
+        offer=(salary_min_rub, salary_max_rub, offer_description),
+    )
     candidate = db.execute(
         text(
             "SELECT cp.id, ui.keycloak_sub FROM candidate_profile cp "
@@ -278,7 +291,7 @@ def create_invitation(
         },
     )
     db.commit()
-    return _public_invitation(_invitation_row(db, invitation_id), employer_view=True)
+    return _public_invitation(db, _invitation_row(db, invitation_id), employer_view=True)
 
 
 def list_employer_invitations(db: Session, principal: Principal) -> list[dict[str, Any]]:
@@ -292,7 +305,7 @@ def list_employer_invitations(db: Session, principal: Principal) -> list[dict[st
         {"identity_id": identity["id"]},
     ).scalars()
     return [
-        _public_invitation(_invitation_row(db, invitation_id), employer_view=True)
+        _public_invitation(db, _invitation_row(db, invitation_id), employer_view=True)
         for invitation_id in rows
     ]
 
@@ -307,7 +320,7 @@ def list_candidate_invitations(db: Session, principal: Principal) -> list[dict[s
         ),
         {"profile_id": profile_id},
     ).scalars()
-    return [_public_invitation(_invitation_row(db, invitation_id)) for invitation_id in rows]
+    return [_public_invitation(db, _invitation_row(db, invitation_id)) for invitation_id in rows]
 
 
 def respond_to_invitation(
@@ -330,7 +343,7 @@ def respond_to_invitation(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="invitation_not_found")
 
     if row["status"] == action:
-        return _public_invitation(_invitation_row(db, invitation_id))
+        return _public_invitation(db, _invitation_row(db, invitation_id))
     if row["status"] != "pending":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="invitation_not_pending")
 
@@ -344,7 +357,7 @@ def respond_to_invitation(
             {"now": now, "invitation_id": invitation_id},
         )
         db.commit()
-        return _public_invitation(_invitation_row(db, invitation_id))
+        return _public_invitation(db, _invitation_row(db, invitation_id))
 
     create_match_for_invitation(
         db,
@@ -355,7 +368,7 @@ def respond_to_invitation(
         now=now,
     )
     db.commit()
-    return _public_invitation(_invitation_row(db, invitation_id))
+    return _public_invitation(db, _invitation_row(db, invitation_id))
 
 
 def get_invitation_for_employer(db: Session, principal: Principal, invitation_id: str) -> dict[str, Any]:
@@ -369,4 +382,4 @@ def get_invitation_for_employer(db: Session, principal: Principal, invitation_id
     ).scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="invitation_not_found")
-    return _public_invitation(_invitation_row(db, invitation_id), employer_view=True)
+    return _public_invitation(db, _invitation_row(db, invitation_id), employer_view=True)

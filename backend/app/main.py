@@ -91,6 +91,12 @@ from .resume import get_resume, review_resume, upload_resume
 from .skill_passport import get_skill_passport
 from .task_assignments import list_candidate_assignments, submit_candidate_assignment
 from .taxonomy import list_taxonomy
+from .trust import (
+    create_trust_report,
+    get_employer_trust,
+    list_trust_reports,
+    resolve_trust_report,
+)
 from .vacancies import (
     close_vacancy,
     create_vacancy,
@@ -410,6 +416,21 @@ class PipelineStagePreviewResponse(BaseModel):
     estimated_minutes: int
 
 
+class TrustSignalResponse(BaseModel):
+    key: str
+    label: str
+    category: Literal["verified", "heuristic"]
+    status: Literal["pass", "attention", "not_available"]
+    explanation: str
+
+
+class EmployerTrustSummaryResponse(BaseModel):
+    state: Literal["normal", "review"]
+    badge: Literal["verified_email", "none"]
+    badge_label: str
+    signals: list[TrustSignalResponse]
+
+
 class InvitationResponse(BaseModel):
     id: str
     status: Literal["pending", "accepted", "declined"]
@@ -426,12 +447,52 @@ class InvitationResponse(BaseModel):
     contact_unlocked_at: datetime | None
     match_id: str | None
     pipeline_stages: list[PipelineStagePreviewResponse]
+    employer_trust: EmployerTrustSummaryResponse
 
 
 class InvitationActionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     action: Literal["accepted", "declined"]
+
+
+class EmployerTrustResponse(EmployerTrustSummaryResponse):
+    company_id: str
+    review_queue: bool
+    open_report_count: int
+    outbound_used: int
+    outbound_limit: int
+    review_reasons: list[str]
+
+
+class EmployerTrustReportRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: Literal["fake_vacancy", "fee_request", "misleading_offer", "spam", "other"]
+    details: str | None = Field(default=None, max_length=500)
+
+
+class EmployerTrustReportResponse(BaseModel):
+    id: str
+    status: Literal["open", "reviewed", "closed"]
+
+
+class ReviewerTrustReportResponse(BaseModel):
+    id: str
+    invitation_id: str
+    company_id: str
+    company_name: str | None = None
+    reason: Literal["fake_vacancy", "fee_request", "misleading_offer", "spam", "other"]
+    details: str | None
+    status: Literal["open", "reviewed", "closed"]
+    created_at: datetime
+    updated_at: datetime
+
+
+class ReviewerTrustReportUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["reviewed", "closed"]
 
 
 class ChatMessageRequest(BaseModel):
@@ -1222,6 +1283,14 @@ def employer_principal(
     return principal
 
 
+def reviewer_principal(
+    principal: Annotated[Principal, Depends(resolve_current_principal)],
+) -> Principal:
+    if principal.role not in {Role.ADMIN, Role.REVIEWER}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="role_required")
+    return principal
+
+
 def chat_principal(
     principal: Annotated[Principal, Depends(resolve_current_principal)],
 ) -> Principal:
@@ -1374,6 +1443,21 @@ def update_employer_company(
     if not changes:
         raise HTTPException(status_code=422, detail="company_profile_update_required")
     return CompanyProfileResponse.model_validate(update_company(db, principal, changes))
+
+
+@app.get(
+    "/api/v1/employer/trust",
+    tags=["employer trust"],
+    response_model=EmployerTrustResponse,
+    responses={403: {"model": ErrorResponse, "description": "Employer role required"}},
+)
+def employer_trust(
+    principal: Annotated[Principal, Depends(employer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> EmployerTrustResponse:
+    """Return the employer's explicit trust evidence and advisory signals."""
+
+    return EmployerTrustResponse.model_validate(get_employer_trust(db, principal))
 
 
 @app.get(
@@ -2134,6 +2218,73 @@ def respond_candidate_invitation(
 ) -> InvitationResponse:
     return InvitationResponse.model_validate(
         respond_to_invitation(db, principal, invitation_id, request.action)
+    )
+
+
+@app.post(
+    "/api/v1/candidate/invitations/{invitation_id}/report",
+    tags=["candidate trust"],
+    response_model=EmployerTrustReportResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        404: {"model": ErrorResponse, "description": "Invitation not found"},
+        422: {"model": ErrorResponse, "description": "Report is invalid"},
+    },
+)
+def report_employer_invitation(
+    invitation_id: str,
+    request: EmployerTrustReportRequest,
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> EmployerTrustReportResponse:
+    """Let a candidate report an addressed employer offer for review."""
+
+    return EmployerTrustReportResponse.model_validate(
+        create_trust_report(
+            db,
+            principal,
+            invitation_id,
+            reason=request.reason,
+            details=request.details,
+        )
+    )
+
+
+@app.get(
+    "/api/v1/reviewer/trust/reports",
+    tags=["employer trust"],
+    response_model=list[ReviewerTrustReportResponse],
+    responses={403: {"model": ErrorResponse, "description": "Reviewer role required"}},
+)
+def reviewer_trust_reports(
+    principal: Annotated[Principal, Depends(reviewer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+    report_status: Literal["open", "reviewed", "closed"] = Query(default="open"),
+) -> list[ReviewerTrustReportResponse]:
+    return [
+        ReviewerTrustReportResponse.model_validate(item)
+        for item in list_trust_reports(db, principal, report_status=report_status)
+    ]
+
+
+@app.patch(
+    "/api/v1/reviewer/trust/reports/{report_id}",
+    tags=["employer trust"],
+    response_model=ReviewerTrustReportResponse,
+    responses={
+        403: {"model": ErrorResponse, "description": "Reviewer role required"},
+        404: {"model": ErrorResponse, "description": "Trust report not found"},
+    },
+)
+def update_reviewer_trust_report(
+    report_id: str,
+    request: ReviewerTrustReportUpdateRequest,
+    principal: Annotated[Principal, Depends(reviewer_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> ReviewerTrustReportResponse:
+    return ReviewerTrustReportResponse.model_validate(
+        resolve_trust_report(db, principal, report_id, report_status=request.status)
     )
 
 

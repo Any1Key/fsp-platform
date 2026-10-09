@@ -817,6 +817,32 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .radarEvidenceList small { color: #b7b7c1; font-size: 8px; }
 .radarDialogActions { justify-content: flex-end; border-top: 1px solid rgba(255,255,255,.1); padding-top: 12px; }
 .radarDialogActions .authButton { font-size: 9px; }
+.trustPanel { display: grid; gap: 14px; border: 1px solid rgba(139,224,178,.24); border-radius: 16px; padding: 18px; background: rgba(20,21,26,.76); }
+.trustPanel.muted, .trustPanel.error { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.trustPanel.error { color: #ffb6bd; }
+.trustHeading { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.trustHeading > div { display: grid; gap: 5px; }
+.trustHeading h2 { margin: 0; font-size: 15px; }
+.trustHeading p { margin: 0; max-width: 760px; color: #b7b7c1; font-size: 10px; line-height: 1.5; }
+.trustBadge { display: inline-flex; width: fit-content; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: 5px 8px; color: #b7b7c1; font-size: 8px; letter-spacing: .05em; white-space: nowrap; }
+.trustBadge.verified { border-color: rgba(139,224,178,.34); color: #8be0b2; background: rgba(139,224,178,.08); }
+.trustMeta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: #b7b7c1; font-size: 9px; }
+.trustState { border-radius: 999px; padding: 5px 7px; color: #8be0b2; background: rgba(139,224,178,.1); letter-spacing: .05em; }
+.trustState.review { color: #ffd28a; background: rgba(255,210,138,.1); }
+.trustSignals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.trustSignal { display: grid; gap: 7px; border: 1px solid rgba(255,255,255,.1); border-radius: 11px; padding: 10px; background: rgba(27,28,33,.42); }
+.trustSignal > div { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.trustSignal strong { color: #ededed; font-size: 9px; }
+.trustSignal small { color: #a9a1ff; font-size: 7px; letter-spacing: .06em; }
+.trustSignal p { margin: 0; color: #b7b7c1; font-size: 9px; line-height: 1.45; }
+.trustSignalStatus { width: fit-content; border-radius: 999px; padding: 3px 5px; font-size: 7px; letter-spacing: .05em; }
+.trustSignalStatus.pass { color: #8be0b2; background: rgba(139,224,178,.1); }
+.trustSignalStatus.attention { color: #ffd28a; background: rgba(255,210,138,.1); }
+.trustSignalStatus.not_available { color: #b7b7c1; background: rgba(255,255,255,.08); }
+.invitationTrust { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.invitationTrust small, .invitationReported { color: #b7b7c1; font-size: 9px; }
+.invitationReport { justify-self: start; color: #ffb6bd; font-size: 9px; }
+.invitationReport:hover, .invitationReport:focus-visible { color: #ffd0d5; }
 .proofCard {
   background: white; color: var(--text); border-radius: 24px; padding: 30px;
   box-shadow: 0 25px 90px rgba(0,0,0,.28); transform: rotate(-1deg);
@@ -900,6 +926,8 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .profileFooter small { max-width: none; }
   .companyHeading, .companyFooter { align-items: flex-start; flex-direction: column; }
   .companyFooter small { max-width: none; }
+  .trustHeading { align-items: flex-start; flex-direction: column; }
+  .trustSignals { grid-template-columns: 1fr; }
   .skillPreferenceGrid { grid-template-columns: 1fr; }
   .vacancyToolbar { grid-template-columns: 1fr; }
   .vacancyFields { grid-template-columns: repeat(2, minmax(0, 1fr)); }

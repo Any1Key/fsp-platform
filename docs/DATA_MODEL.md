@@ -13,9 +13,11 @@
   configured private directory and are never employer-visible.
 - `company`: one employer-owned row per identity; name, description, industry,
   website, location, explicitly supplied public contact method, and timestamps.
-  Trust fields remain future employer-discovery scope. The empty draft row is
-  provisioned on the employer's first company-profile read, while a saved
-  profile requires a non-blank name.
+  The empty draft row is provisioned on the employer's first company-profile
+  read, while a saved profile requires a non-blank name. Trust is a derived
+  projection rather than a company score: verified email is explicit evidence;
+  domain, website, completeness, age, outcomes and offer-pattern checks are
+  advisory heuristics.
 
 ## Taxonomy
 - `specialization`: active, stable slug/name for a professional track.
@@ -104,6 +106,15 @@ Snapshot preserves result context during refinement.
 - `talent_match` is created once per accepted invitation and stores the two authorized parties
   plus contact-unlock time.
 - `domain_event` records `MATCH_CREATED` and `CONTACT_UNLOCKED` with non-PII aggregate payloads.
+
+## Employer trust / anti-fraud
+- `employer_trust_report`: invitation, company, candidate reporter, reason,
+  optional details, open/reviewed/closed status, and timestamps; one report per
+  candidate/invitation pair.
+- Open reports form the reviewer queue. The employer trust projection derives
+  the state and outbound invitation limit from open reports and independent
+  advisory signals. It never uses candidate protected data or changes match
+  ranking.
 
 ## Chat
 - conversation (bound to match)

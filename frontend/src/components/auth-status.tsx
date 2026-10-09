@@ -11,6 +11,7 @@ import { CandidateCareerGraph } from "./candidate-career-graph";
 import { CandidateAssessment } from "./candidate-assessment";
 import { CandidateFsp } from "./candidate-fsp";
 import { EmployerCompanyProfile } from "./employer-company-profile";
+import { EmployerTrust } from "./employer-trust";
 import { EmployerHiringNeed } from "./employer-hiring-need";
 import { EmployerVacancies } from "./employer-vacancies";
 import { EmployerApplications } from "./employer-applications";
@@ -185,6 +186,7 @@ export function AuthStatus() {
         {auth.session.role === "employer" && (
           <>
             <EmployerCompanyProfile token={keycloak.current?.token ?? ""} />
+            <EmployerTrust token={keycloak.current?.token ?? ""} />
             <EmployerHiringNeed token={keycloak.current?.token ?? ""} onSaved={() => setTalentRadarRefreshKey((value) => value + 1)} />
             <EmployerVacancies token={keycloak.current?.token ?? ""} />
             <EmployerApplications token={keycloak.current?.token ?? ""} />

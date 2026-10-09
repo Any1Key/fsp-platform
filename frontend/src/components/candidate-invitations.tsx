@@ -12,6 +12,12 @@ type Invitation = {
   created_at: string;
   matched_at: string | null;
   pipeline_stages: { stage_type: string; title: string; required: boolean; estimated_minutes: number }[];
+  employer_trust: {
+    state: "normal" | "review";
+    badge: "verified_email" | "none";
+    badge_label: string;
+    signals: { key: string; label: string; category: "verified" | "heuristic"; status: "pass" | "attention" | "not_available"; explanation: string }[];
+  };
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -29,6 +35,7 @@ export function CandidateInvitations({ token, onMatchCreated }: { token: string;
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
 
   async function load() {
     setState("loading");
@@ -68,6 +75,25 @@ export function CandidateInvitations({ token, onMatchCreated }: { token: string;
     }
   }
 
+  async function report(id: string) {
+    setBusyId(id);
+    setMessage(null);
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/candidate/invitations/${id}/report`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "other" }),
+      });
+      if (!response.ok) throw new Error("report_failed");
+      setReportedIds((current) => new Set(current).add(id));
+      setMessage("Report отправлен на ручную проверку. Один сигнал не является автоматическим обвинением.");
+    } catch {
+      setMessage("Не удалось отправить report. Попробуй еще раз.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   if (state === "loading") return <section className="invitationPanel muted">Проверяем входящие приглашения…</section>;
   if (state === "error") return <section className="invitationPanel error">Не удалось загрузить входящие приглашения.</section>;
 
@@ -92,6 +118,10 @@ export function CandidateInvitations({ token, onMatchCreated }: { token: string;
                 <div><span className={`invitationState ${invitation.status}`}>{statusLabel(invitation.status)}</span><h3>{invitation.company.name}</h3><small>{formatDate(invitation.created_at)} · {invitation.company.contact_method}</small></div>
                 <strong className="invitationSalary">{invitation.salary_min_rub.toLocaleString("ru-RU")}–{invitation.salary_max_rub.toLocaleString("ru-RU")} ₽</strong>
               </div>
+              <div className="invitationTrust">
+                <span className={`trustBadge ${invitation.employer_trust.badge === "verified_email" ? "verified" : ""}`}>{invitation.employer_trust.badge_label}</span>
+                <small>{invitation.employer_trust.state === "review" ? "Есть сигналы для ручной проверки" : "Публичных review-сигналов нет"}</small>
+              </div>
               <p className="invitationOffer">{invitation.offer_description}</p>
               {invitation.pipeline_stages.length > 0 && (
                 <div className="invitationPipeline">
@@ -108,6 +138,11 @@ export function CandidateInvitations({ token, onMatchCreated }: { token: string;
                 </div>
               )}
               {invitation.status === "accepted" && <small className="invitationUnlocked">✓ Match создан · внутреннее общение разблокировано</small>}
+              {reportedIds.has(invitation.id) ? (
+                <small className="invitationReported">Report отправлен на ручную проверку</small>
+              ) : (
+                <button className="textButton invitationReport" disabled={busyId === invitation.id} onClick={() => void report(invitation.id)}>Пожаловаться на оффер</button>
+              )}
             </article>
           ))}
         </div>
