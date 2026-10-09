@@ -53,10 +53,30 @@ The fixed-seed run on 2026-10-09 produced 1,600/1,600 expected pairs:
 Freshness coverage was 27 fresh, 27 expiring and 26 stale candidates. These
 are deterministic fixture counts, not claims about production match quality.
 
-## Boundary
+## Keyword baseline
 
-This unit provides labeled inputs for the later keyword baseline and
-Precision@5/nDCG@5/Recall@10 work. It does not calculate those metrics, change
-production ProofMatch ranking, create a validation endpoint, or claim actual
-production performance. Tests are in
-`backend/tests/test_matching_validation.py`.
+The conventional comparator is implemented in
+`backend/app/keyword_baseline.py`. Because the synthetic fixture is
+intentionally PII-free and does not contain resume text, candidate skill slugs
+are used as the resume-keyword proxy. For each need, the baseline scores every
+candidate with the unweighted Jaccard overlap of candidate skills and the
+union of required and preferred need skills:
+
+`score = |candidate keywords ∩ need keywords| / |candidate keywords ∪ need keywords|`
+
+It ranks descending by score and then by synthetic candidate ID. It does not
+read expected relevance labels, grade, specialization, FSP history or
+freshness, and it does not affect production ProofMatch ranking.
+
+Reproduce the label-free baseline artifact from `backend/`:
+
+```sh
+PYTHONPATH=. .venv/bin/python -m app.keyword_baseline \
+  --output /tmp/fsp-keyword-baseline.json
+```
+
+The output contains 20 complete rankings of 80 synthetic candidates. It is an
+input to later Precision@5/nDCG@5/Recall@10 work; this unit does not calculate
+those metrics, create a validation endpoint, or claim production performance.
+Tests are in `backend/tests/test_matching_validation.py` and
+`backend/tests/test_keyword_baseline.py`.

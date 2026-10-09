@@ -33,7 +33,15 @@ the keyword baseline and ranking metrics remain separate validation units.
 - explanation completeness
 - no-FSP fairness sanity check
 
-Baseline: simple resume keyword/Jaccard overlap.
+Baseline: implemented offline in `backend/app/keyword_baseline.py` as a
+simple skill-keyword/Jaccard overlap comparator over the PII-free fixture;
+candidate skill slugs are the resume-keyword proxy. The baseline output is
+label-free and does not enter production ProofMatch. Reproduce it with:
+
+```sh
+PYTHONPATH=. .venv/bin/python -m app.keyword_baseline \
+  --output /tmp/fsp-keyword-baseline.json
+```
 
 ## Assessment metrics
 
