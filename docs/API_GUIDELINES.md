@@ -33,6 +33,21 @@ exception text is never returned.
 Document 400/401/403/404/409/422 cases where relevant.
 Do not leak protected resource existence across authorization boundaries.
 
+## ATS integration contract
+
+`GET /api/v1/integrations/ats/v1/contract` is a public, data-free discovery
+endpoint for the versioned vendor-neutral ATS contract. It returns the typed
+`fsp.ats.event.v1` envelope, supported vacancy/invitation/application/match
+events, HMAC webhook headers, the five-minute replay window, idempotency rule,
+retry statuses, and the contact-unlock policy. It does not return credentials,
+candidate data, or a vendor-specific configuration.
+
+Future inbound webhooks must be verified by an employer-scoped connector using
+the raw request bytes, `X-FSP-Signature`, and `Idempotency-Key`. The connector
+must make duplicate deliveries side-effect free. The existing invitation and
+match state machine remains authoritative: an ATS event cannot unlock contact
+before an accepted invitation creates a match. See `docs/ATS_INTEGRATION.md`.
+
 ## Taxonomy catalog
 
 `GET /api/v1/taxonomy` returns active non-sensitive specialization, grade, and

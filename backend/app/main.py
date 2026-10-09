@@ -20,6 +20,7 @@ from .assessments import (
     AssessmentService,
     public_history_item,
 )
+from .ats import AtsContract, ats_contract
 from .auth import (
     Principal,
     Role,
@@ -1231,6 +1232,17 @@ def system_info() -> dict[str, str]:
         "state": "bootstrap",
         "message": "Autonomous development workspace is ready.",
     }
+
+
+@app.get(
+    "/api/v1/integrations/ats/v1/contract",
+    tags=["integrations"],
+    response_model=AtsContract,
+)
+def ats_integration_contract() -> AtsContract:
+    """Return the vendor-neutral ATS contract without employer data or secrets."""
+
+    return ats_contract()
 
 
 @app.get(

@@ -13,6 +13,7 @@ FastAPI REST/WebSocket API -----> Keycloak / OIDC
   |
   +---- PostgreSQL
   +---- FSP Registry Adapter (synthetic now / real later)
+  +---- ATS Connector Port (contract now / vendor adapters later)
   +---- Resume Parser Adapter
   +---- Optional Local AI Adapter/worker (CPU, async, replaceable)
 ```
@@ -45,6 +46,7 @@ Supporting:
 - `documents`
 - `privacy`
 - `local_ai`
+- `ats`
 - `audit`
 
 Rules:

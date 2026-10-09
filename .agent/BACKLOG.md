@@ -116,7 +116,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] Talent Radar polish
 - [x] Career Graph
 - [x] employer trust/anti-fraud MVP/concept
-- [ ] ATS integration contract/concept
+- [x] ATS integration contract/concept
 
 ## M13 — Validation and load
 - [ ] deterministic synthetic candidate/need/assessment dataset
