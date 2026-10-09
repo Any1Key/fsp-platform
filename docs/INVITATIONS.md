@@ -11,6 +11,8 @@ An employer can send an invitation without publishing a vacancy. The request con
 - candidate profile ID from the employer's Talent Radar result;
 - a positive `salary_min_rub` and `salary_max_rub`, with minimum no greater than maximum;
 - a non-empty offer description.
+- optional `blind_discovery: true`, which keeps the candidate anonymous in the
+  employer's invitation response/list until the candidate accepts.
 
 The candidate must be discoverable, have publication consent, and have at least one
 platform assessment with a confirmed grade. Candidates with an unconfirmed grade remain
@@ -34,6 +36,22 @@ rejected; declined or accepted invitations remain immutable and can be audited.
 
 Invitation responses contain the salary, offer, company and public contact method. They never
 contain candidate email, phone, date of birth, documents, or other protected profile fields.
+
+## Blind Discovery
+
+Talent Radar can request `GET /api/v1/employer/talent-radar?blind=true`. The
+server returns the same category, ProofMatch score, evidence, confidence, and
+gap explanation, but replaces the candidate's display name/headline/location
+with an anonymous label. Blind free-text search only considers category and
+skill evidence, so a name or location cannot be used as a deanonymization
+side-channel.
+
+When the employer sends `blind_discovery: true` to the invitation endpoint, the
+mode is persisted on the invitation. Employer-facing pending/declined
+responses use `Anonymous candidate`; the candidate still sees the normal safe
+offer in their own inbox. Acceptance creates the normal match and causes later
+employer views to reveal the candidate identity. Contacts, documents, DOB, and
+email remain protected by the existing match boundary.
 
 ## Match transition
 

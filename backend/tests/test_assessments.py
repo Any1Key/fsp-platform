@@ -57,6 +57,27 @@ def test_progressive_followup_and_integrity_signal_are_advisory() -> None:
     assert result.integrity_signals == ["large_paste_review"]
 
 
+def test_rotated_form_normalizes_progressive_followup_weight() -> None:
+    # This seed rotates the form to three progressive items. A correct answer
+    # and valid rationale for every item must remain a verified result.
+    service = AssessmentService(
+        now=datetime(2026, 10, 6, tzinfo=UTC),
+        seed_factory=lambda: "00000003" + "00" * 12,
+    )
+    attempt = service.create_attempt("rotated-form", "Backend Engineering", "Middle")
+    progressive = [item for item in attempt.items if item.progressive]
+    assert len(progressive) == 3
+
+    result = service.submit(
+        attempt.attempt_id,
+        attempt.answer_keys.copy(),
+        {item.item_id: _valid_followup(item) for item in progressive},
+    )
+
+    assert result.score == 100
+    assert result.grade_state == "verified"
+
+
 def test_canonical_review_is_delayed_then_released_after_configured_window() -> None:
     started = datetime(2026, 10, 6, tzinfo=UTC)
     service = AssessmentService(now=started, canonical_exposure_window=timedelta(days=7))

@@ -380,6 +380,7 @@ class CreateInvitationRequest(BaseModel):
     salary_min_rub: int = Field(gt=0)
     salary_max_rub: int = Field(gt=0)
     offer_description: str = Field(min_length=1, max_length=4000)
+    blind_discovery: bool = False
 
 
 class InvitationCompanyResponse(BaseModel):
@@ -414,6 +415,7 @@ class InvitationResponse(BaseModel):
     salary_min_rub: int
     salary_max_rub: int
     offer_description: str
+    blind_discovery: bool
     company: InvitationCompanyResponse
     candidate: InvitationCandidateResponse
     created_at: datetime
@@ -1958,6 +1960,7 @@ def employer_talent_radar(
     skill: str | None = Query(default=None, max_length=100),
     fsp: Literal["all", "with_history", "without_history"] = Query(default="all"),
     include_unconfirmed: bool = Query(default=True),
+    blind: bool = Query(default=False),
     limit: int = Query(default=30, ge=1, le=100),
 ) -> dict[str, Any]:
     """Return a consent-gated, explainable candidate discovery snapshot."""
@@ -1973,6 +1976,7 @@ def employer_talent_radar(
             skill=(skill or "").strip() or None,
             fsp=fsp,
             include_unconfirmed=include_unconfirmed,
+            blind=blind,
             limit=limit,
         ),
     )
@@ -2003,6 +2007,7 @@ def create_employer_invitation(
             salary_min_rub=request.salary_min_rub,
             salary_max_rub=request.salary_max_rub,
             offer_description=request.offer_description,
+            blind_discovery=request.blind_discovery,
             assessment_service=assessment_service,
         )
     )

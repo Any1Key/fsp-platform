@@ -48,6 +48,7 @@ class RadarFilters:
     skill: str | None = None
     fsp: Literal["all", "with_history", "without_history"] = "all"
     include_unconfirmed: bool = True
+    blind: bool = False
     limit: int = DEFAULT_LIMIT
 
 
@@ -382,15 +383,36 @@ def get_talent_radar(
         if filters.fsp == "without_history" and card["fsp"]["history_status"] != "no_history":
             continue
         if filters.query:
-            haystack = " ".join(
-                str(card.get(field) or "") for field in ("display_name", "headline", "location")
-            ) + " " + str(card["category"].get("label") or "")
+            if filters.blind:
+                # Blind search must not become a deanonymization side channel.
+                haystack = " ".join(
+                    [
+                        str(card["category"].get("label") or ""),
+                        *(item["skill"] for group in (card["evidence"]["required"], card["evidence"]["preferred"]) for item in group),
+                    ]
+                )
+            else:
+                haystack = " ".join(
+                    str(card.get(field) or "") for field in ("display_name", "headline", "location")
+                ) + " " + str(card["category"].get("label") or "")
             if _normalize(filters.query) not in _normalize(haystack):
                 continue
         candidates.append(card)
 
     candidates.sort(key=lambda card: (-card["match_score"], card["eligibility"] != "verified", card["candidate_id"]))
     selected = candidates[: filters.limit]
+    if filters.blind:
+        selected = [
+            {
+                **card,
+                "display_name": f"Anonymous candidate {position:02d}",
+                "headline": "Evidence-only profile",
+                "location": None,
+                "blind_discovery": True,
+                "identity_revealed": False,
+            }
+            for position, card in enumerate(selected, start=1)
+        ]
     categories: dict[str, dict[str, Any]] = {}
     for card in candidates:
         category = card["category"]
@@ -421,6 +443,7 @@ def get_talent_radar(
         "skill": requested_skill,
         "fsp": filters.fsp,
         "include_unconfirmed": filters.include_unconfirmed,
+        "blind": filters.blind,
         "limit": filters.limit,
     }
     snapshot_seed = json.dumps(
@@ -441,5 +464,6 @@ def get_talent_radar(
         },
         "categories": sorted(categories.values(), key=lambda item: (-item["candidate_count"], item["key"])),
         "candidates": selected,
+        "blind_discovery": filters.blind,
         "total_candidates": len(candidates),
     }

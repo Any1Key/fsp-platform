@@ -26,6 +26,7 @@ def _invitation_row(db: Session, invitation_id: str):
             "SELECT i.id, i.employer_identity_id, i.company_id, i.candidate_profile_id, "
             "i.salary_min_rub, i.salary_max_rub, i.offer_description, "
             "i.company_name_snapshot, i.contact_method_snapshot, i.status, "
+            "i.blind_discovery, "
             "i.pipeline_snapshot, i.source_application_id, "
             "i.created_at, i.updated_at, i.responded_at, i.matched_at, i.contact_unlocked_at, "
             "cp.display_name AS candidate_display_name, tm.id AS match_id "
@@ -38,16 +39,20 @@ def _invitation_row(db: Session, invitation_id: str):
     ).mappings().one_or_none()
 
 
-def _public_invitation(row) -> dict[str, Any]:
+def _public_invitation(row, *, employer_view: bool = False) -> dict[str, Any]:
     pipeline_stages = row["pipeline_snapshot"] or []
     if isinstance(pipeline_stages, str):
         pipeline_stages = json.loads(pipeline_stages)
+    identity_visible = (
+        not employer_view or not row["blind_discovery"] or row["status"] == "accepted"
+    )
     return {
         "id": row["id"],
         "status": row["status"],
         "salary_min_rub": row["salary_min_rub"],
         "salary_max_rub": row["salary_max_rub"],
         "offer_description": row["offer_description"],
+        "blind_discovery": bool(row["blind_discovery"]),
         "company": {
             "id": row["company_id"],
             "name": row["company_name_snapshot"],
@@ -55,7 +60,11 @@ def _public_invitation(row) -> dict[str, Any]:
         },
         "candidate": {
             "id": row["candidate_profile_id"],
-            "display_name": row["candidate_display_name"] or "Unnamed candidate",
+            "display_name": (
+                row["candidate_display_name"] or "Unnamed candidate"
+                if identity_visible
+                else "Anonymous candidate"
+            ),
         },
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
@@ -194,6 +203,7 @@ def create_invitation(
     salary_min_rub: int,
     salary_max_rub: int,
     offer_description: str,
+    blind_discovery: bool,
     assessment_service: AssessmentService,
 ) -> dict[str, Any]:
     """Create a salary-bearing offer addressed to a discoverable candidate."""
@@ -245,10 +255,12 @@ def create_invitation(
         text(
             "INSERT INTO invitation ("
             "id, employer_identity_id, company_id, candidate_profile_id, salary_min_rub, "
-            "salary_max_rub, offer_description, company_name_snapshot, contact_method_snapshot, pipeline_snapshot"
+            "salary_max_rub, offer_description, company_name_snapshot, contact_method_snapshot, "
+            "pipeline_snapshot, blind_discovery"
             ") VALUES ("
             ":id, :employer_identity_id, :company_id, :candidate_profile_id, :salary_min_rub, "
-            ":salary_max_rub, :offer_description, :company_name_snapshot, :contact_method_snapshot, :pipeline_snapshot"
+            ":salary_max_rub, :offer_description, :company_name_snapshot, :contact_method_snapshot, "
+            ":pipeline_snapshot, :blind_discovery"
             ")"
         ),
         {
@@ -262,10 +274,11 @@ def create_invitation(
             "company_name_snapshot": company["name"],
             "contact_method_snapshot": company["public_contact_method"],
             "pipeline_snapshot": snapshot_json(pipeline_stages),
+            "blind_discovery": blind_discovery,
         },
     )
     db.commit()
-    return _public_invitation(_invitation_row(db, invitation_id))
+    return _public_invitation(_invitation_row(db, invitation_id), employer_view=True)
 
 
 def list_employer_invitations(db: Session, principal: Principal) -> list[dict[str, Any]]:
@@ -278,7 +291,10 @@ def list_employer_invitations(db: Session, principal: Principal) -> list[dict[st
         ),
         {"identity_id": identity["id"]},
     ).scalars()
-    return [_public_invitation(_invitation_row(db, invitation_id)) for invitation_id in rows]
+    return [
+        _public_invitation(_invitation_row(db, invitation_id), employer_view=True)
+        for invitation_id in rows
+    ]
 
 
 def list_candidate_invitations(db: Session, principal: Principal) -> list[dict[str, Any]]:
@@ -353,4 +369,4 @@ def get_invitation_for_employer(db: Session, principal: Principal, invitation_id
     ).scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="invitation_not_found")
-    return _public_invitation(_invitation_row(db, invitation_id))
+    return _public_invitation(_invitation_row(db, invitation_id), employer_view=True)

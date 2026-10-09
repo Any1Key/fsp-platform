@@ -185,3 +185,32 @@ def test_talent_radar_filters_and_role_need_boundaries(auth_context):
     missing_need = client.get("/api/v1/employer/talent-radar", headers=no_need)
     assert missing_need.status_code == 409
     assert missing_need.json()["error"]["code"] == "HIRING_NEED_REQUIRED_FOR_TALENT_RADAR"
+
+
+def test_blind_talent_radar_masks_identity_but_keeps_evidence_searchable(auth_context):
+    client, private_key, settings = auth_context
+    main.assessment_service.attempts.clear()
+    main.assessment_service.history.clear()
+    main.assessment_service.family_exposure.clear()
+    candidate_id = f"blind-candidate-{uuid4().hex}"
+    _candidate(client, private_key, settings, sub=candidate_id, skills=["Python"], assessed="verified")
+    employer = _employer_need(client, private_key, settings, sub=f"blind-employer-{uuid4().hex}")
+
+    response = client.get(
+        "/api/v1/employer/talent-radar?blind=true&q=Backend%20Engineering",
+        headers=employer,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["blind_discovery"] is True
+    assert body["snapshot"]["filters"]["blind"] is True
+    assert len(body["candidates"]) == 1
+    card = body["candidates"][0]
+    assert card["candidate_id"]
+    assert card["display_name"] == "Anonymous candidate 01"
+    assert card["headline"] == "Evidence-only profile"
+    assert card["location"] is None
+    assert card["identity_revealed"] is False
+    assert card["evidence"]["required"][0]["present"] is True
+    assert candidate_id not in str(card)

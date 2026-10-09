@@ -23,6 +23,8 @@ type RadarCandidate = {
   fsp: { score: number; history_status: string };
   reasons: string[];
   gaps: string[];
+  blind_discovery?: boolean;
+  identity_revealed?: boolean;
 };
 type RadarResponse = {
   need: {
@@ -32,7 +34,8 @@ type RadarResponse = {
     required_skills: { slug: string; name: string }[];
     preferred_skills: { slug: string; name: string }[];
   };
-  snapshot: { id: string; created_at: string; filters: { include_unconfirmed: boolean } };
+  snapshot: { id: string; created_at: string; filters: { include_unconfirmed: boolean; blind: boolean } };
+  blind_discovery: boolean;
   categories: {
     key: string;
     candidate_count: number;
@@ -43,9 +46,9 @@ type RadarResponse = {
   total_candidates: number;
 };
 
-type Filters = { query: string; specialization: string; grade: string; skill: string; fsp: "all" | "with_history" | "without_history"; include_unconfirmed: boolean };
+type Filters = { query: string; specialization: string; grade: string; skill: string; fsp: "all" | "with_history" | "without_history"; include_unconfirmed: boolean; blind: boolean };
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const initialFilters: Filters = { query: "", specialization: "", grade: "", skill: "", fsp: "all", include_unconfirmed: true };
+const initialFilters: Filters = { query: "", specialization: "", grade: "", skill: "", fsp: "all", include_unconfirmed: true, blind: false };
 
 async function readError(response: Response): Promise<string> {
   try {
@@ -83,6 +86,7 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
     if (nextFilters.skill) params.set("skill", nextFilters.skill);
     params.set("fsp", nextFilters.fsp);
     params.set("include_unconfirmed", String(nextFilters.include_unconfirmed));
+    params.set("blind", String(nextFilters.blind));
     try {
       const response = await fetch(`${apiUrl}/api/v1/employer/talent-radar?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -141,6 +145,7 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
           salary_min_rub: Number(salaryMin),
           salary_max_rub: Number(salaryMax),
           offer_description: offer,
+          blind_discovery: radar?.blind_discovery ?? false,
         }),
       });
       if (!response.ok) throw new Error(await readError(response));
@@ -183,8 +188,11 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
         <label>Навык<select value={draft.skill} onChange={(event) => update("skill", event.target.value)}><option value="">Все навыки</option>{skills.map((skill) => <option key={skill.slug} value={skill.slug}>{skill.name}</option>)}</select></label>
         <label>FSP evidence<select value={draft.fsp} onChange={(event) => update("fsp", event.target.value as Filters["fsp"])}><option value="all">Все кандидаты</option><option value="with_history">Только с историей</option><option value="without_history">Без истории тоже</option></select></label>
         <label className="radarCheckbox"><input type="checkbox" checked={draft.include_unconfirmed} onChange={(event) => update("include_unconfirmed", event.target.checked)} /> Показывать grade not confirmed</label>
+        <label className="radarCheckbox"><input type="checkbox" checked={draft.blind} onChange={(event) => update("blind", event.target.checked)} /> Blind Discovery: скрывать identity до match</label>
         <button className="authButton primaryButton" type="submit" disabled={loading}>{loading ? "Обновляем…" : "Применить фильтры"}</button>
       </form>
+
+      {radar.blind_discovery && <div className="radarBlindNote"><strong>BLIND DISCOVERY</strong><span>Видны только category, ProofMatch и verified evidence. Salary-bearing invitation можно отправить анонимно; identity откроется работодателю только после acceptance кандидатом.</span></div>}
 
       <div className="radarSummary">
         <div><span>SNAPSHOT</span><strong>{radar.snapshot.id}</strong></div>

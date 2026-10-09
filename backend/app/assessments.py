@@ -442,8 +442,12 @@ class AssessmentService:
                 followup_points += 1
             else:
                 hidden_check_failed = True
-        max_points = len(attempt.items) + len(progressive_ids)
-        attempt.score = round((base_points + followup_points * 0.5) / (max_points + len(progressive_ids) * 0.5) * 100, 2)
+        # Progressive follow-ups add half an item of credit. Keep the
+        # denominator aligned with that weight so rotated forms with more
+        # progressive items remain comparable and a fully correct form can
+        # still reach a verified grade.
+        max_points = len(attempt.items) + len(progressive_ids) * 0.5
+        attempt.score = round((base_points + followup_points * 0.5) / max_points * 100, 2)
         attempt.grade_state = "verified" if attempt.score >= 70 else "not_confirmed"
         signals: list[str] = []
         if telemetry and telemetry.get("focus_loss_count", 0) >= 3:

@@ -41,3 +41,19 @@ deletes evidence and is not a ranking gate.
 The UI places the passport before the detailed FSP link-management panel so a
 candidate can understand the evidence graph even when no FSP identity is
 linked.
+
+## Blind Discovery
+
+Employer Talent Radar supports an evidence-first privacy mode through
+`GET /api/v1/employer/talent-radar?blind=true`. Candidate identity fields are
+masked by the backend while category, grade state, ProofMatch score, evidence,
+confidence, freshness, reasons, and gaps remain available. The employer can
+still send a salary-bearing invitation using `blind_discovery: true`; the
+candidate decides whether to accept before the employer receives the identity
+in a matched invitation view.
+
+Blind mode is a presentation and invitation privacy boundary, not a ranking
+change. It uses the same explainable score and does not use protected traits.
+Blind query matching excludes name, headline, and location so search cannot
+undo the masking. The mode does not expose contacts, DOB, documents, email, or
+assessment answer data.

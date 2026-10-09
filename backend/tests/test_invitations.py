@@ -200,6 +200,51 @@ def test_acceptance_creates_match_and_both_unlock_events_atomically(auth_context
     assert match_count == 1
 
 
+def test_blind_invitation_keeps_candidate_anonymous_until_acceptance(auth_context):
+    client, private_key, settings = auth_context
+    candidate_headers, candidate_id = _candidate(
+        client, private_key, settings, sub=f"blind-invite-candidate-{uuid4().hex}"
+    )
+    employer_headers = _employer(client, private_key, settings, sub=f"blind-invite-employer-{uuid4().hex}")
+    created = client.post(
+        "/api/v1/employer/invitations",
+        headers=employer_headers,
+        json={**_offer(candidate_id), "blind_discovery": True},
+    )
+
+    assert created.status_code == 201
+    invitation = created.json()
+    assert invitation["blind_discovery"] is True
+    assert invitation["candidate"]["display_name"] == "Anonymous candidate"
+
+    employer_list = client.get("/api/v1/employer/invitations", headers=employer_headers)
+    assert employer_list.status_code == 200
+    assert employer_list.json()[0]["candidate"]["display_name"] == "Anonymous candidate"
+    employer_pending_view = client.get(
+        f"/api/v1/employer/invitations/{invitation['id']}", headers=employer_headers
+    )
+    assert employer_pending_view.status_code == 200
+    assert employer_pending_view.json()["candidate"]["display_name"] == "Anonymous candidate"
+
+    candidate_list = client.get("/api/v1/candidate/invitations", headers=candidate_headers)
+    assert candidate_list.status_code == 200
+    assert candidate_list.json()[0]["candidate"]["display_name"] == "Visible Candidate"
+
+    accepted = client.post(
+        f"/api/v1/candidate/invitations/{invitation['id']}/respond",
+        headers=candidate_headers,
+        json={"action": "accepted"},
+    )
+    assert accepted.status_code == 200
+    assert accepted.json()["candidate"]["display_name"] == "Visible Candidate"
+
+    employer_view = client.get(
+        f"/api/v1/employer/invitations/{invitation['id']}", headers=employer_headers
+    )
+    assert employer_view.status_code == 200
+    assert employer_view.json()["candidate"]["display_name"] == "Visible Candidate"
+
+
 def test_invitation_transitions_are_scoped_and_decline_does_not_create_match(auth_context):
     client, private_key, settings = auth_context
     candidate_headers, candidate_id = _candidate(
