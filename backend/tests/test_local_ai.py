@@ -486,9 +486,24 @@ def test_enabled_local_ai_is_rate_limited_and_job_is_company_scoped(auth_context
         async def propose_task_draft(self, context):
             return LocalAiDraftResult(status="completed", source="local", draft=_draft())
 
+    call_order = []
+    original_feedback = main.list_draft_feedback
+    original_schedule = main.schedule_task_draft_job
+
+    def capture_feedback(*args, **kwargs):
+        call_order.append("feedback")
+        return original_feedback(*args, **kwargs)
+
+    def capture_schedule(*args, **kwargs):
+        call_order.append("schedule")
+        return original_schedule(*args, **kwargs)
+
+    monkeypatch.setattr(main, "list_draft_feedback", capture_feedback)
+    monkeypatch.setattr(main, "schedule_task_draft_job", capture_schedule)
     monkeypatch.setattr(main, "local_ai_port", FastAdapter())
     first = client.post("/api/v1/employer/tasks/draft-suggestion", headers=employer)
     assert first.status_code == 202
+    assert call_order[:2] == ["feedback", "schedule"]
     second = client.post("/api/v1/employer/tasks/draft-suggestion", headers=employer)
     assert second.status_code == 429
     assert second.headers["retry-after"] == "60"

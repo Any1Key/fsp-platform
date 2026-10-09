@@ -57,3 +57,32 @@ change. It uses the same explainable score and does not use protected traits.
 Blind query matching excludes name, headline, and location so search cannot
 undo the masking. The mode does not expose contacts, DOB, documents, email, or
 assessment answer data.
+
+## Career Graph
+
+The candidate workspace exposes a self-scoped, read-time Career Graph at:
+
+```text
+GET /api/v1/candidate/career-graph
+```
+
+It composes the latest submitted platform assessment, active taxonomy, mapped
+FSP achievements, and profile declarations into an evidence map. The response
+contains:
+
+- the current specialization and declared/verified grade state;
+- skill nodes with `verified`, `unconfirmed`, or `declared` status, source,
+  confidence, evidence count, and freshness;
+- the current category, the next grade when the current grade is verified, and
+  the highest-overlap adjacent taxonomy paths;
+- matched skills, explicit evidence gaps, and a small summary for the UI.
+
+Path suggestions are navigation aids, not hiring guarantees or automatic grade
+decisions. A declared or unconfirmed skill may be shown as context but never
+becomes verified through graph projection. Candidates without FSP history still
+receive the graph from their platform/profile evidence, and a candidate with no
+assessment receives an explicit starting state and assessment next step.
+
+The endpoint accepts no candidate ID and omits contacts, DOB/minor state,
+documents, answer keys, integrity telemetry, and protected traits. It performs
+no writes and does not use age, location, or identity fields to form paths.

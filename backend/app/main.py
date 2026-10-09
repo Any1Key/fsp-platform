@@ -30,6 +30,7 @@ from .auth import (
     sync_identity,
 )
 from .candidates import get_profile, update_profile
+from .career_graph import get_career_graph
 from .challenges import (
     create_challenge,
     grade_challenge,
@@ -873,6 +874,64 @@ class SkillPassportResponse(BaseModel):
     evidence: list[SkillPassportEvidenceResponse]
 
 
+class CareerGraphProfileResponse(BaseModel):
+    display_name: str | None
+    headline: str | None
+
+
+class CareerGraphPositionResponse(BaseModel):
+    specialization: dict[str, str]
+    grade: dict[str, str | int]
+    grade_state: Literal["verified", "not_confirmed"]
+    score: float
+    assessed_at: datetime
+
+
+class CareerGraphNodeResponse(BaseModel):
+    id: str
+    kind: Literal["position", "skill"]
+    label: str
+    status: Literal["verified", "unconfirmed", "declared"]
+    confidence: float = Field(ge=0, le=1)
+    evidence_count: int = Field(ge=0)
+    freshness: Literal["fresh", "aging", "stale", "future", "not_available"]
+    sources: list[str]
+    details: str
+
+
+class CareerGraphPathResponse(BaseModel):
+    id: str
+    specialization: dict[str, str]
+    grade: dict[str, str | int]
+    relation: Literal["current", "next", "adjacent"]
+    readiness: Literal["current", "explore"]
+    match_score: int = Field(ge=0, le=100)
+    matched_skills: list[str]
+    gap_skills: list[str]
+    reasons: list[str]
+    evidence_basis: Literal["verified_and_unconfirmed", "no_mapped_evidence"]
+
+
+class CareerGraphSummaryResponse(BaseModel):
+    verified_skills: int = Field(ge=0)
+    unconfirmed_skills: int = Field(ge=0)
+    declared_skills: int = Field(ge=0)
+    evidence_nodes: int = Field(ge=0)
+    path_count: int = Field(ge=0)
+    gap_count: int = Field(ge=0)
+
+
+class CareerGraphResponse(BaseModel):
+    version: str
+    profile: CareerGraphProfileResponse
+    status: Literal["not_started", "active", "unconfirmed"]
+    current_position: CareerGraphPositionResponse | None
+    nodes: list[CareerGraphNodeResponse]
+    paths: list[CareerGraphPathResponse]
+    summary: CareerGraphSummaryResponse
+    next_step: str
+
+
 class TaxonomySkillResponse(BaseModel):
     id: str
     slug: str
@@ -1659,6 +1718,7 @@ async def employer_task_draft_suggestion(
     context = context_from_hiring_need(need)
     examples = retrieve_approved_task_examples(db, principal, context)
     context = context_from_hiring_need(need, tuple(examples))
+    feedback_history = list_draft_feedback(db, principal, hiring_need_id=need["id"])
 
     if isinstance(local_ai_port, DisabledLocalAiAdapter):
         result = await local_ai_port.propose_task_draft(context)
@@ -1684,7 +1744,7 @@ async def employer_task_draft_suggestion(
                 }
                 for example in examples
             ],
-            feedback_history=list_draft_feedback(db, principal, hiring_need_id=need["id"]),
+            feedback_history=feedback_history,
         )
 
     settings = get_settings()
@@ -1734,7 +1794,7 @@ async def employer_task_draft_suggestion(
             }
             for example in examples
         ],
-        feedback_history=list_draft_feedback(db, principal, hiring_need_id=need["id"]),
+        feedback_history=feedback_history,
     )
 
 
@@ -2531,6 +2591,23 @@ def candidate_skill_passport(
 
     return SkillPassportResponse.model_validate(
         get_skill_passport(db, principal, assessment_service)
+    )
+
+
+@app.get(
+    "/api/v1/candidate/career-graph",
+    tags=["candidate career graph"],
+    response_model=CareerGraphResponse,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_career_graph(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CareerGraphResponse:
+    """Return the authenticated candidate's evidence-backed career graph."""
+
+    return CareerGraphResponse.model_validate(
+        get_career_graph(db, principal, assessment_service)
     )
 
 

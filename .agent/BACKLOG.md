@@ -114,7 +114,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] Verified Skill Passport
 - [x] Blind Discovery
 - [x] Talent Radar polish
-- [ ] Career Graph
+- [x] Career Graph
 - [ ] employer trust/anti-fraud MVP/concept
 - [ ] ATS integration contract/concept
 
