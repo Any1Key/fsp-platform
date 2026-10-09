@@ -20,14 +20,16 @@ that the matching or load metrics below have been run.
 
 The complete candidate/need relevance labels are materialized into a stable
 offline case artifact by `backend/app/matching_validation.py`, documented in
-`docs/MATCHING_VALIDATION.md`. This validates label and state coverage only;
-the keyword baseline and ranking metrics remain separate validation units.
+`docs/MATCHING_VALIDATION.md`. The keyword baseline and its ranking metrics are
+separate offline comparators and never feed production ProofMatch.
 
 ## Matching metrics
 
-- Precision@5
-- nDCG@5
-- Recall@10
+- Precision@5 — positive labels are `relevant` or `adjacent` in the first five;
+  denominator is five.
+- nDCG@5 — graded gains are `relevant=2`, `adjacent=1`, `not_relevant=0`.
+- Recall@10 — positive labels are `relevant` or `adjacent` in the first ten,
+  divided by all positive labels for the need.
 - category eligibility accuracy
 - grade-state correctness
 - explanation completeness
@@ -36,11 +38,15 @@ the keyword baseline and ranking metrics remain separate validation units.
 Baseline: implemented offline in `backend/app/keyword_baseline.py` as a
 simple skill-keyword/Jaccard overlap comparator over the PII-free fixture;
 candidate skill slugs are the resume-keyword proxy. The baseline output is
-label-free and does not enter production ProofMatch. Reproduce it with:
+label-free and does not enter production ProofMatch. The metrics evaluator is
+implemented in `backend/app/matching_metrics.py` and macro-averages results
+across needs. Reproduce the baseline and metric report with:
 
 ```sh
 PYTHONPATH=. .venv/bin/python -m app.keyword_baseline \
   --output /tmp/fsp-keyword-baseline.json
+PYTHONPATH=. .venv/bin/python -m app.matching_metrics \
+  --output /tmp/fsp-matching-metrics.json
 ```
 
 ## Assessment metrics

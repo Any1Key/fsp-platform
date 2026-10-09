@@ -1,6 +1,33 @@
 # Validation results
 
-Status: **MEASURED — local synthetic assessment run**
+Status: **MEASURED — local synthetic matching and assessment runs**
+
+## Matching ranking baseline
+
+Command, run from `backend/` on 2026-10-09:
+
+```sh
+PYTHONPATH=. .venv/bin/python -m app.matching_metrics \
+  --output /tmp/fsp-matching-metrics.json
+```
+
+This compares the label-free skill/Jaccard baseline with the fixed-seed,
+synthetic relevance matrix. `relevant` and `adjacent` count as positive for
+Precision@5 and Recall@10; nDCG@5 uses graded gains
+(`relevant=2`, `adjacent=1`, `not_relevant=0`). Values below are macro averages
+over 20 needs and 80 candidates per ranking.
+
+| Metric | Result |
+|---|---:|
+| Precision@5 | 0.620000 |
+| nDCG@5 | 0.506438 |
+| Recall@10 | 0.699386 |
+
+The run evaluated 20 complete rankings and 1,600 candidate/need labels. These
+are deterministic synthetic baseline results, not production performance or
+external supervisor verification. Per-need values are included in the JSON
+output produced by the command above. The implementation and tests are in
+`backend/app/matching_metrics.py` and `backend/tests/test_matching_metrics.py`.
 
 Command, run from `backend/` on 2026-10-07:
 

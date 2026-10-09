@@ -75,8 +75,27 @@ PYTHONPATH=. .venv/bin/python -m app.keyword_baseline \
   --output /tmp/fsp-keyword-baseline.json
 ```
 
-The output contains 20 complete rankings of 80 synthetic candidates. It is an
-input to later Precision@5/nDCG@5/Recall@10 work; this unit does not calculate
-those metrics, create a validation endpoint, or claim production performance.
-Tests are in `backend/tests/test_matching_validation.py` and
-`backend/tests/test_keyword_baseline.py`.
+The output contains 20 complete rankings of 80 synthetic candidates. It is
+evaluated offline by `backend/app/matching_metrics.py`; it does not enter
+production ProofMatch and does not claim production performance.
+
+## Ranking metrics
+
+The metric evaluator validates that the baseline contains exactly one complete
+80-candidate ranking for each of the 20 needs before calculating results.
+Precision@5 and Recall@10 use `relevant` and `adjacent` as positive retrieval
+labels. nDCG@5 retains graded gains of 2 for `relevant`, 1 for `adjacent` and
+0 for `not_relevant`. Reported aggregate values are macro averages across
+needs and are rounded to six decimal places.
+
+Reproduce the fixed-seed metric report from `backend/`:
+
+```sh
+PYTHONPATH=. .venv/bin/python -m app.matching_metrics \
+  --output /tmp/fsp-matching-metrics.json
+```
+
+The 2026-10-09 default run is summarized in `docs/VALIDATION_RESULTS.md`.
+Tests are in `backend/tests/test_matching_validation.py`,
+`backend/tests/test_keyword_baseline.py` and
+`backend/tests/test_matching_metrics.py`.

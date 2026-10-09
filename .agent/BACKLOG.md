@@ -122,7 +122,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] deterministic synthetic candidate/need/assessment dataset
 - [x] labeled matching relevance
 - [x] keyword baseline matcher
-- [ ] Precision@5/nDCG@5/Recall@10
+- [x] Precision@5/nDCG@5/Recall@10
 - [ ] assessment confusion matrix/macro-F1/stability/discrimination
 - [ ] grade-collapse check
 - [ ] target load test on core profile
