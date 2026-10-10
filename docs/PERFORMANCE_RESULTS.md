@@ -1,6 +1,6 @@
 # Performance / load-test results
 
-Status: **AUTHENTICATED TARGET RUNNER IMPLEMENTED; TARGET MEASUREMENT PENDING**
+Status: **REPORTING IMPLEMENTED; AUTHENTICATED TARGET MEASUREMENT PENDING**
 
 ## Authenticated target runner
 
@@ -8,6 +8,10 @@ Status: **AUTHENTICATED TARGET RUNNER IMPLEMENTED; TARGET MEASUREMENT PENDING**
 - Runner: `qa/load/run_load.py`.
 - Contract/unit evidence: `agent/test-load-contract.sh` and
   `qa/load/test_run_load.py`.
+- Report evidence: `report.json` now includes request/error percentiles,
+  threshold decisions, and a `resources` section with before/during/after
+  Docker CPU/RAM observations and peak values; raw `*-docker-stats.tsv` files
+  remain alongside it.
 - Default profile: 50 virtual users, 60-second ramp, 600-second hold; mixed
   authenticated candidate/employer profile, Talent Radar, invitation-list and
   accepted-match chat traffic.

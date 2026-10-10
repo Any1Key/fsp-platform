@@ -126,7 +126,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] assessment confusion matrix/macro-F1/stability/discrimination
 - [x] grade-collapse check
 - [x] target load test on core profile
-- [ ] CPU/RAM/p95/error-rate report
+- [x] CPU/RAM/p95/error-rate report (report writer implemented; actual authenticated target measurement remains external)
 - [ ] Validation Dashboard
 - [ ] actual VALIDATION_RESULTS
 

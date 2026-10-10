@@ -32,8 +32,13 @@ profile. To reuse prepared data without setup, pass
 
 The runner records `report.json`, `summary.txt`, `request-times.tsv`,
 `host-specs.txt`, Compose state and Docker CPU/RAM snapshots under
-`.agent/runs/<run-id>/performance/`. `--fail-on-thresholds` applies the
-targets from `docs/PERFORMANCE_TESTING.md`; setup failures always exit 2.
+`.agent/runs/<run-id>/performance/`. `report.json` contains request
+count/error rate/p50/p95/p99, per-endpoint metrics, threshold decisions, and a
+`resources` section with before/during/after snapshot rows plus peak CPU and
+memory values. The raw `*-docker-stats.tsv` files retain Docker's original
+display values. Missing Docker telemetry is reported as `available: false`,
+not as a zero measurement. `--fail-on-thresholds` applies the targets from
+`docs/PERFORMANCE_TESTING.md`; setup failures always exit 2.
 
 ```sh
 python3 -m unittest discover -s qa/load -p 'test_*.py'

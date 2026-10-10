@@ -14,6 +14,7 @@ import math
 import os
 import platform
 import random
+import re
 import subprocess
 import sys
 import threading
@@ -46,6 +47,8 @@ COMMON_READ_ROUTES = {
     "/api/v1/employer/invitations",
     "/api/v1/chat/conversations",
 }
+DOCKER_STAT_PHASES = ("before", "during", "after")
+_DOCKER_SIZE_RE = re.compile(r"^([0-9]+(?:\.[0-9]+)?)\s*([KMGTPE]?i?B)$", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -353,6 +356,89 @@ def threshold_result(metrics: dict[str, Any]) -> dict[str, Any]:
     return {"passed": all(checks.values()), "checks": checks}
 
 
+def _docker_size_bytes(value: str) -> float | None:
+    """Convert Docker's display size (for example ``108.9MiB``) to bytes."""
+
+    match = _DOCKER_SIZE_RE.match(value.strip())
+    if match is None:
+        return None
+    magnitude = float(match.group(1))
+    unit = match.group(2).upper()
+    units = {
+        "B": 1,
+        "KB": 1000,
+        "MB": 1000**2,
+        "GB": 1000**3,
+        "TB": 1000**4,
+        "PB": 1000**5,
+        "EB": 1000**6,
+        "KIB": 1024,
+        "MIB": 1024**2,
+        "GIB": 1024**3,
+        "TIB": 1024**4,
+        "PIB": 1024**5,
+        "EIB": 1024**6,
+    }
+    multiplier = units.get(unit)
+    return magnitude * multiplier if multiplier is not None else None
+
+
+def _parse_docker_stats(path: Path) -> list[dict[str, Any]]:
+    """Parse one raw Docker stats TSV while retaining display values."""
+
+    if not path.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    for line in path.read_text(encoding="utf-8").splitlines()[1:]:
+        fields = line.split("\t")
+        if len(fields) != 4:
+            continue
+        container, cpu_display, memory_display, memory_percent_display = fields
+        try:
+            cpu_percent = float(cpu_display.rstrip("%"))
+        except ValueError:
+            cpu_percent = None
+        memory_parts = [part.strip() for part in memory_display.split("/", 1)]
+        memory_used_bytes = _docker_size_bytes(memory_parts[0]) if memory_parts else None
+        memory_limit_bytes = _docker_size_bytes(memory_parts[1]) if len(memory_parts) == 2 else None
+        try:
+            memory_percent = float(memory_percent_display.rstrip("%"))
+        except ValueError:
+            memory_percent = None
+        rows.append(
+            {
+                "container": container,
+                "cpu_percent": cpu_percent,
+                "cpu_display": cpu_display,
+                "memory_used_bytes": memory_used_bytes,
+                "memory_limit_bytes": memory_limit_bytes,
+                "memory_usage_display": memory_display,
+                "memory_percent": memory_percent,
+                "memory_percent_display": memory_percent_display,
+            }
+        )
+    return rows
+
+
+def _resource_summary(output_dir: Path) -> dict[str, Any]:
+    """Build report-safe CPU/RAM evidence from before/during/after snapshots."""
+
+    phases = {
+        phase: _parse_docker_stats(output_dir / f"{phase}-docker-stats.tsv")
+        for phase in DOCKER_STAT_PHASES
+    }
+    rows = [row for phase_rows in phases.values() for row in phase_rows]
+    cpu_values = [row["cpu_percent"] for row in rows if row["cpu_percent"] is not None]
+    memory_values = [row["memory_used_bytes"] for row in rows if row["memory_used_bytes"] is not None]
+    return {
+        "available": bool(rows),
+        "snapshot_phases": {phase: bool(rows) for phase, rows in phases.items()},
+        "snapshots": phases,
+        "peak_cpu_percent": max(cpu_values) if cpu_values else None,
+        "peak_memory_used_bytes": max(memory_values) if memory_values else None,
+    }
+
+
 def _docker_snapshot(output_dir: Path, phase: str) -> None:
     try:
         ps = subprocess.run(
@@ -468,6 +554,16 @@ def main() -> int:
     stop = threading.Event()
     started = time.perf_counter()
 
+    snapshot_thread: threading.Thread | None = None
+    if not args.skip_docker_stats:
+        def capture_during_snapshot() -> None:
+            if stop.wait(max(0.0, args.duration_seconds / 2)):
+                return
+            _docker_snapshot(output_dir, "during")
+
+        snapshot_thread = threading.Thread(target=capture_during_snapshot, name="load-resource-snapshot", daemon=True)
+        snapshot_thread.start()
+
     def user(vu: int) -> None:
         role = "candidate" if vu % 2 == 0 else "employer"
         token = candidates.at(vu) if role == "candidate" else employers.at(vu)
@@ -491,6 +587,8 @@ def main() -> int:
     stop.set()
     for thread in threads:
         thread.join(timeout=max(10.0, args.ramp_seconds + 10.0))
+    if snapshot_thread is not None:
+        snapshot_thread.join(timeout=30.0)
     if not args.skip_docker_stats:
         _docker_snapshot(output_dir, "after")
 
@@ -506,6 +604,7 @@ def main() -> int:
         "workload": "authenticated candidate/employer profile, discovery, invitation-list and matched-chat traffic",
         "metrics": metric_summary,
         "thresholds": thresholds,
+        "resources": _resource_summary(output_dir),
     }
     (output_dir / "report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     with (output_dir / "request-times.tsv").open("w", encoding="utf-8") as output:
@@ -527,6 +626,9 @@ def main() -> int:
                 f"search_p95_seconds={metric_summary['search_p95_seconds']:.6f}",
                 f"write_p95_seconds={metric_summary['write_p95_seconds']:.6f}",
                 f"thresholds_passed={thresholds['passed']}",
+                f"resource_snapshots_available={report['resources']['available']}",
+                f"resource_peak_cpu_percent={report['resources']['peak_cpu_percent']}",
+                f"resource_peak_memory_used_bytes={report['resources']['peak_memory_used_bytes']}",
             ]
         )
         + "\n",

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+import tempfile
 import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -13,7 +14,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 from run_load import (
     ApiClient,
     Metrics,
+    _docker_size_bytes,
     _metric_summary,
+    _parse_docker_stats,
+    _resource_summary,
     percentile,
     prepare_state,
     threshold_result,
@@ -86,6 +90,44 @@ class LoadRunnerTests(unittest.TestCase):
         result = threshold_result(summary)
         self.assertFalse(result["passed"])
         self.assertFalse(result["checks"]["error_rate_lt_1_percent"])
+
+    def test_docker_stats_parser_normalizes_cpu_and_memory_without_losing_display_values(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "during-docker-stats.tsv"
+            path.write_text(
+                "container\tcpu_percent\tmemory_usage\tmemory_percent\n"
+                "fsp-backend\t12.50%\t108.9MiB / 1GiB\t10.63%\n",
+                encoding="utf-8",
+            )
+            rows = _parse_docker_stats(path)
+
+        self.assertEqual(rows[0]["container"], "fsp-backend")
+        self.assertEqual(rows[0]["cpu_percent"], 12.5)
+        self.assertEqual(rows[0]["cpu_display"], "12.50%")
+        self.assertAlmostEqual(rows[0]["memory_used_bytes"], 108.9 * 1024 * 1024)
+        self.assertEqual(rows[0]["memory_usage_display"], "108.9MiB / 1GiB")
+        self.assertEqual(_docker_size_bytes("1GiB"), 1024**3)
+
+    def test_resource_summary_reports_phases_peaks_and_missing_telemetry_explicitly(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_dir = Path(temporary)
+            (output_dir / "before-docker-stats.tsv").write_text(
+                "container\tcpu_percent\tmemory_usage\tmemory_percent\n"
+                "backend\t1.00%\t100MiB / 1GiB\t9.77%\n",
+                encoding="utf-8",
+            )
+            (output_dir / "during-docker-stats.tsv").write_text(
+                "container\tcpu_percent\tmemory_usage\tmemory_percent\n"
+                "backend\t22.00%\t140MiB / 1GiB\t13.67%\n",
+                encoding="utf-8",
+            )
+            summary = _resource_summary(output_dir)
+
+        self.assertTrue(summary["available"])
+        self.assertEqual(summary["snapshot_phases"], {"before": True, "during": True, "after": False})
+        self.assertEqual(summary["peak_cpu_percent"], 22.0)
+        self.assertEqual(summary["peak_memory_used_bytes"], 140 * 1024 * 1024)
+        self.assertEqual(_resource_summary(Path(temporary) / "does-not-exist")["available"], False)
 
     def test_authenticated_setup_resolves_profile_and_conversation(self) -> None:
         server = ThreadingHTTPServer(("127.0.0.1", 0), SetupHandler)

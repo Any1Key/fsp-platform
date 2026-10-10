@@ -56,11 +56,19 @@ AI. Keep scenarios and thresholds in the repository. Capture:
 - request counts;
 - error rate;
 - p50/p95/p99;
-- Docker CPU/RAM snapshot before/during/after;
+- Docker CPU/RAM snapshot before/during/after, summarized in the report's
+  `resources` section and retained as raw `*-docker-stats.tsv` files;
 - database slow-query observations.
 
 Write actual load results to `docs/PERFORMANCE_RESULTS.md` and keep raw
 reports under `.agent/runs/<run-id>/performance/`.
+
+The authenticated runner's `report.json` is the canonical machine-readable
+report. Its `metrics` object contains request/error and latency percentiles;
+its `thresholds` object records the four NFR-010 checks; and its `resources`
+object contains per-phase container rows, `available`, `peak_cpu_percent` and
+`peak_memory_used_bytes`. A missing Docker stats command is explicit in that
+object and must not be interpreted as measured zero resource use.
 
 The authenticated runner accepts operator-supplied Keycloak access-token files
 (one token per line), performs an explicit setup flow for a verified candidate,
