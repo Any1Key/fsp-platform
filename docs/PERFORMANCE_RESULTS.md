@@ -1,6 +1,21 @@
 # Performance / load-test results
 
-Status: **BOOTSTRAP CPU-ONLY BASELINE RECORDED; TARGET LOAD NOT YET MEASURED**
+Status: **AUTHENTICATED TARGET RUNNER IMPLEMENTED; TARGET MEASUREMENT PENDING**
+
+## Authenticated target runner
+
+- Requirement: NFR-010.
+- Runner: `qa/load/run_load.py`.
+- Contract/unit evidence: `agent/test-load-contract.sh` and
+  `qa/load/test_run_load.py`.
+- Default profile: 50 virtual users, 60-second ramp, 600-second hold; mixed
+  authenticated candidate/employer profile, Talent Radar, invitation-list and
+  accepted-match chat traffic.
+- Raw artifact contract: `.agent/runs/<run-id>/performance/report.json`,
+  `summary.txt`, `request-times.tsv`, host metadata and Docker snapshots.
+- Actual target measurements are intentionally not claimed here until an
+  operator supplies valid Keycloak access tokens and runs the core Compose
+  profile. The bootstrap figures below remain NFR-011 evidence only.
 
 ## Bootstrap core-profile baseline
 

@@ -50,19 +50,30 @@ Keycloak login can be measured separately from already-authenticated application
 
 ## Tooling
 
-Prefer a reproducible scripted tool such as Locust or k6. Keep scenarios and thresholds in the repository. Capture:
+The repository's reproducible runner is `qa/load/run_load.py`; it uses only
+Python's standard library and is intentionally independent of optional local
+AI. Keep scenarios and thresholds in the repository. Capture:
 - request counts;
 - error rate;
 - p50/p95/p99;
 - Docker CPU/RAM snapshot before/during/after;
 - database slow-query observations.
 
-Write actual results to `docs/VALIDATION_RESULTS.md` and keep raw reports under `.agent/runs/<run-id>/performance/`.
+Write actual load results to `docs/PERFORMANCE_RESULTS.md` and keep raw
+reports under `.agent/runs/<run-id>/performance/`.
+
+The authenticated runner accepts operator-supplied Keycloak access-token files
+(one token per line), performs an explicit setup flow for a verified candidate,
+employer need and accepted invitation (including the invitation transition),
+then runs the timed mixed workload. It does not print or persist tokens. See
+`qa/load/README.md` for the target and smoke commands. A load harness or
+fake-server test is implementation evidence; NFR-010 is only externally
+verified after a real target run on the core profile.
 
 ## Bootstrap CPU-only baseline
 
-Before the final authenticated target-load suite exists, run the core-profile
-baseline from the repository root:
+For a quick CPU-policy and service-startup check independent of authenticated
+target traffic, run the core-profile baseline from the repository root:
 
 ```sh
 BASELINE_ITERATIONS=20 ./scripts/resource-baseline.sh
@@ -76,7 +87,6 @@ metadata, service health, request timings, and Docker CPU/RAM snapshots in
 `.agent/runs/<run-id>/performance/`.
 
 This bootstrap probe is resource evidence for NFR-011; it is deliberately not
-the NFR-010 release load test. The latter must wait until authenticated
-candidate/employer search, invitations, matching, and chat endpoints exist and
-must exercise those representative journeys at the smoke and target
-concurrency described above.
+the NFR-010 release load test. The authenticated runner exercises the
+candidate/employer search, invitations, matching-backed chat and profile
+journeys at the smoke and target concurrency described above.
