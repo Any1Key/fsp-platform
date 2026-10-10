@@ -42,6 +42,7 @@ body { font-family: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, m
   display: grid; grid-template-columns: 1.15fr .85fr; gap: 64px; align-items: center; color: white;
   background: var(--surface-inverse);
 }
+.heroText, .proofCard, .authPanel, .signedInPanel, .signedInPanel > * { min-width: 0; }
 .eyebrow { color: #a9a1ff; font-size: 12px; letter-spacing: .13em; }
 h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055em; margin: 20px 0; }
 .lead { max-width: 760px; color: #d5d5dc; line-height: 1.7; font-size: 15px; }
@@ -59,7 +60,7 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 }
 .authPanel > div { display: grid; gap: 5px; }
 .authPanel strong { font-size: 13px; }
-.authPanel small, .authPanel.muted { color: #b7b7c1; font-size: 11px; line-height: 1.5; }
+.authPanel small, .authPanel.muted { color: #b7b7c1; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
 .authLabel { color: #a9a1ff; font-size: 10px; letter-spacing: .1em; }
 .authPanel.error { color: #ffb6bd; font-size: 11px; }
 .authActions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
@@ -946,6 +947,20 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
     scroll-behavior: auto !important;
   }
 }
+@media (max-width: 1100px) {
+  /* The 1024px acceptance viewport must give the authenticated surface a full
+     content column; keeping the hero split here makes every dashboard panel
+     compete with the proof card for a narrow desktop-width column. */
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 34px; padding: 46px 32px 64px; }
+  .proofCard { width: min(100%, 560px); justify-self: end; }
+  .signedInPanel { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .signedInPanel > :not(.authButton) { grid-column: 1 / -1; }
+  .signedInPanel > .authButton { grid-column: 2; grid-row: 1; align-self: start; }
+  .pipelineStageFields, .taskFields, .vacancyFields, .radarFilters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .radarFilters .radarCheckbox { grid-column: 1 / -1; }
+  .taskRubricRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .taskRubricRow > :last-child { grid-column: 1 / -1; }
+}
 @media (max-width: 850px) {
   .topbar { padding: 18px 20px; }
   .badge { display: none; }
@@ -965,8 +980,12 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .pipelineRequired { min-height: 34px; }
   .taskToolbar { grid-template-columns: 1fr; }
   .taskFields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .taskRubricRow { grid-template-columns: 1fr; }
+  .taskRubricRow > :last-child { grid-column: auto; }
   .authActions { flex-direction: column; }
   .authButton { width: 100%; }
+  .signedInPanel { grid-template-columns: 1fr; }
+  .signedInPanel > .authButton { grid-column: 1; grid-row: auto; width: 100%; }
   .dashboardHeading, .dashboardHistoryHeading { align-items: flex-start; flex-direction: column; }
   .validationHeading, .validationSectionHeading, .validationCardHeading { align-items: flex-start; flex-direction: column; }
   .validationMetricGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

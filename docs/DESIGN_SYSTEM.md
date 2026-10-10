@@ -87,10 +87,13 @@ High-visibility information. Do not bury it.
 ## Brand audit implementation
 
 The frontend maps the official colors to semantic CSS tokens and uses the white FSP logo only on the
-charcoal inverse surface. The public shell has responsive breakpoints at 850px and below, keeps the
-primary action reachable on mobile, and does not rely on horizontal scrolling for the landing flow.
+charcoal inverse surface. The public and authenticated shell uses a tablet breakpoint at 1100px to
+give the working surface a full content column, then mobile transformations at 850px and below.
+Primary actions remain reachable and the product does not rely on horizontal scrolling for the
+landing or dashboard flow.
 
 Every link and form control receives a visible `:focus-visible` ring. The shared reduced-motion media
 query removes smooth scrolling and reduces transitions for users who request less motion. Browser
 coverage for the brand contract is maintained in `qa/tests/fsp-brand.spec.ts` across 1920, 1366, 1024,
-768 and 390 pixel viewports.
+768 and 390 pixel viewports, including viewport-boundary checks for the primary CTA, evidence card
+and authenticated shell placeholder.

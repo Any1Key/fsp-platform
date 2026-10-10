@@ -90,5 +90,7 @@ The shared frontend foundation and public entrypoint were audited against this g
   while the product story centers on verified evidence and reverse recruitment.
 - All public navigation controls expose a 3px keyboard focus ring, and reduced-motion users receive
   an automatic-scroll/transition reduction.
-- The required desktop, laptop, tablet and mobile viewport checks assert no horizontal overflow and
-  remain in `qa/tests/fsp-brand.spec.ts`.
+- The shared shell gives the 1024px tablet surface a full content column and collapses dense dashboard
+  grids at the mobile breakpoint; the required desktop, laptop, tablet and mobile viewport checks
+  assert no horizontal overflow and keep primary surfaces inside the viewport in
+  `qa/tests/fsp-brand.spec.ts`.

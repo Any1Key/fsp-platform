@@ -28,6 +28,35 @@ test("FSP evidence brand entrypoint is visible and responsive", async ({ page })
   const linkBox = await brandLink.boundingBox();
   expect(linkBox).not.toBeNull();
   expect(linkBox!.x + linkBox!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  const responsiveBounds = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    const selectors = [
+      'a.primary',
+      '.proofCard',
+      '.authPanel',
+      '.principles',
+    ];
+    return selectors.flatMap((selector) =>
+      Array.from(document.querySelectorAll<HTMLElement>(selector)).map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          selector,
+          left: rect.left,
+          right: rect.right,
+          width: rect.width,
+          visible: rect.width > 0 && rect.height > 0,
+          inside: rect.left >= -1 && rect.right <= viewportWidth + 1,
+        };
+      }),
+    );
+  });
+  for (const element of responsiveBounds.filter((item) => item.visible)) {
+    expect(element.inside, `${element.selector} escaped the viewport`).toBe(true);
+    expect(element.width).toBeGreaterThan(0);
+  }
+  if (page.viewportSize()!.width <= 1100) {
+    await expect(page.locator(".hero")).toHaveCSS("grid-template-columns", /^(\d+(\.\d+)?px)$/);
+  }
   await brandLink.focus();
   await expect(brandLink).toBeFocused();
   const focus = await brandLink.evaluate((element) => {
