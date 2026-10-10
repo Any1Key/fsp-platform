@@ -57,6 +57,20 @@ is read-only and does not expose candidate profile data or assessment results;
 the assessment service remains responsible for deciding whether a candidate's
 declared grade is verified.
 
+## Validation dashboard
+
+Authenticated employers, reviewers, and admins may call `GET
+/api/v1/validation/dashboard` to read the deterministic, aggregate synthetic
+validation projection used by the demo UI. The response includes source
+versions, dataset counts/seed, macro matching ranking metrics, assessment
+metrics, grade confusion counts, and item-family discrimination values.
+
+Candidates receive `403 ROLE_REQUIRED`; unauthenticated callers receive the
+usual authorization error. The endpoint is read-only and never returns
+candidate identities, PII, raw relevance labels, assessment answer keys, or
+submission content. Values are calibration evidence, not a production hiring
+decision. See `docs/VALIDATION_DASHBOARD.md`.
+
 ## Employer hiring need
 
 The employer-only `GET`, `POST`, and `PATCH /api/v1/employer/hiring-need`

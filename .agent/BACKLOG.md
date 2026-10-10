@@ -127,7 +127,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] grade-collapse check
 - [x] target load test on core profile
 - [x] CPU/RAM/p95/error-rate report (report writer implemented; actual authenticated target measurement remains external)
-- [ ] Validation Dashboard
+- [x] Validation Dashboard
 - [ ] actual VALIDATION_RESULTS
 
 ## M14 — Brand, responsive, accessibility

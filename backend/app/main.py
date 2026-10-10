@@ -98,6 +98,7 @@ from .trust import (
     list_trust_reports,
     resolve_trust_report,
 )
+from .validation_dashboard import build_validation_dashboard
 from .vacancies import (
     close_vacancy,
     create_vacancy,
@@ -994,6 +995,52 @@ class CareerGraphResponse(BaseModel):
     next_step: str
 
 
+class ValidationDatasetResponse(BaseModel):
+    version: str
+    seed: str
+    candidate_count: int
+    need_count: int
+
+
+class ValidationMatchingResponse(BaseModel):
+    matching_metrics_version: str
+    keyword_baseline_version: str
+    matching_validation_version: str
+    precision_at_5: float
+    ndcg_at_5: float
+    recall_at_10: float
+    ranking_count: int
+
+
+class ValidationAssessmentResponse(BaseModel):
+    validation_version: str
+    specialization: str
+    candidates_per_grade: int
+    sample_size: int
+    macro_f1: float
+    grade_agreement: float
+    confusion_matrix: dict[str, dict[str, int]]
+    predicted_distribution: dict[str, int]
+    grade_collapse: bool
+    grade_collapse_threshold: float
+    grade_collapse_dominant_grade: str | None
+    grade_collapse_share: float
+    equivalent_form_score_difference: float
+    retest_agreement: float
+    mean_item_discrimination: float
+    positive_item_discrimination_rate: float
+    critical_domain_reliability: dict[str, float]
+    form_uniqueness_rate: float
+    item_metrics: dict[str, dict[str, float | int]]
+
+
+class ValidationDashboardResponse(BaseModel):
+    dashboard_version: str
+    dataset: ValidationDatasetResponse
+    matching: ValidationMatchingResponse
+    assessment: ValidationAssessmentResponse
+
+
 class TaxonomySkillResponse(BaseModel):
     id: str
     slug: str
@@ -1303,12 +1350,40 @@ def reviewer_principal(
     return principal
 
 
+def validation_dashboard_principal(
+    principal: Annotated[Principal, Depends(resolve_current_principal)],
+) -> Principal:
+    """Allow demo reviewers and employers to inspect synthetic evidence only."""
+
+    if principal.role not in {Role.ADMIN, Role.REVIEWER, Role.EMPLOYER}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="role_required")
+    return principal
+
+
 def chat_principal(
     principal: Annotated[Principal, Depends(resolve_current_principal)],
 ) -> Principal:
     if principal.role not in {Role.CANDIDATE, Role.EMPLOYER}:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="role_required")
     return principal
+
+
+@app.get(
+    "/api/v1/validation/dashboard",
+    tags=["validation"],
+    response_model=ValidationDashboardResponse,
+    responses={
+        401: {"model": ErrorResponse, "description": "Authentication required"},
+        403: {"model": ErrorResponse, "description": "Employer or reviewer role required"},
+    },
+)
+def validation_dashboard(
+    principal: Annotated[Principal, Depends(validation_dashboard_principal)],
+) -> ValidationDashboardResponse:
+    """Return aggregate synthetic validation evidence for the demo workspace."""
+
+    del principal
+    return ValidationDashboardResponse.model_validate(build_validation_dashboard())
 
 
 @app.post(
