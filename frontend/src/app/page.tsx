@@ -4,6 +4,7 @@ import { AuthStatus } from "../components/auth-status";
 export default function Home() {
   return (
     <main className="shell" data-brand="fsp-talent">
+      <a className="skipLink" href="#main-content">Перейти к содержимому</a>
       <header className="topbar">
         <div className="brand">
           <Image className="brandLogo" src="/brand/logo_white1.png" alt="ФСП" width={50} height={72} priority />
@@ -12,7 +13,7 @@ export default function Home() {
         <span className="badge">EVIDENCE-FIRST DISCOVERY</span>
       </header>
 
-      <section className="hero">
+      <section className="hero" id="main-content" tabIndex={-1}>
         <div className="heroText">
           <p className="eyebrow">ФСП TALENT · VERIFIED ENGINEERING EVIDENCE</p>
           <h1>Проверенные навыки.<br />Точный подбор.</h1>

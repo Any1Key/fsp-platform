@@ -14,11 +14,19 @@ Must pass:
 - usable mobile flow, not desktop table squeezed smaller;
 - consistent component styles;
 - visible keyboard focus;
+- keyboard users can reveal a skip link and move focus to the main content;
+- public text and primary controls meet a 4.5:1 minimum contrast target;
 - error/empty/loading states;
 - correct FSP-logo contrast;
 - salary visible in invitation/vacancy;
 - match score has explanation;
 - declared vs verified evidence visually distinct;
 - candidate contacts never rendered pre-unlock.
+
+The public keyboard/contrast contract is exercised by
+`qa/tests/accessibility.spec.ts` across the configured desktop, laptop, tablet
+and mobile projects. Focus uses a two-tone ring so it remains visible on both
+the charcoal hero and white evidence surfaces; forced-colors mode defers to
+the platform highlight color.
 
 Playwright stores evidence in `.agent/screenshots/`.

@@ -133,7 +133,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 ## M14 — Brand, responsive, accessibility
 - [x] full official FSP brand audit
 - [x] desktop/tablet/mobile
-- [ ] keyboard/focus/contrast
+- [x] keyboard/focus/contrast
 - [ ] empty/loading/error/unconfirmed states
 - [ ] screenshot evidence suite using synthetic demo data
 

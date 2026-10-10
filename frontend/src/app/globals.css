@@ -10,7 +10,8 @@
   --text-primary: #1b1c21;
   --text-secondary: #5e6068;
   --border-default: #e0e0e6;
-  --focus-ring: #a9a1ff;
+  --focus-ring: #402fff;
+  --focus-ring-contrast: #ffffff;
   --surface: var(--surface-page);
   --card: var(--surface-card);
   --text: var(--text-primary);
@@ -24,6 +25,22 @@ body { font-family: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, m
   min-height: 100vh;
   background: var(--surface-page);
 }
+.skipLink {
+  position: fixed;
+  z-index: 40;
+  top: 10px;
+  left: 10px;
+  transform: translateY(-180%);
+  border-radius: 9px;
+  padding: 10px 13px;
+  background: var(--surface-card);
+  color: var(--brand-ink);
+  box-shadow: 0 5px 22px rgba(0, 0, 0, .28);
+  font-size: 11px;
+  text-decoration: none;
+  transition: transform 160ms ease;
+}
+.skipLink:focus-visible { transform: translateY(0); }
 .topbar {
   width: 100%; margin: 0; padding: 24px max(32px, calc((100% - 1216px) / 2));
   display: flex; justify-content: space-between; align-items: center; color: white;
@@ -931,13 +948,23 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .principles b { color: var(--brand-primary); font-size: 12px; }
 .principles h3 { margin: 26px 0 8px; }
 .principles p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
-/* Shared brand and keyboard contract. Keep focus visible on every control,
-   including controls whose component styles reset the native outline. */
-:where(a, button, input, textarea, select):focus-visible {
-  outline: 3px solid var(--focus-ring);
+/* Shared brand and keyboard contract. The white inner outline is visible on
+   the dark hero; the blue outer ring is visible on the light evidence card. */
+:is(a, button, input, textarea, select):focus-visible,
+.uploadButton:has(input:focus-visible) {
+  outline: 3px solid var(--focus-ring-contrast);
   outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--focus-ring);
 }
 :where(button, input, textarea, select):disabled { outline: 0; }
+@media (forced-colors: active) {
+  :is(a, button, input, textarea, select):focus-visible,
+  .uploadButton:has(input:focus-visible) {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+    box-shadow: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {

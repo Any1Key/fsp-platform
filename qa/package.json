@@ -2,7 +2,7 @@
   "name": "fsp-qa",
   "private": true,
   "scripts": {
-    "test": "playwright test tests/smoke.spec.ts tests/fsp-brand.spec.ts tests/auth-registration.spec.ts tests/talent-radar-ui.spec.ts tests/validation-dashboard-ui.spec.ts",
+    "test": "playwright test tests/smoke.spec.ts tests/fsp-brand.spec.ts tests/accessibility.spec.ts tests/auth-registration.spec.ts tests/talent-radar-ui.spec.ts tests/validation-dashboard-ui.spec.ts",
     "screenshots": "playwright test tests/screenshots.spec.ts"
   },
   "devDependencies": {
