@@ -135,7 +135,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] desktop/tablet/mobile
 - [x] keyboard/focus/contrast
 - [x] empty/loading/error/unconfirmed states
-- [ ] screenshot evidence suite using synthetic demo data
+- [x] screenshot evidence suite using synthetic demo data
 
 ## M15 — Security / 152-FZ-oriented controls
 - [ ] upload hardening
