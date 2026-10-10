@@ -81,6 +81,8 @@ class AssessmentValidationReport:
     predicted_distribution: dict[str, int]
     grade_collapse: bool
     grade_collapse_threshold: float
+    grade_collapse_dominant_grade: str | None
+    grade_collapse_share: float
     equivalent_form_score_difference: float
     retest_agreement: float
     item_metrics: dict[str, dict[str, float | int]]
@@ -133,12 +135,41 @@ def grade_collapse_detected(
 ) -> bool:
     """Return true when one predicted grade absorbs an almost-all share."""
 
-    predictions = list(predicted_grades)
-    if not predictions:
-        return True
+    return bool(grade_collapse_details(predicted_grades, threshold=threshold)["collapsed"])
+
+
+def grade_collapse_details(
+    predicted_grades: Iterable[str], *, threshold: float = GRADE_COLLAPSE_SHARE
+) -> dict[str, bool | str | float | int | None]:
+    """Return an auditable collapse result for a predicted-grade sample.
+
+    An empty sample is treated as collapsed because it cannot demonstrate
+    grade coverage. Its dominant share is reported as zero so consumers can
+    distinguish missing evidence from an observed one-grade concentration.
+    """
+
     if not 0 < threshold <= 1:
         raise ValueError("grade-collapse threshold must be in (0, 1]")
-    return max(Counter(predictions).values()) / len(predictions) >= threshold
+    predictions = list(predicted_grades)
+    if not predictions:
+        return {
+            "collapsed": True,
+            "dominant_grade": None,
+            "dominant_share": 0.0,
+            "sample_size": 0,
+            "threshold": threshold,
+        }
+    counts = Counter(predictions)
+    dominant_count = max(counts.values())
+    dominant_grade = next(grade for grade in predictions if counts[grade] == dominant_count)
+    dominant_share = dominant_count / len(predictions)
+    return {
+        "collapsed": dominant_share >= threshold,
+        "dominant_grade": dominant_grade,
+        "dominant_share": round(dominant_share, 4),
+        "sample_size": len(predictions),
+        "threshold": threshold,
+    }
 
 
 def run_validation(
@@ -165,6 +196,7 @@ def run_validation(
 
     confusion = _confusion_matrix(primary)
     predictions = [observation.predicted_grade for observation in primary]
+    collapse = grade_collapse_details(predictions)
     item_observations = [item for observation in primary for item in observation.items]
     item_metrics = _item_metrics(item_observations)
     return AssessmentValidationReport(
@@ -179,8 +211,10 @@ def run_validation(
             sum(confusion[grade][grade] for grade in GRADES) / len(primary), 4
         ),
         predicted_distribution={grade: predictions.count(grade) for grade in GRADES},
-        grade_collapse=grade_collapse_detected(predictions),
+        grade_collapse=bool(collapse["collapsed"]),
         grade_collapse_threshold=GRADE_COLLAPSE_SHARE,
+        grade_collapse_dominant_grade=collapse["dominant_grade"],
+        grade_collapse_share=float(collapse["dominant_share"]),
         equivalent_form_score_difference=round(
             sum(abs(first.score - second.score) for first, second in retests)
             / len(retests),

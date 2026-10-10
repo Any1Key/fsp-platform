@@ -33,6 +33,11 @@ JSON to stdout. The M13 backlog does not identify a stable artifact contract.
 - Keep validation-only score bands separate from production grade state; no
   quotas, curves, database/API changes, or AI dependency.
 
+The follow-up grade-collapse unit makes the existing boolean check auditable:
+the report also records the dominant predicted grade and its observed share.
+Threshold validation happens before empty-input handling so malformed
+validation configuration cannot be silently accepted.
+
 ## Files/modules
 
 - `backend/app/assessment_validation.py` — report fields, aggregate metrics,
@@ -60,7 +65,8 @@ candidate IDs, answers, answer keys, or production database data.
 - Confusion matrix, grade agreement, macro-F1, retest stability, equivalent
   form difference, and aggregate/item discrimination are populated.
 - The explicit output writer produces JSON equivalent to `to_dict()`.
-- Grade-collapse behavior remains tested separately and is not used to alter
+- Grade-collapse behavior reports the dominant grade/share, covers the exact
+  threshold boundary and rejects invalid thresholds; it is not used to alter
   scores.
 
 ## Demo/evidence
@@ -84,3 +90,5 @@ synthetic evidence; external supervisor verification remains separate.
 - 2026-10-09: implemented report fields/writer, CLI output option, tests, and
   refreshed fixed-seed evidence. Backend suite: 156 passed; Ruff and diff
   checks passed. Supervisor verification remains pending.
+- 2026-10-10: completed the separate grade-collapse unit with auditable
+  dominant-grade/share fields and strict threshold validation.

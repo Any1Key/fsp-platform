@@ -4,6 +4,7 @@ from app.assessment_validation import (
     DEFAULT_SEED,
     GRADES,
     generate_synthetic_candidates,
+    grade_collapse_details,
     grade_collapse_detected,
     run_validation,
     write_report,
@@ -41,6 +42,26 @@ def test_grade_collapse_detector_catches_degenerate_predictions() -> None:
     assert not grade_collapse_detected(["Junior", "Middle", "Senior"] * 4)
     assert grade_collapse_detected([])
 
+    details = grade_collapse_details(["Junior"] * 8 + ["Middle", "Senior"])
+    assert details == {
+        "collapsed": True,
+        "dominant_grade": "Junior",
+        "dominant_share": 0.8,
+        "sample_size": 10,
+        "threshold": 0.8,
+    }
+    assert grade_collapse_details(["Junior", "Middle", "Senior"])["collapsed"] is False
+
+
+def test_grade_collapse_detector_validates_threshold_before_empty_sample() -> None:
+    for threshold in (0, -0.1, 1.01):
+        try:
+            grade_collapse_detected([], threshold=threshold)
+        except ValueError as exc:
+            assert str(exc) == "grade-collapse threshold must be in (0, 1]"
+        else:
+            raise AssertionError("invalid grade-collapse threshold was accepted")
+
 
 def test_synthetic_profiles_are_labeled_without_personal_data() -> None:
     candidates = generate_synthetic_candidates(seed=DEFAULT_SEED, candidates_per_grade=4)
@@ -66,5 +87,7 @@ def test_validation_report_writer_persists_the_machine_readable_contract(tmp_pat
     assert payload == report.to_dict()
     assert "synthetic-junior-000" not in output.read_text(encoding="utf-8")
     assert payload["grade_agreement"] == 0.6667
+    assert payload["grade_collapse_dominant_grade"] == "Senior"
+    assert payload["grade_collapse_share"] == 0.6667
     assert "mean_item_discrimination" in payload
     assert "positive_item_discrimination_rate" in payload

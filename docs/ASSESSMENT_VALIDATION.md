@@ -41,7 +41,12 @@ machine-readable payload that is printed to stdout.
 - `form_uniqueness_rate`: distinct family/variant signatures across primary and
   paired forms.
 - `grade_collapse`: true when at least 80% of predictions fall into one grade.
-  The detector is also unit-tested with deliberately degenerate predictions.
+  `grade_collapse_dominant_grade` and `grade_collapse_share` identify the
+  observed concentration, while `grade_collapse_threshold` records the rule
+  used for the run. An empty sample is conservatively collapsed with a zero
+  dominant share because it provides no grade-coverage evidence. The detector
+  is unit-tested with deliberately degenerate, boundary, empty, and invalid-
+  threshold inputs.
 
 The validation-only score bands are `<40` Junior, `40–64.99` Middle, and
 `>=65` Senior. They are a calibration view, not a new product rule: the

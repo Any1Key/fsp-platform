@@ -124,7 +124,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] keyword baseline matcher
 - [x] Precision@5/nDCG@5/Recall@10
 - [x] assessment confusion matrix/macro-F1/stability/discrimination
-- [ ] grade-collapse check
+- [x] grade-collapse check
 - [ ] target load test on core profile
 - [ ] CPU/RAM/p95/error-rate report
 - [ ] Validation Dashboard

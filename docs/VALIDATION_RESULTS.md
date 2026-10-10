@@ -56,6 +56,8 @@ represent production candidate outcomes.
   "form_uniqueness_rate": 1.0,
   "grade_agreement": 0.75,
   "grade_collapse": false,
+  "grade_collapse_dominant_grade": "Senior",
+  "grade_collapse_share": 0.5278,
   "grade_collapse_threshold": 0.8,
   "item_metrics": {
     "api-1": {"difficulty": 0.3235, "discrimination": 0.6213, "observations": 68, "pass_rate": 0.6765},
