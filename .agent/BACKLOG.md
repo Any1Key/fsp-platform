@@ -134,7 +134,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] full official FSP brand audit
 - [x] desktop/tablet/mobile
 - [x] keyboard/focus/contrast
-- [ ] empty/loading/error/unconfirmed states
+- [x] empty/loading/error/unconfirmed states
 - [ ] screenshot evidence suite using synthetic demo data
 
 ## M15 — Security / 152-FZ-oriented controls

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { EmptyState, ErrorState, LoadingState, UnconfirmedGradeBadge } from "./ui-state";
 
 type SkillEvidence = { skill: string; present: boolean; edges: { source: string }[] };
 type RadarCandidate = {
@@ -207,12 +208,13 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
     }
   }
 
-  if (loading && !radar) return <section className="radarPanel muted">Строим Talent Radar по проверенным свидетельствам…</section>;
+  if (loading && !radar) return <section className="radarPanel muted"><LoadingState title="Строим Talent Radar по проверенным свидетельствам…" description="Собираем explainable ProofMatch snapshot." /></section>;
   if (!radar) {
     return (
-      <section className="radarPanel error" aria-live="polite">
-        <div className="radarHeading"><div><span className="authLabel">TALENT RADAR</span><h2>Talent Radar пока не готов</h2></div><button className="authButton secondaryButton" type="button" onClick={() => void load()}>Обновить</button></div>
-        <p>{message ?? "Сохраните hiring need, чтобы открыть подбор."}</p>
+      <section className="radarPanel error">
+        <ErrorState title="Talent Radar пока не готов" description={message ?? "Сохраните hiring need, чтобы открыть подбор."}>
+          <button className="authButton secondaryButton" type="button" onClick={() => void load()}>Обновить</button>
+        </ErrorState>
       </section>
     );
   }
@@ -270,13 +272,13 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
       </div>
 
       {radar.candidates.length === 0 ? (
-        <div className="radarEmpty"><strong>Подходящих кандидатов пока нет</strong><span>Измените фильтр или сохраните больше подтверждённых свидетельств.</span></div>
+        <EmptyState className="radarEmpty" title="Подходящих кандидатов пока нет" description="Измените фильтр или сохраните больше подтверждённых свидетельств." />
       ) : (
         <div className="radarCandidates">
           {radar.candidates.map((candidate) => (
             <article className="radarCandidate" key={candidate.candidate_id}>
               <div className="radarCandidateTop">
-                <div><span className={`radarCandidateState ${candidate.eligibility === "verified" ? "verified" : "unconfirmed"}`}>{candidate.eligibility === "verified" ? "✓ VERIFIED" : "! GRADE NOT CONFIRMED"}</span><h3>{candidate.display_name}</h3><p>{candidate.headline ?? "Профессиональный профиль"}{candidate.location ? ` · ${candidate.location}` : ""}</p></div>
+                <div>{candidate.eligibility === "verified" ? <span className="radarCandidateState verified">✓ VERIFIED</span> : <UnconfirmedGradeBadge />}<h3>{candidate.display_name}</h3><p>{candidate.headline ?? "Профессиональный профиль"}{candidate.location ? ` · ${candidate.location}` : ""}</p></div>
                 <div className="radarScore"><strong>{Math.round(candidate.match_score)}</strong><span>ProofMatch</span><em className={`fitBand ${candidate.fit_band}`}>{fitBandLabels[candidate.fit_band]}</em></div>
               </div>
               <div className="radarCategory"><span>{candidate.category.label ?? "Категория ещё не подтверждена"}</span><small>Уверенность {percent(candidate.confidence.overall)} · свежесть {percent(candidate.confidence.freshness)}</small></div>

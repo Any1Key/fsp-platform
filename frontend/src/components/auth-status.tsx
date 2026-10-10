@@ -27,6 +27,7 @@ import { EmployerChallenges } from "./employer-challenges";
 import { EmployerInvitations } from "./employer-invitations";
 import { InternalChat } from "./internal-chat";
 import { ValidationDashboard } from "./validation-dashboard";
+import { ErrorState, LoadingState } from "./ui-state";
 
 type Session = {
   identity_id: string | null;
@@ -120,10 +121,10 @@ export function AuthStatus() {
   }
 
   if (auth.status === "loading") {
-    return <div className="authPanel muted">Проверяем защищённую сессию…</div>;
+    return <div className="authPanel muted"><LoadingState title="Проверяем защищённую сессию…" description="Подключаем защищённое рабочее пространство." /></div>;
   }
   if (auth.status === "error") {
-    return <div className="authPanel error">{auth.message}</div>;
+    return <div className="authPanel error"><ErrorState title="Не удалось открыть защищённую сессию" description={auth.message} /></div>;
   }
   if (auth.status === "signed-in") {
     if (auth.session.onboarding_required) {

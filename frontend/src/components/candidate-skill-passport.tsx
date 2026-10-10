@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { EmptyState, ErrorState, LoadingState, UnconfirmedGradeBadge } from "./ui-state";
 
 type Evidence = {
   id: string;
@@ -103,10 +104,10 @@ export function CandidateSkillPassport({ token, refreshKey = 0 }: { token: strin
   }, [token, refreshKey]);
 
   if (state === "loading") {
-    return <section className="passportPanel muted" aria-busy="true">Собираем твой Verified Skill Passport…</section>;
+    return <section className="passportPanel muted"><LoadingState title="Собираем твой Verified Skill Passport…" description="Сверяем assessment, профиль и FSP evidence." /></section>;
   }
   if (state === "error" || !passport) {
-    return <section className="passportPanel error" role="alert">Не удалось загрузить Verified Skill Passport. Обнови страницу и попробуй ещё раз.</section>;
+    return <section className="passportPanel error"><ErrorState title="Не удалось загрузить Verified Skill Passport" description="Обнови страницу и попробуй ещё раз." /></section>;
   }
 
   return (
@@ -133,9 +134,7 @@ export function CandidateSkillPassport({ token, refreshKey = 0 }: { token: strin
           <div>
             <span>{passport.category.grade_state === "verified" ? "ПОДТВЕРЖДЁННЫЙ УРОВЕНЬ" : "ЗАЯВЛЕННЫЙ УРОВЕНЬ"}</span>
             <strong>{passport.category.grade ?? passport.category.declared_grade}</strong>
-            <small className={`passportGrade ${passport.category.grade_state}`}>
-              {passport.category.grade_state === "verified" ? "GRADE VERIFIED" : "GRADE NOT CONFIRMED"}
-            </small>
+            {passport.category.grade_state === "verified" ? <small className="passportGrade verified">GRADE VERIFIED</small> : <UnconfirmedGradeBadge compact />}
           </div>
           <div>
             <span>РЕЗУЛЬТАТ</span>
@@ -144,10 +143,7 @@ export function CandidateSkillPassport({ token, refreshKey = 0 }: { token: strin
           </div>
         </div>
       ) : (
-        <div className="passportEmpty">
-          <strong>Подтверждённой категории пока нет</strong>
-          <p>Пройди базовую оценку, чтобы добавить первую платформенную проверку.</p>
-        </div>
+        <EmptyState className="passportEmpty" title="Подтверждённой категории пока нет" description="Пройди базовую оценку, чтобы добавить первую платформенную проверку." />
       )}
 
       <div className="passportFreshness" aria-label="Свежесть доказательств">
@@ -158,7 +154,7 @@ export function CandidateSkillPassport({ token, refreshKey = 0 }: { token: strin
       </div>
 
       {passport.evidence.length === 0 ? (
-        <p className="passportEvidenceEmpty">Доказательства появятся после оценки, FSP link или заполнения профиля.</p>
+        <EmptyState className="passportEvidenceEmpty" title="Доказательств пока нет" description="Они появятся после оценки, FSP link или заполнения профиля." />
       ) : (
         <div className="passportEvidence" aria-label="Доказательства навыков">
           {passport.evidence.map((item) => (

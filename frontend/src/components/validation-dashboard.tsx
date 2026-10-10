@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ErrorState, LoadingState } from "./ui-state";
 
 type MetricGroup = {
   matching_metrics_version: string;
@@ -77,10 +78,10 @@ export function ValidationDashboard({ token }: { token: string }) {
   }, [token]);
 
   if (state === "loading") {
-    return <section className="validationPanel muted" aria-busy="true">Загружаем Validation Dashboard…</section>;
+    return <section className="validationPanel muted"><LoadingState title="Загружаем Validation Dashboard…" description="Читаем воспроизводимые matching и assessment результаты." /></section>;
   }
   if (state === "error" || !dashboard) {
-    return <section className="validationPanel error" role="alert">Не удалось загрузить Validation Dashboard. Проверь права доступа и обнови страницу.</section>;
+    return <section className="validationPanel error"><ErrorState title="Не удалось загрузить Validation Dashboard" description="Проверь права доступа и обнови страницу." /></section>;
   }
 
   const { matching, assessment } = dashboard;
