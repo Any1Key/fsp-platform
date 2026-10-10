@@ -81,6 +81,7 @@ docs/TELEGRAM_REPORTING.md
 docs/TRUST_AND_ANTI_FRAUD.md
 docs/UI_ACCEPTANCE_CRITERIA.md
 docs/VALIDATION_PLAN.md
+docs/VALIDATION_RESULTS.json
 docs/VALIDATION_RESULTS.md
 docs/source/FSP_brandbook_original.rar
 docs/source/TZ_2026.pdf

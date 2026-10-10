@@ -128,7 +128,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] target load test on core profile
 - [x] CPU/RAM/p95/error-rate report (report writer implemented; actual authenticated target measurement remains external)
 - [x] Validation Dashboard
-- [ ] actual VALIDATION_RESULTS
+- [x] actual VALIDATION_RESULTS
 
 ## M14 — Brand, responsive, accessibility
 - [ ] full official FSP brand audit

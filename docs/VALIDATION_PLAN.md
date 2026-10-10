@@ -15,8 +15,8 @@ seed:
 - one expected relevance label per candidate/need pair plus synthetic
   assessment-response profiles with known target grade/ability.
 
-This establishes the fixture for later validation units; it does not claim
-that the matching or load metrics below have been run.
+This establishes the fixture consumed by the offline validation runs. It does
+not claim production match quality or load performance.
 
 The complete candidate/need relevance labels are materialized into a stable
 offline case artifact by `backend/app/matching_validation.py`, documented in
@@ -98,4 +98,13 @@ Run repository-controlled scenarios from `PERFORMANCE_TESTING.md` on the target 
 
 ## Results
 
-Write actual results to `docs/VALIDATION_RESULTS.md`. Never invent metrics.
+Generate the aggregate, machine-readable result artifact from `backend/`:
+
+```sh
+PYTHONPATH=. .venv/bin/python -m app.validation_report \
+  --output ../docs/VALIDATION_RESULTS.json
+```
+
+Review the human-readable summary in `docs/VALIDATION_RESULTS.md`. Never
+invent metrics. Authenticated target load results remain a separate external
+measurement documented in `docs/PERFORMANCE_RESULTS.md`.

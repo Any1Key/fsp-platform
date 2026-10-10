@@ -79,6 +79,9 @@ services:
       LOCAL_AI_MAX_ACTIVE_JOBS_PER_COMPANY: ${LOCAL_AI_MAX_ACTIVE_JOBS_PER_COMPANY:-1}
     volumes:
       - backend-private-data:/var/lib/fsp/private
+      # The offline validation contract compares the generated report with
+      # the committed artifact while tests run inside the backend container.
+      - ./docs/VALIDATION_RESULTS.json:/app/docs/VALIDATION_RESULTS.json:ro
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
