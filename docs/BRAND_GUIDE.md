@@ -75,3 +75,20 @@ Prioritize:
 - obvious salary;
 - meaningful match explanations;
 - responsive behavior.
+
+## 2026-10 brand audit record
+
+The shared frontend foundation and public entrypoint were audited against this guide on 2026-10-10.
+
+- Palette tokens use the official primary blue/violet `#402FFF`, red `#EC1D35`, light neutral
+  `#EDEDED`, muted gray `#C8C9CA` and charcoal `#1B1C21`.
+- `logo_white1.png` is reserved for the charcoal hero/header surface; the supplied blue logo variants
+  remain available for light surfaces. Raster assets are rendered with `object-fit: contain` and are
+  never recolored or stretched.
+- JetBrains Mono remains the product voice for the public shell and evidence labels.
+- The landing page uses a restrained charcoal/blue/red treatment. Red is limited to evidence emphasis,
+  while the product story centers on verified evidence and reverse recruitment.
+- All public navigation controls expose a 3px keyboard focus ring, and reduced-motion users receive
+  an automatic-scroll/transition reduction.
+- The required desktop, laptop, tablet and mobile viewport checks assert no horizontal overflow and
+  remain in `qa/tests/fsp-brand.spec.ts`.

@@ -83,3 +83,14 @@ High-visibility information. Do not bury it.
 - honor reduced motion;
 - keyboard/focus/semantic status;
 - practical WCAG 2.2 AA target.
+
+## Brand audit implementation
+
+The frontend maps the official colors to semantic CSS tokens and uses the white FSP logo only on the
+charcoal inverse surface. The public shell has responsive breakpoints at 850px and below, keeps the
+primary action reachable on mobile, and does not rely on horizontal scrolling for the landing flow.
+
+Every link and form control receives a visible `:focus-visible` ring. The shared reduced-motion media
+query removes smooth scrolling and reduces transitions for users who request less motion. Browser
+coverage for the brand contract is maintained in `qa/tests/fsp-brand.spec.ts` across 1920, 1366, 1024,
+768 and 390 pixel viewports.
