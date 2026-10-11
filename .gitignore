@@ -1,4 +1,5 @@
 .env
+email_confirmation_links.txt
 .env.agent
 .env.*
 !.env.example

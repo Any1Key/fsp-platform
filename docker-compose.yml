@@ -35,6 +35,21 @@ services:
       - "127.0.0.1:${MAILPIT_PORT:-8025}:8025"
     restart: unless-stopped
 
+  # Demo-only helper: copies Keycloak verification links from Mailpit into a
+  # local, git-ignored file in the project directory.
+  mailpit-link-writer:
+    build:
+      context: ./scripts/mailpit-link-writer
+    environment:
+      MAILPIT_BASE_URL: http://mailpit:8025
+      POLL_SECONDS: ${MAILPIT_LINK_POLL_SECONDS:-2}
+    volumes:
+      - ./email_confirmation_links.txt:/out/email_confirmation_links.txt
+    depends_on:
+      mailpit:
+        condition: service_started
+    restart: unless-stopped
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.0
     command: ["start-dev", "--import-realm"]
