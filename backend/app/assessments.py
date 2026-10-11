@@ -569,7 +569,45 @@ class AssessmentService:
         )
         form_signature = tuple((item.family_id, item.artifact) for item in attempt.items)
         if form_signature in self.form_signatures:
-            raise AssessmentError("assessment_form_collision")
+            # A collision should never make a candidate unable to start a
+            # test. Keep the calibrated family selection and regenerate only
+            # session wording/artifacts from a candidate-scoped fallback seed.
+            # This preserves comparable scoring while making uniqueness an
+            # invariant even when the entropy source repeats a value.
+            collision_seed = hmac.new(
+                seed.encode(),
+                f"{candidate_id}:{len(recent)}:{len(self.form_signatures)}".encode(),
+                sha256,
+            ).hexdigest()
+            for index, item in enumerate(items):
+                family = TEMPLATES[item.family_id]
+                prompt, artifact = _variant(
+                    collision_seed,
+                    family,
+                    index,
+                    specialization=specialization,
+                    grade=declared_grade,
+                    industry=industry,
+                )
+                items[index] = AssessmentItem(
+                    item.item_id,
+                    item.family_id,
+                    item.domain,
+                    item.difficulty,
+                    prompt,
+                    item.options,
+                    item.progressive,
+                    item.anchor,
+                    artifact,
+                    item.family_version,
+                )
+                followup_keys[item.item_id] = artifact
+            attempt.seed = collision_seed
+            attempt.items = tuple(items)
+            attempt.followup_keys = followup_keys
+            form_signature = tuple((item.family_id, item.artifact) for item in attempt.items)
+            if form_signature in self.form_signatures:
+                raise AssessmentError("assessment_form_collision")
         self.form_signatures.add(form_signature)
         self.attempts[attempt.attempt_id] = attempt
         self.history.setdefault(candidate_id, []).append(attempt.attempt_id)
