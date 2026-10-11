@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type ApplicationStatus = "submitted" | "reviewing" | "shortlisted" | "accepted" | "rejected" | "withdrawn";
 type Taxonomy = { slug: string; name: string } | null;
@@ -64,6 +64,8 @@ export function CandidateVacancies({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [specializationFilter, setSpecializationFilter] = useState("all");
 
   async function load() {
     setLoading(true);
@@ -117,6 +119,19 @@ export function CandidateVacancies({ token }: { token: string }) {
     }
   }
 
+  const specializations = useMemo(
+    () => Array.from(new Set(vacancies.map((vacancy) => vacancy.specialization?.name).filter(Boolean))).sort(),
+    [vacancies],
+  );
+  const filteredVacancies = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
+    return vacancies.filter((vacancy) => {
+      const searchable = `${vacancy.title} ${vacancy.company_name} ${vacancy.location ?? ""}`.toLocaleLowerCase("ru-RU");
+      return (!normalizedQuery || searchable.includes(normalizedQuery)) &&
+        (specializationFilter === "all" || vacancy.specialization?.name === specializationFilter);
+    });
+  }, [query, specializationFilter, vacancies]);
+
   if (loading) return <section className="candidateVacanciesPanel muted">Загружаем вакансии и отклики…</section>;
 
   return (
@@ -127,13 +142,26 @@ export function CandidateVacancies({ token }: { token: string }) {
           <h2 id="candidate-vacancies-title">Вакансии и мои отклики</h2>
           <p>Открытые предложения с зарплатой — отдельный путь к матчу, без раскрытия контактов до принятия.</p>
         </div>
-        <span className="profileStatus">{vacancies.length} OPEN</span>
+        <span className="profileStatus">{filteredVacancies.length} из {vacancies.length}</span>
+      </div>
+      <div className="candidateVacancyFilters" aria-label="Фильтры вакансий">
+        <label>
+          <span>Поиск</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Название или компания" />
+        </label>
+        <label>
+          <span>Специализация</span>
+          <select value={specializationFilter} onChange={(event) => setSpecializationFilter(event.target.value)}>
+            <option value="all">Все специализации</option>
+            {specializations.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </label>
       </div>
       <div className="candidateVacanciesLayout">
         <div className="candidateVacancyList" aria-label="Опубликованные вакансии">
-          {vacancies.length === 0 ? (
+          {filteredVacancies.length === 0 ? (
             <div className="candidateVacancyEmpty"><strong>Пока нет опубликованных вакансий</strong><span>Работодатели добавят новые предложения — они появятся здесь с обязательной зарплатой.</span></div>
-          ) : vacancies.map((vacancy) => (
+          ) : filteredVacancies.map((vacancy) => (
             <article className="candidateVacancyCard" key={vacancy.id}>
               <div className="candidateVacancyCardTop">
                 <div>
@@ -148,7 +176,10 @@ export function CandidateVacancies({ token }: { token: string }) {
                 {vacancy.location && <span>{vacancy.location}</span>}
                 {vacancy.work_mode && <span>{workModeLabels[vacancy.work_mode]}</span>}
               </div>
-              <p>{vacancy.description}</p>
+              <details className="candidateVacancyDetails">
+                <summary>Подробнее о вакансии</summary>
+                <p>{vacancy.description}</p>
+              </details>
               <div className="candidateVacancyFooter">
                 {vacancy.application_status ? (
                   <span className={`candidateApplicationStatus ${vacancy.application_status}`}>{statusText(vacancy.application_status)}</span>
