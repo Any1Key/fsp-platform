@@ -218,3 +218,22 @@ Adjust scope to the remaining wall-clock budget:
 - as 23:59 MSK approaches: avoid risky refactors and preserve the last verified state.
 
 Do not estimate the current time from conversation context. Read it from the host.
+
+### NEXT CYCLE OVERRIDE
+
+M15 implementation is complete.
+
+The next implementation cycle MUST treat all remaining M16 and M17 backlog items
+as ONE single coherent final submission-readiness work unit.
+
+"Exactly one coherent work unit" in the autopilot prompt means the combined M16+M17
+submission unit, NOT one checkbox and NOT one milestone.
+
+Do not stop after M16.
+Do not create a separate implementation cycle for M17.
+Complete as much of M16+M17 as safely possible in the same cycle, including P0/P1 fixes.
+
+Use existing evidence/tests where valid rather than repeating equivalent implementation work.
+P2 findings may be documented and deferred.
+
+After implementation, allow the normal external supervisor verification to run once.

@@ -143,9 +143,9 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] minor-document privacy
 - [x] rate limits where appropriate
 - [x] security headers/CORS
-- [ ] secret/log audit
+- [x] secret/log audit
 - [x] Telegram no-PII audit
-- [ ] index/query audit
+- [x] index/query audit
 
 ## M16 — Submission/docs/demo
 - [ ] OpenAPI audit

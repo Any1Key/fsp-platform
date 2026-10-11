@@ -152,7 +152,7 @@ Optional service behind `LocalAiPort`. Core works with adapter disabled. Inferen
 
 ## Performance target
 
-Target host: about 8 CPU / 32–64 GB RAM, no GPU. Optimize the core profile first. Avoid N+1 ranking queries and add indexes for category/grade, evidence, assessment result, matching snapshots, invitations and chat membership/time.
+Target host: about 8 CPU / 32–64 GB RAM, no GPU. Optimize the core profile first. Avoid N+1 ranking queries and add indexes for category/grade, evidence, assessment result, matching snapshots, invitations and chat membership/time. The M15 query audit and migration cover the current hand-written SQL paths; deployment still owns PostgreSQL planner and load verification.
 
 ## Observability
 

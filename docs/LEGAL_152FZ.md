@@ -11,6 +11,7 @@ This is an engineering control set, not a legal opinion or certification of comp
 - audit of consent, access-sensitive transitions and data changes;
 - configurable retention/deletion/anonymization workflows;
 - secure transport and secret handling;
+- tested log redaction and a reviewed query/index access-path audit;
 - bounded request-rate controls around public registration and private-data
   mutation boundaries;
 - avoid external transfer of personal data by default;
@@ -40,6 +41,13 @@ assessment writes, candidate private uploads, invitations, chat messages, and
 export/deletion requests. Counters use only one-way connection-peer and
 bearer-token fingerprints and are not an audit trail or a substitute for a
 trusted ingress/shared store in a multi-worker deployment.
+
+The M15 security/query audit records the Python log-redaction boundary and
+keeps credentials, raw private documents, full chat content and unnecessary
+protected data out of application diagnostics. Its migration and index
+contract test cover the audited SQL access paths; PostgreSQL planner review,
+log-sink access controls and retention remain deployment responsibilities. See
+`docs/SECURITY_QUERY_AUDIT.md`.
 
 ## Minor candidates
 

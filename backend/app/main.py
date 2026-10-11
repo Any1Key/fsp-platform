@@ -83,6 +83,7 @@ from .local_ai import (
     retrieve_approved_task_examples,
     schedule_task_draft_job,
 )
+from .logging_safety import install_safe_logging
 from .minor_consent import get_document_status, upload_document, withdraw_document
 from .pipelines import get_hiring_pipeline, update_hiring_pipeline
 from .privacy import (
@@ -130,6 +131,7 @@ from .vacancy_applications import (
 from .validation_dashboard import build_validation_dashboard
 
 runtime_settings = get_settings()
+install_safe_logging()
 rate_limit_store = InMemoryRateLimitStore(max_keys=runtime_settings.rate_limit_max_keys)
 
 app = FastAPI(

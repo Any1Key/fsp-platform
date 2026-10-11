@@ -37,6 +37,6 @@ ensure_dirs() {
 safe_tail() {
   local f="$1"; local n="${2:-80}"
   [[ -f "$f" ]] && tail -n "$n" "$f" | sed -E \
-    -e 's/(TELEGRAM_BOT_TOKEN|OPENAI_API_KEY|KEYCLOAK_ADMIN_PASSWORD|POSTGRES_PASSWORD)=([^[:space:]]+)/\1=[REDACTED]/g' \
+    -e 's/(TELEGRAM_BOT_TOKEN|TELEGRAM_CHAT_ID|OPENAI_API_KEY|GITHUB_TOKEN|DATABASE_URL|KEYCLOAK_DB_PASSWORD|KEYCLOAK_ADMIN_PASSWORD|POSTGRES_PASSWORD)=([^[:space:]]+)/\1=[REDACTED]/g' \
     -e 's/(Bearer )[A-Za-z0-9._-]+/\1[REDACTED]/g'
 }

@@ -16,6 +16,7 @@ git status --short || true
 
 echo "=== CI and QA contracts ==="
 bash "$ROOT/agent/test-ci-contract.sh"
+bash "$ROOT/agent/test-secret-log-contract.sh"
 
 echo "=== compose config ==="
 docker compose config -q

@@ -115,7 +115,7 @@ receives the document.
 Never commit DB passwords, Keycloak admin password, AI tokens, Telegram bot token or GitHub token.
 
 ## Logs
-No passwords/tokens. Avoid raw resume/chat text. Mask contact data where possible. Use request IDs and safe metadata.
+No passwords/tokens. Avoid raw resume/chat text. Mask contact data where possible. Use request IDs and safe metadata. The Python API installs the tested `SafeLogFilter` from `backend/app/logging_safety.py`; it redacts credentials in messages, logging arguments, exception tracebacks, stack text and sensitive query parameters. The API does not log request bodies. See `docs/SECURITY_QUERY_AUDIT.md` for the complete secret/log and query/index audit.
 
 ## Request rate limits
 
