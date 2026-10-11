@@ -10,12 +10,12 @@ export default function Home() {
           <Image className="brandLogo" src="/brand/logo_white1.png" alt="ФСП" width={50} height={72} priority />
           <span className="brandName">FSP <b>TALENT</b></span>
         </div>
-        <span className="badge">EVIDENCE-FIRST DISCOVERY</span>
+        <span className="badge">ПОДБОР ПО ПОДТВЕРЖДЁННЫМ НАВЫКАМ</span>
       </header>
 
       <section className="hero" id="main-content" tabIndex={-1}>
         <div className="heroText">
-          <p className="eyebrow">ФСП TALENT · VERIFIED ENGINEERING EVIDENCE</p>
+          <p className="eyebrow">FSP TALENT · ПЛАТФОРМА ПРОФЕССИОНАЛЬНОГО ПОДБОРА</p>
           <h1>Проверенные навыки.<br />Точный подбор.</h1>
           <p className="lead">
             Работодатель находит специалистов по подтверждённым навыкам и сразу видит объяснимое
@@ -28,23 +28,23 @@ export default function Home() {
           <AuthStatus />
         </div>
         <div className="proofCard" id="proof" aria-label="Пример подтверждённого профиля">
-          <p className="cardLabel">VERIFIED PROFILE</p>
+          <p className="cardLabel">ПОДТВЕРЖДЁННЫЙ ПРОФИЛЬ</p>
           <h2>Backend · Middle</h2>
-          <div className="metric"><span>Assessment</span><strong>87</strong></div>
+          <div className="metric"><span>Оценка навыков</span><strong>87</strong></div>
           <div className="bar"><i style={{width: "87%"}} /></div>
           <div className="chips">
             <span>✓ Python</span><span>✓ FastAPI</span><span>✓ PostgreSQL</span>
           </div>
           <div className="fspLine">
-            <span className="dot" /> FSP evidence becomes a bounded verified signal
+            <span className="dot" /> Подтверждённые данные помогают принимать решения
           </div>
         </div>
       </section>
 
-      <section className="principles" id="principles" aria-label="Принципы FSP Talent">
-        <article><b>01</b><h3>Assessment</h3><p>Comparable, parameterized, auditable.</p></article>
-        <article><b>02</b><h3>Matching</h3><p>Explainable ranking by verified evidence.</p></article>
-        <article><b>03</b><h3>Invitation</h3><p>Employer initiates with salary visible upfront.</p></article>
+      <section className="principles" id="principles" aria-label="Как работает FSP Talent">
+        <article><b>01</b><h3>Оценка навыков</h3><p>Сравнимые задания и понятный результат.</p></article>
+        <article><b>02</b><h3>Подбор</h3><p>Рейтинг кандидатов на основе подтверждённых данных.</p></article>
+        <article><b>03</b><h3>Приглашение</h3><p>Работодатель сразу указывает условия предложения.</p></article>
       </section>
     </main>
   );

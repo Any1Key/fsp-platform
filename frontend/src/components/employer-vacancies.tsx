@@ -170,7 +170,7 @@ export function EmployerVacancies({ token }: { token: string }) {
     <section className="vacancyPanel" aria-labelledby="vacancies-title">
       <div className="companyHeading">
         <div>
-          <span className="authLabel">VACANCY STUDIO</span>
+          <span className="authLabel">ВАКАНСИИ КОМПАНИИ</span>
           <h2 id="vacancies-title">Публикации с зарплатой</h2>
           <p>Создайте понятное предложение для кандидата. Зарплата обязательна до публикации.</p>
         </div>

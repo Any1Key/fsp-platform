@@ -96,7 +96,7 @@ export function CandidateProtectedProfile({ token }: { token: string }) {
       <section className="protectedPanel" aria-label="Приватные данные кандидата">
         <div className="profileHeading">
           <div>
-            <span className="authLabel">PRIVATE IDENTITY DATA</span>
+          <span className="authLabel">ЛИЧНЫЕ ДАННЫЕ</span>
             <strong>Дата рождения</strong>
             <small>Нужна только для приватных возрастных процессов и не участвует в подборе.</small>
           </div>

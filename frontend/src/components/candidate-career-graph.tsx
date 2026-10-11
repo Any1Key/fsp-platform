@@ -55,7 +55,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const statusLabels: Record<GraphNode["status"], string> = {
   verified: "VERIFIED",
-  unconfirmed: "NOT CONFIRMED",
+  unconfirmed: "НЕ ПОДТВЕРЖДЕНО",
   declared: "DECLARED",
 };
 
@@ -113,12 +113,12 @@ export function CandidateCareerGraph({ token, refreshKey = 0 }: { token: string;
     <section className="careerGraphPanel" aria-labelledby="career-graph-title">
       <div className="careerGraphHeading">
         <div>
-          <span className="authLabel">CAREER GRAPH · EVIDENCE MAP</span>
+          <span className="authLabel">КАРЬЕРНЫЙ ПРОФИЛЬ · КАРТА НАВЫКОВ</span>
           <h2 id="career-graph-title">Куда растёт твой профиль</h2>
           <p>Связываем проверенные сигналы с соседними профессиональными треками.</p>
         </div>
         <span className={`careerGraphStatus ${graph.status}`}>
-          {graph.status === "active" ? "TRACK ACTIVE" : graph.status === "unconfirmed" ? "GRADE NOT CONFIRMED" : "STARTING POINT"}
+          {graph.status === "active" ? "ПЛАН РАЗВИТИЯ АКТИВЕН" : graph.status === "unconfirmed" ? "УРОВЕНЬ НЕ ПОДТВЕРЖДЁН" : "НАЧАЛЬНАЯ ТОЧКА"}
         </span>
       </div>
 
@@ -130,7 +130,7 @@ export function CandidateCareerGraph({ token, refreshKey = 0 }: { token: string;
             <small>{graph.current_position.grade.name} · оценка {formatDate(graph.current_position.assessed_at)}</small>
           </div>
           <div>
-            <span>{graph.current_position.grade_state === "verified" ? "GRADE VERIFIED" : "GRADE NOT CONFIRMED"}</span>
+            <span>{graph.current_position.grade_state === "verified" ? "УРОВЕНЬ ПОДТВЕРЖДЁН" : "УРОВЕНЬ НЕ ПОДТВЕРЖДЁН"}</span>
             <strong>{Math.round(graph.current_position.score)}<small>/100</small></strong>
             <small>системный результат</small>
           </div>

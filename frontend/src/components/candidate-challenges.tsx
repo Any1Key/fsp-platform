@@ -76,7 +76,7 @@ export function CandidateChallenges({ token, refreshKey = 0 }: { token: string; 
 
   return (
     <section className="candidateTasksPanel" aria-labelledby="candidate-challenges-title">
-      <div className="candidateTasksHeading"><div><span className="authLabel">FRESH EVIDENCE LOOP</span><h2 id="candidate-challenges-title">Короткие challenge работодателя</h2><p>5–20 минут на цикл. Результат остаётся evidence конкретной компании и не меняет Verified Grade.</p></div><span className="profileStatus">{items.length} CYCLES</span></div>
+      <div className="candidateTasksHeading"><div><span className="authLabel">ПРАКТИЧЕСКИЕ ЗАДАЧИ</span><h2 id="candidate-challenges-title">Короткие задания работодателя</h2><p>5–20 минут на задание. Результат относится к конкретной компании и не меняет общий подтверждённый уровень.</p></div><span className="profileStatus">{items.length} заданий</span></div>
       {message && <p className="candidateTasksMessage" aria-live="polite">{message}</p>}
       {items.length > 0 && <div className="candidateFreshnessSummary" aria-label="Сводка свежести employer evidence"><span className="fresh"><strong>{freshness.fresh}</strong> актуально</span><span className="expiring"><strong>{freshness.expiring}</strong> скоро обновить</span><span className="stale"><strong>{freshness.stale}</strong> устарело</span></div>}
       {items.length === 0 ? <div className="invitationEmpty"><strong>Активных challenge пока нет</strong><span>После match работодатель может включить короткий повторяющийся цикл.</span></div> : (

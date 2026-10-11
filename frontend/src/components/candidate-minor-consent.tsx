@@ -125,7 +125,7 @@ export function CandidateMinorConsent({ token }: { token: string }) {
     <section className="minorConsentPanel" aria-label="Согласие родителя или законного представителя">
       <div className="profileHeading">
         <div>
-          <span className="authLabel">PRIVATE DOCUMENT</span>
+          <span className="authLabel">ДОКУМЕНТ СОГЛАСИЯ</span>
           <strong>Согласие родителя или представителя</strong>
           <small>Документ хранится отдельно и не виден работодателям.</small>
         </div>

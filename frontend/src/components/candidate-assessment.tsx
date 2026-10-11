@@ -185,7 +185,7 @@ export function CandidateAssessment({
     <section className="assessmentPanel" ref={startRef} aria-labelledby="assessment-title">
       <div className="assessmentHeading">
         <div>
-          <span className="authLabel">BASE ASSESSMENT</span>
+          <span className="authLabel">ОЦЕНКА ПРОФЕССИОНАЛЬНЫХ НАВЫКОВ</span>
           <h2 id="assessment-title">Подтверди специализацию</h2>
           <p>Каждая попытка формируется заново: параметры и порядок заданий уникальны для твоей сессии.</p>
         </div>

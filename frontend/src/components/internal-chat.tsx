@@ -145,7 +145,7 @@ export function InternalChat({ token }: { token: string }) {
   return (
     <section className="chatPanel" aria-labelledby="internal-chat-title">
       <div className="chatHeading">
-        <div><span className="authLabel">MATCHED COMMUNICATION</span><h2 id="internal-chat-title">Внутренние разговоры</h2><p>Чат и обмен контактами открываются только после принятого приглашения.</p></div>
+        <div><span className="authLabel">ОБЩЕНИЕ ПОСЛЕ СОГЛАСИЯ</span><h2 id="internal-chat-title">Чат и контакты</h2><p>Общение и обмен контактами открываются после принятия предложения.</p></div>
         <span className="profileStatus">{conversations.reduce((total, item) => total + item.unread_count, 0)} UNREAD</span>
       </div>
       {message && <p className="chatMessage" aria-live="polite">{message}</p>}

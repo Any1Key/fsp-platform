@@ -91,28 +91,28 @@ export function ValidationDashboard({ token }: { token: string }) {
     <section className="validationPanel" aria-labelledby="validation-dashboard-title">
       <div className="validationHeading">
         <div>
-          <span className="authLabel">VALIDATION DASHBOARD · {dashboard.dashboard_version}</span>
+          <span className="authLabel">ОТЧЁТ О КАЧЕСТВЕ ПЛАТФОРМЫ · {dashboard.dashboard_version}</span>
           <h2 id="validation-dashboard-title">Доказательная база подбора</h2>
           <p>Синтетическая калибровка matching и assessment в одном проверяемом срезе.</p>
         </div>
-        <span className="validationBadge">DEMO EVIDENCE</span>
+        <span className="validationBadge">РАСЧЁТНЫЕ ПОКАЗАТЕЛИ</span>
       </div>
 
       <div className="validationNotice">
         <strong>Важно для интерпретации</strong>
-        <span>Это воспроизводимые synthetic-результаты, а не production-решение о найме и не внешняя верификация.</span>
+        <span>Это расчётные показатели для контроля качества подбора. Они не заменяют решение работодателя и внешнюю проверку.</span>
       </div>
 
       <div className="validationMeta">
-        <span><b>{dashboard.dataset.candidate_count}</b> candidates</span>
-        <span><b>{dashboard.dataset.need_count}</b> hiring needs</span>
-        <span>dataset <b>{dashboard.dataset.version}</b></span>
-        <span>seed <b>{dashboard.dataset.seed}</b></span>
+        <span><b>{dashboard.dataset.candidate_count}</b> кандидатов</span>
+        <span><b>{dashboard.dataset.need_count}</b> запросов работодателей</span>
+        <span>набор данных <b>{dashboard.dataset.version}</b></span>
+        <span>версия расчёта <b>{dashboard.dataset.seed}</b></span>
       </div>
 
       <div className="validationSection">
         <div className="validationSectionHeading">
-          <div><span className="authLabel">PROOFMATCH BASELINE</span><h3>Ranking quality</h3></div>
+          <div><span className="authLabel">КАЧЕСТВО ПОДБОРА</span><h3>Точность рекомендаций</h3></div>
           <small>{matching.ranking_count} complete need rankings</small>
         </div>
         <div className="validationMetricGrid">
@@ -124,12 +124,12 @@ export function ValidationDashboard({ token }: { token: string }) {
 
       <div className="validationSection">
         <div className="validationSectionHeading">
-          <div><span className="authLabel">ASSESSMENT CALIBRATION</span><h3>{assessment.specialization}</h3></div>
+          <div><span className="authLabel">КАЛИБРОВКА ОЦЕНКИ</span><h3>{assessment.specialization}</h3></div>
           <small>{assessment.sample_size} labeled attempts · {assessment.validation_version}</small>
         </div>
         <div className="validationMetricGrid">
           <div className="validationMetric"><span>Macro-F1</span><strong>{percent(assessment.macro_f1)}</strong><small>grade discrimination</small></div>
-          <div className="validationMetric"><span>Grade agreement</span><strong>{percent(assessment.grade_agreement)}</strong><small>target vs predicted</small></div>
+          <div className="validationMetric"><span>Совпадение уровня</span><strong>{percent(assessment.grade_agreement)}</strong><small>целевой и рассчитанный уровень</small></div>
           <div className="validationMetric"><span>Unique forms</span><strong>{percent(assessment.form_uniqueness_rate)}</strong><small>session-specific variants</small></div>
           <div className="validationMetric"><span>Retest agreement</span><strong>{percent(assessment.retest_agreement)}</strong><small>same synthetic ability</small></div>
         </div>
@@ -155,7 +155,7 @@ export function ValidationDashboard({ token }: { token: string }) {
         </div>
 
         <div className={`validationCollapse ${assessment.grade_collapse ? "attention" : "pass"}`}>
-          <strong>{assessment.grade_collapse ? "Grade-collapse signal detected" : "Grade-collapse check passed"}</strong>
+          <strong>{assessment.grade_collapse ? "Обнаружено снижение качества по уровням" : "Проверка распределения уровней пройдена"}</strong>
           <span>{assessment.grade_collapse ? `${assessment.grade_collapse_dominant_grade} = ${percent(assessment.grade_collapse_share)} of predictions` : `dominant grade share ${percent(assessment.grade_collapse_share)} · threshold ${percent(assessment.grade_collapse_threshold)}`}</span>
         </div>
       </div>

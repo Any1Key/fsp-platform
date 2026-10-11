@@ -49,7 +49,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const sourceLabels: Record<Evidence["source"], string> = {
   platform_assessment: "Проверка платформы",
-  fsp: "FSP evidence",
+  fsp: "Внешнее подтверждение",
   profile: "Заявлено в профиле",
 };
 
@@ -104,17 +104,17 @@ export function CandidateSkillPassport({ token, refreshKey = 0 }: { token: strin
   }, [token, refreshKey]);
 
   if (state === "loading") {
-    return <section className="passportPanel muted"><LoadingState title="Собираем твой Verified Skill Passport…" description="Сверяем assessment, профиль и FSP evidence." /></section>;
+    return <section className="passportPanel muted"><LoadingState title="Собираем профиль навыков…" description="Сверяем оценку, профиль и подтверждения." /></section>;
   }
   if (state === "error" || !passport) {
-    return <section className="passportPanel error"><ErrorState title="Не удалось загрузить Verified Skill Passport" description="Обнови страницу и попробуй ещё раз." /></section>;
+    return <section className="passportPanel error"><ErrorState title="Не удалось загрузить профиль навыков" description="Обновите страницу и попробуйте ещё раз." /></section>;
   }
 
   return (
     <section className="passportPanel" aria-labelledby="passport-title">
       <div className="passportHeading">
         <div>
-          <span className="authLabel">VERIFIED SKILL PASSPORT</span>
+          <span className="authLabel">ПРОФИЛЬ НАВЫКОВ</span>
           <h2 id="passport-title">Профиль доказательств</h2>
           <p>Работодатели видят проверяемые сигналы отдельно от твоих заявлений.</p>
         </div>
@@ -134,7 +134,7 @@ export function CandidateSkillPassport({ token, refreshKey = 0 }: { token: strin
           <div>
             <span>{passport.category.grade_state === "verified" ? "ПОДТВЕРЖДЁННЫЙ УРОВЕНЬ" : "ЗАЯВЛЕННЫЙ УРОВЕНЬ"}</span>
             <strong>{passport.category.grade ?? passport.category.declared_grade}</strong>
-            {passport.category.grade_state === "verified" ? <small className="passportGrade verified">GRADE VERIFIED</small> : <UnconfirmedGradeBadge compact />}
+            {passport.category.grade_state === "verified" ? <small className="passportGrade verified">УРОВЕНЬ ПОДТВЕРЖДЁН</small> : <UnconfirmedGradeBadge compact />}
           </div>
           <div>
             <span>РЕЗУЛЬТАТ</span>
@@ -164,7 +164,7 @@ export function CandidateSkillPassport({ token, refreshKey = 0 }: { token: strin
                   <span>{sourceLabels[item.source]}</span>
                   <strong>{item.title}</strong>
                 </div>
-                <b>{item.status === "verified" ? "VERIFIED" : item.status === "unconfirmed" ? "NOT CONFIRMED" : "DECLARED"}</b>
+                <b>{item.status === "verified" ? "ПОДТВЕРЖДЕНО" : item.status === "unconfirmed" ? "НЕ ПОДТВЕРЖДЕНО" : "ЗАЯВЛЕНО"}</b>
               </div>
               {item.skills.length > 0 && (
                 <div className="passportSkillChips">

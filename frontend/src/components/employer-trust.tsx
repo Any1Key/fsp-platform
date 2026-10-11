@@ -25,9 +25,9 @@ type TrustProfile = {
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 function signalLabel(signal: TrustSignal) {
-  if (signal.status === "pass") return "PASS";
-  if (signal.status === "attention") return "CHECK";
-  return "NOT CHECKED";
+  if (signal.status === "pass") return "ПРОВЕРЕНО";
+  if (signal.status === "attention") return "ТРЕБУЕТ ВНИМАНИЯ";
+  return "НЕ ПРОВЕРЕНО";
 }
 
 export function EmployerTrust({ token }: { token: string }) {
@@ -61,14 +61,14 @@ export function EmployerTrust({ token }: { token: string }) {
     <section className="trustPanel" aria-labelledby="employer-trust-title">
       <div className="trustHeading">
         <div>
-          <span className="authLabel">EMPLOYER TRUST</span>
+          <span className="authLabel">ПРОВЕРКА КОМПАНИИ</span>
           <h2 id="employer-trust-title">Доверие и защита исходящих приглашений</h2>
-          <p>Verified badge основан только на подтвержденном email. Остальные сигналы помогают человеку принять решение и не являются автоматическим обвинением.</p>
+          <p>Отметка компании основана на подтверждённом email. Остальные сигналы помогают принять решение и не являются автоматическим обвинением.</p>
         </div>
         <span className={`trustBadge ${profile.badge === "verified_email" ? "verified" : ""}`}>{profile.badge_label}</span>
       </div>
       <div className="trustMeta">
-        <span className={profile.state === "review" ? "trustState review" : "trustState"}>{profile.state === "review" ? "REVIEW QUEUE" : "NORMAL OUTBOUND"}</span>
+        <span className={profile.state === "review" ? "trustState review" : "trustState"}>{profile.state === "review" ? "НА ПРОВЕРКЕ" : "ОБЫЧНЫЙ РЕЖИМ"}</span>
         <span>{profile.outbound_used} / {profile.outbound_limit} приглашений за 24 часа</span>
         {profile.open_report_count > 0 && <span>{profile.open_report_count} открытый report</span>}
       </div>

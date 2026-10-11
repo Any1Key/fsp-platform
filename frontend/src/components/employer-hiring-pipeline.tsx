@@ -8,7 +8,7 @@ type Pipeline = { stages: Stage[]; updated_at: string };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const stageLabels: Record<StageType, string> = {
-  platform_review: "Verified Skill Passport",
+  platform_review: "Проверка профиля навыков",
   employer_task: "Задание работодателя",
   questionnaire: "Анкета",
   portfolio_review: "Проверка портфолио / кода",
@@ -102,7 +102,7 @@ export function EmployerHiringPipeline({ token, refreshKey = 0 }: { token: strin
         const code = await errorCode(response);
         const messages: Record<string, string> = {
           HIRING_PIPELINE_STAGE_COUNT_INVALID: "Добавьте хотя бы два этапа.",
-          HIRING_PIPELINE_PLATFORM_REVIEW_REQUIRED: "Проверка Verified Skill Passport обязательна.",
+          HIRING_PIPELINE_PLATFORM_REVIEW_REQUIRED: "Проверка профиля навыков обязательна.",
           HIRING_PIPELINE_FINAL_DECISION_REQUIRED: "Финальное решение обязательно.",
         };
         throw new Error(messages[code] ?? code);
@@ -124,7 +124,7 @@ export function EmployerHiringPipeline({ token, refreshKey = 0 }: { token: strin
     <section className="pipelinePanel" aria-labelledby="hiring-pipeline-title">
       <div className="companyHeading">
         <div>
-          <span className="authLabel">HIRING PIPELINE</span>
+          <span className="authLabel">ЭТАПЫ ПОДБОРА</span>
           <h2 id="hiring-pipeline-title">Этапы после match</h2>
           <p>Соберите прозрачный порядок отбора. Кандидат увидит формат и примерное время до принятия приглашения.</p>
         </div>

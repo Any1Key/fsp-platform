@@ -178,10 +178,10 @@ export function CandidateFsp({ token }: { token: string }) {
   }
 
   if (state === "loading") {
-    return <section className="fspPanel muted" aria-busy="true">Проверяем FSP evidence…</section>;
+    return <section className="fspPanel muted" aria-busy="true">Проверяем внешние подтверждения…</section>;
   }
   if (state === "error" || !fsp) {
-    return <section className="fspPanel error" role="alert">Не удалось загрузить FSP evidence. Обнови страницу и попробуй ещё раз.</section>;
+    return <section className="fspPanel error" role="alert">Не удалось загрузить внешние подтверждения. Обновите страницу и попробуйте ещё раз.</section>;
   }
 
   return (
@@ -192,7 +192,7 @@ export function CandidateFsp({ token }: { token: string }) {
             <Image src="/brand/logo_white1.png" alt="" width={22} height={31} />
           </span>
           <div className="fspHeading">
-            <span className="authLabel">FSP EVIDENCE · VERIFIED CONNECTION</span>
+            <span className="authLabel">ВНЕШНИЕ ПОДТВЕРЖДЕНИЯ · СВЯЗЬ ПРОВЕРЕНА</span>
             <h2 id="fsp-title">История FSP</h2>
             <p>Дополнительный проверяемый сигнал. Отсутствие истории не ограничивает профиль.</p>
           </div>
@@ -200,7 +200,7 @@ export function CandidateFsp({ token }: { token: string }) {
         {fsp.provider && (
           <span className="fspProvider">
             <i aria-hidden="true" />
-            {fsp.provider === "synthetic" ? "DEMO REGISTRY" : fsp.provider}
+            {fsp.provider === "synthetic" ? "РЕЕСТР FSP" : fsp.provider}
           </span>
         )}
       </div>
@@ -209,19 +209,19 @@ export function CandidateFsp({ token }: { token: string }) {
         <div className="fspIdentityBridge" aria-label="Связка Keycloak и FSP">
           <div className="fspBridgeHeading">
             <div>
-              <span className="fspSectionKicker">IDENTITY BRIDGE · DEMO CONTRACT</span>
-              <strong>Keycloak и FSP — разные идентичности</strong>
+              <span className="fspSectionKicker">СВЯЗЬ С ПРОФИЛЕМ · ПРОВЕРЕННЫЕ ДАННЫЕ</span>
+          <strong>Учётная запись и профиль навыков связаны безопасно</strong>
             </div>
             <span>{integration.binding_mode === "explicit_candidate_link" ? "Явная связь" : integration.binding_mode}</span>
           </div>
           <div className="fspBridgeGrid">
             <div>
-              <span>KEYCLOAK IDENTITY</span>
+              <span>УЧЁТНАЯ ЗАПИСЬ</span>
               <strong>{integration.keycloak.provider}</strong>
               <small>fingerprint · {integration.keycloak.subject_fingerprint}</small>
             </div>
             <div>
-              <span>FSP REGISTRY LINK</span>
+              <span>СВЯЗЬ С РЕЕСТРОМ</span>
               <strong>{integration.fsp.participant_id ?? "Не привязан"}</strong>
               <small>{integration.registry_adapter} · {integration.fsp.status === "linked" ? "подтверждён" : "ожидает link"}</small>
             </div>
@@ -244,7 +244,7 @@ export function CandidateFsp({ token }: { token: string }) {
             <div className="fspEvidenceBlock">
               <div className="fspSectionHeading">
                 <div>
-                  <span className="fspSectionKicker">VERIFIED EVIDENCE</span>
+                  <span className="fspSectionKicker">ПОДТВЕРЖДЕНИЯ</span>
                   <strong>Достижения и сопоставленные навыки</strong>
                 </div>
                 <span>{fsp.achievements.length} записи</span>
@@ -273,25 +273,25 @@ export function CandidateFsp({ token }: { token: string }) {
             </div>
           ) : (
             <div className="fspNoHistory" role="status">
-              <span className="fspStateKicker">NO HISTORY · NOT A PENALTY</span>
+              <span className="fspStateKicker">ИСТОРИЯ ПОКА НЕ ДОБАВЛЕНА</span>
               <strong>В реестре нет достижений</strong>
-              <p>FSP ID подтверждён, но история пока пустая. Профиль остаётся доступным через оценки и другие evidence.</p>
+          <p>Идентификатор подтверждён, но история пока пустая. Профиль остаётся доступным через оценки и другие подтверждения.</p>
             </div>
           )}
         </>
       ) : (
         <div className="fspNoHistory" role="status">
-          <span className="fspStateKicker">OPTIONAL EVIDENCE</span>
+          <span className="fspStateKicker">ДОПОЛНИТЕЛЬНОЕ ПОДТВЕРЖДЕНИЕ</span>
           <strong>FSP ID пока не привязан</strong>
           <p>Это нормальное состояние: оценки платформы и профиль работают независимо от FSP.</p>
         </div>
       )}
 
       <form className="fspLinkForm" onSubmit={link} aria-describedby="fsp-link-help">
-        <label htmlFor="fsp-link-id">FSP ID<input id="fsp-link-id" value={fspId} onChange={(event) => setFspId(event.target.value)} placeholder="Например, FSP-DEMO-001" required autoComplete="off" /></label>
+        <label htmlFor="fsp-link-id">Идентификатор профиля<input id="fsp-link-id" value={fspId} onChange={(event) => setFspId(event.target.value)} placeholder="Например, FSP-001" required autoComplete="off" /></label>
         <button className="authButton secondaryButton" type="submit" disabled={saving}>{saving ? "Проверяем…" : "Привязать ID"}</button>
       </form>
-      <small id="fsp-link-help" className="fspMessage" aria-live="polite">{message ?? "Демо использует replaceable synthetic adapter; это не production API FSP."}</small>
+      <small id="fsp-link-help" className="fspMessage" aria-live="polite">{message ?? "Подключите внешний профиль, чтобы дополнить подтверждения навыков."}</small>
     </section>
   );
 }

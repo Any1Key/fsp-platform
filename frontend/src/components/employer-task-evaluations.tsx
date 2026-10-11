@@ -93,7 +93,7 @@ export function EmployerTaskEvaluations({ token, refreshKey = 0 }: { token: stri
     <section className="taskPanel" aria-labelledby="employer-evaluations-title">
       <div className="companyHeading">
         <div>
-          <span className="authLabel">EMPLOYER GRADING</span>
+          <span className="authLabel">ОЦЕНКА ЗАДАНИЙ КОМПАНИЕЙ</span>
           <h2 id="employer-evaluations-title">Ответы кандидатов</h2>
           <p>Вы — финальный грейдер своих заданий. Результат остаётся employer-specific evidence.</p>
         </div>

@@ -116,11 +116,11 @@ export function EmployerCompanyProfile({ token }: { token: string }) {
     <section className="companyPanel" aria-labelledby="company-profile-title">
       <div className="companyHeading">
         <div>
-          <span className="authLabel">EMPLOYER PROFILE</span>
+          <span className="authLabel">ПРОФИЛЬ КОМПАНИИ</span>
           <h2 id="company-profile-title">Профиль компании</h2>
-          <p>Заполните основу, которая появится в Talent Radar и приглашениях.</p>
+          <p>Заполните профиль компании, который увидят подходящие кандидаты и получатели приглашений.</p>
         </div>
-        <span className="profileStatus">EMPLOYER-OWNED</span>
+        <span className="profileStatus">УПРАВЛЯЕТ КОМПАНИЯ</span>
       </div>
       <form className="companyForm" onSubmit={save}>
         <div className="profileGrid">

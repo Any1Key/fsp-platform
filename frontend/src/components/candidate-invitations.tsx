@@ -27,7 +27,7 @@ function formatDate(value: string) {
 }
 
 function statusLabel(status: Invitation["status"]) {
-  return status === "pending" ? "Ждёт ответа" : status === "accepted" ? "MATCH CREATED" : "Отклонено";
+  return status === "pending" ? "Ждёт ответа" : status === "accepted" ? "Совпадение найдено" : "Отклонено";
 }
 
 export function CandidateInvitations({ token, onMatchCreated }: { token: string; onMatchCreated?: () => void }) {
@@ -101,9 +101,9 @@ export function CandidateInvitations({ token, onMatchCreated }: { token: string;
     <section className="invitationPanel" aria-labelledby="candidate-invitations-title">
       <div className="invitationHeading">
         <div>
-          <span className="authLabel">REVERSE RECRUITMENT</span>
+          <span className="authLabel">ПРЕДЛОЖЕНИЯ ОТ РАБОТОДАТЕЛЕЙ</span>
           <h2 id="candidate-invitations-title">Приглашения от работодателей</h2>
-          <p>Зарплата и способ связи видны до ответа. Прямые контакты открываются только после match.</p>
+          <p>Зарплата и условия видны до ответа. Прямые контакты открываются только после взаимного согласия.</p>
         </div>
         <span className="profileStatus">{invitations.length} OFFER{invitations.length === 1 ? "" : "S"}</span>
       </div>
@@ -125,7 +125,7 @@ export function CandidateInvitations({ token, onMatchCreated }: { token: string;
               <p className="invitationOffer">{invitation.offer_description}</p>
               {invitation.pipeline_stages.length > 0 && (
                 <div className="invitationPipeline">
-                  <strong>Что будет после match</strong>
+                  <strong>Что будет после согласия</strong>
                   <ol>
                     {invitation.pipeline_stages.map((stage, index) => <li key={`${invitation.id}-${index}`}><span>{stage.title}</span><small>{stage.required ? "Обязательный" : "Опциональный"} · около {stage.estimated_minutes} мин.</small></li>)}
                   </ol>
@@ -133,7 +133,7 @@ export function CandidateInvitations({ token, onMatchCreated }: { token: string;
               )}
               {invitation.status === "pending" && (
                 <div className="invitationActions">
-                  <button className="authButton primaryButton" disabled={busyId === invitation.id} onClick={() => void respond(invitation.id, "accepted")}>Принять · создать match</button>
+                  <button className="authButton primaryButton" disabled={busyId === invitation.id} onClick={() => void respond(invitation.id, "accepted")}>Принять предложение</button>
                   <button className="authButton secondaryButton" disabled={busyId === invitation.id} onClick={() => void respond(invitation.id, "declined")}>Отклонить</button>
                 </div>
               )}

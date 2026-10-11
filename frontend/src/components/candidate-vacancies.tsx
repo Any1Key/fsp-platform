@@ -138,7 +138,7 @@ export function CandidateVacancies({ token }: { token: string }) {
     <section className="candidateVacanciesPanel" aria-labelledby="candidate-vacancies-title">
       <div className="candidateVacanciesHeading">
         <div>
-          <span className="authLabel">VACANCY RADAR</span>
+          <span className="authLabel">ПОДХОДЯЩИЕ ВАКАНСИИ</span>
           <h2 id="candidate-vacancies-title">Вакансии и мои отклики</h2>
           <p>Открытые предложения с зарплатой — отдельный путь к матчу, без раскрытия контактов до принятия.</p>
         </div>
@@ -199,7 +199,7 @@ export function CandidateVacancies({ token }: { token: string }) {
         <aside className="candidateApplicationsPanel" aria-labelledby="candidate-applications-title">
           <div className="candidateApplicationsHeading">
             <div>
-              <span className="authLabel">STATUS TRACKER</span>
+            <span className="authLabel">СТАТУС ОТКЛИКОВ</span>
               <h3 id="candidate-applications-title">История откликов</h3>
             </div>
             <span className="profileStatus">{applications.length}</span>

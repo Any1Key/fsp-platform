@@ -69,20 +69,20 @@ function percent(value: number) {
 }
 
 const fitBandLabels: Record<RadarCandidate["fit_band"], string> = {
-  ready_now: "Ready now",
-  strong_fit: "Strong fit",
-  potential_fit: "Potential fit",
-  explore: "Explore",
+  ready_now: "Можно приглашать",
+  strong_fit: "Высокое соответствие",
+  potential_fit: "Перспективный кандидат",
+  explore: "Для дополнительного изучения",
 };
 
 const scoreLabels: Record<string, string> = {
-  specialization_fit: "Specialization fit",
-  grade_fit: "Grade fit",
-  required_skill_coverage: "Required skills",
-  preferred_skill_coverage: "Preferred skills",
-  assessment_strength: "Assessment strength",
-  evidence_confidence_freshness: "Evidence confidence + freshness",
-  fsp_bonus: "FSP evidence bonus",
+  specialization_fit: "Соответствие специализации",
+  grade_fit: "Соответствие уровню",
+  required_skill_coverage: "Обязательные навыки",
+  preferred_skill_coverage: "Дополнительные навыки",
+  assessment_strength: "Результат оценки",
+  evidence_confidence_freshness: "Надёжность и актуальность данных",
+  fsp_bonus: "Дополнительные подтверждения",
 };
 
 export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated }: { token: string; refreshKey?: number; onInvitationCreated?: () => void }) {
@@ -208,11 +208,11 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
     }
   }
 
-  if (loading && !radar) return <section className="radarPanel muted"><LoadingState title="Строим Talent Radar по проверенным свидетельствам…" description="Собираем explainable ProofMatch snapshot." /></section>;
+  if (loading && !radar) return <section className="radarPanel muted"><LoadingState title="Подбираем кандидатов по подтверждённым навыкам…" description="Сопоставляем требования вакансии с профилями." /></section>;
   if (!radar) {
     return (
       <section className="radarPanel error">
-        <ErrorState title="Talent Radar пока не готов" description={message ?? "Сохраните hiring need, чтобы открыть подбор."}>
+        <ErrorState title="Подбор пока не готов" description={message ?? "Сохраните параметры поиска, чтобы открыть результаты."}>
           <button className="authButton secondaryButton" type="button" onClick={() => void load()}>Обновить</button>
         </ErrorState>
       </section>
@@ -223,13 +223,13 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
     <section className="radarPanel" aria-labelledby="talent-radar-title" aria-busy={loading}>
       <div className="radarHeading">
         <div>
-          <span className="authLabel">PROOFMATCH · EVIDENCE GRAPH</span>
-          <h2 id="talent-radar-title">Talent Radar</h2>
+          <span className="authLabel">РЕЗУЛЬТАТЫ ПОИСКА · ПОДТВЕРЖДЁННЫЕ ДАННЫЕ</span>
+          <h2 id="talent-radar-title">Поиск кандидатов</h2>
           <p>{radar.need.role} · {radar.need.specialization.name} · {radar.need.grade.name}</p>
         </div>
         <div className="radarHeadingMeta">
           <span className="profileStatus">{radar.total_candidates} CANDIDATES</span>
-          {loading && <span className="radarRefreshing" role="status">Обновляем snapshot…</span>}
+          {loading && <span className="radarRefreshing" role="status">Обновляем результаты…</span>}
         </div>
       </div>
 
@@ -238,34 +238,34 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
         <label>Специализация<input value={draft.specialization} onChange={(event) => update("specialization", event.target.value)} placeholder="Например, backend-engineering" /></label>
         <label>Грейд<input value={draft.grade} onChange={(event) => update("grade", event.target.value)} placeholder="middle" /></label>
         <label>Навык<select value={draft.skill} onChange={(event) => update("skill", event.target.value)}><option value="">Все навыки</option>{skills.map((skill) => <option key={skill.slug} value={skill.slug}>{skill.name}</option>)}</select></label>
-        <label>FSP evidence<select value={draft.fsp} onChange={(event) => update("fsp", event.target.value as Filters["fsp"])}><option value="all">Все кандидаты</option><option value="with_history">Только с историей</option><option value="without_history">Без истории тоже</option></select></label>
+        <label>История подтверждений<select value={draft.fsp} onChange={(event) => update("fsp", event.target.value as Filters["fsp"])}><option value="all">Все кандидаты</option><option value="with_history">Только с историей</option><option value="without_history">Без истории тоже</option></select></label>
         <label className="radarCheckbox"><input type="checkbox" checked={draft.include_unconfirmed} onChange={(event) => update("include_unconfirmed", event.target.checked)} /> Показывать grade not confirmed</label>
-        <label className="radarCheckbox"><input type="checkbox" checked={draft.blind} onChange={(event) => update("blind", event.target.checked)} /> Blind Discovery: скрывать identity до match</label>
+        <label className="radarCheckbox"><input type="checkbox" checked={draft.blind} onChange={(event) => update("blind", event.target.checked)} /> Скрывать личность до взаимного согласия</label>
         <div className="radarFilterActions">
           <button className="authButton primaryButton" type="submit" disabled={loading}>{loading ? "Обновляем…" : "Применить фильтры"}</button>
           <button className="authButton secondaryButton" type="button" disabled={loading || activeFilterCount === 0} onClick={resetFilters}>Сбросить{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}</button>
         </div>
       </form>
 
-      {radar.blind_discovery && <div className="radarBlindNote"><strong>BLIND DISCOVERY</strong><span>Видны только category, ProofMatch и verified evidence. Salary-bearing invitation можно отправить анонимно; identity откроется работодателю только после acceptance кандидатом.</span></div>}
+      {radar.blind_discovery && <div className="radarBlindNote"><strong>АНОНИМНЫЙ ПОИСК</strong><span>До взаимного согласия видны только категория, результат подбора и подтверждённые навыки. Приглашение можно отправить без раскрытия личности.</span></div>}
 
       <div className="radarSummary">
-        <div><span>SNAPSHOT</span><strong>{radar.snapshot.id}</strong></div>
+        <div><span>РЕЗУЛЬТАТ ПОИСКА</span><strong>{radar.snapshot.id}</strong></div>
         <div><span>КАТЕГОРИИ</span><strong>{radar.categories.length}</strong></div>
-        <div><span>СОСТОЯНИЕ</span><strong>{radar.snapshot.filters.include_unconfirmed ? "Verified + unconfirmed" : "Verified only"}</strong></div>
+        <div><span>СОСТОЯНИЕ</span><strong>{radar.snapshot.filters.include_unconfirmed ? "Подтверждённые и заявленные" : "Только подтверждённые"}</strong></div>
       </div>
 
       <div className="radarSupply" aria-label="Candidate supply by category">
         <div className="radarSupplyHeading">
-          <div><span className="radarSectionKicker">CATEGORY SUPPLY</span><strong>Кого видно в этом snapshot</strong></div>
+          <div><span className="radarSectionKicker">ДОСТУПНЫЕ КАНДИДАТЫ</span><strong>Кого показывает этот поиск</strong></div>
           <small>{radar.categories.length} {radar.categories.length === 1 ? "категория" : "категории"}</small>
         </div>
         <div className="radarSupplyGrid">
           {radar.categories.map((category) => (
             <div className="radarSupplyCard" key={category.key}>
               <strong>{category.key}</strong>
-              <span>{category.candidate_count} {category.candidate_count === 1 ? "candidate" : "candidates"}</span>
-              <small><i className="radarVerifiedDot" /> {category.verified_count} verified · <i className="radarUnconfirmedDot" /> {category.unconfirmed_count} not confirmed</small>
+              <span>{category.candidate_count} {category.candidate_count === 1 ? "кандидат" : "кандидатов"}</span>
+              <small><i className="radarVerifiedDot" /> {category.verified_count} подтверждено · <i className="radarUnconfirmedDot" /> {category.unconfirmed_count} не подтверждено</small>
             </div>
           ))}
         </div>
@@ -278,13 +278,13 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
           {radar.candidates.map((candidate) => (
             <article className="radarCandidate" key={candidate.candidate_id}>
               <div className="radarCandidateTop">
-                <div>{candidate.eligibility === "verified" ? <span className="radarCandidateState verified">✓ VERIFIED</span> : <UnconfirmedGradeBadge />}<h3>{candidate.display_name}</h3><p>{candidate.headline ?? "Профессиональный профиль"}{candidate.location ? ` · ${candidate.location}` : ""}</p></div>
+                <div>{candidate.eligibility === "verified" ? <span className="radarCandidateState verified">✓ УРОВЕНЬ ПОДТВЕРЖДЁН</span> : <UnconfirmedGradeBadge />}<h3>{candidate.display_name}</h3><p>{candidate.headline ?? "Профессиональный профиль"}{candidate.location ? ` · ${candidate.location}` : ""}</p></div>
                 <div className="radarScore"><strong>{Math.round(candidate.match_score)}</strong><span>ProofMatch</span><em className={`fitBand ${candidate.fit_band}`}>{fitBandLabels[candidate.fit_band]}</em></div>
               </div>
               <div className="radarCategory"><span>{candidate.category.label ?? "Категория ещё не подтверждена"}</span><small>Уверенность {percent(candidate.confidence.overall)} · свежесть {percent(candidate.confidence.freshness)}</small></div>
               <div className="radarEvidenceChips">{candidate.evidence.required.filter((item) => item.present).map((item) => <span key={item.skill}>✓ {item.skill}</span>)}{candidate.fsp.score > 0 && <span>FSP +{candidate.fsp.score}</span>}</div>
               <ul className="radarReasons">{candidate.reasons.slice(0, 3).map((reason) => <li key={reason}>{reason}</li>)}</ul>
-              <div className="radarFooter"><span>{candidate.gaps[0]}</span><div className="radarCardActions"><button className="authButton secondaryButton" type="button" onClick={() => setSelectedCandidate(candidate)}>View proof</button><button className="authButton primaryButton" type="button" disabled={candidate.eligibility !== "verified"} title={candidate.eligibility === "verified" ? "Send a salary-bearing invitation" : "A confirmed platform grade is required"} onClick={() => openInvitation(candidate)}>{candidate.eligibility === "verified" ? "Пригласить" : "Нужен verified grade"}</button></div></div>
+              <div className="radarFooter"><span>{candidate.gaps[0]}</span><div className="radarCardActions"><button className="authButton secondaryButton" type="button" onClick={() => setSelectedCandidate(candidate)}>Посмотреть подтверждения</button><button className="authButton primaryButton" type="button" disabled={candidate.eligibility !== "verified"} title={candidate.eligibility === "verified" ? "Отправить приглашение" : "Сначала нужен подтверждённый уровень"} onClick={() => openInvitation(candidate)}>{candidate.eligibility === "verified" ? "Пригласить" : "Нужен подтверждённый уровень"}</button></div></div>
               {invitingCandidate?.candidate_id === candidate.candidate_id && (
                 <form className="inviteForm" onSubmit={(event) => void sendInvitation(event)}>
                   <strong>Salary-bearing invitation</strong>
@@ -304,7 +304,7 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
         <div className="radarDialogBackdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedCandidate(null); }}>
           <section className="radarDialog" role="dialog" aria-modal="true" aria-labelledby="radar-dialog-title">
             <div className="radarDialogHeading">
-              <div><span className="authLabel">PROOFMATCH EXPLANATION</span><h3 id="radar-dialog-title">{selectedCandidate.display_name}</h3><p>{selectedCandidate.category.label ?? "Категория ещё не подтверждена"} · {fitBandLabels[selectedCandidate.fit_band]}</p></div>
+        <div><span className="authLabel">ПОЧЕМУ КАНДИДАТ ПОДХОДИТ</span><h3 id="radar-dialog-title">{selectedCandidate.display_name}</h3><p>{selectedCandidate.category.label ?? "Категория ещё не подтверждена"} · {fitBandLabels[selectedCandidate.fit_band]}</p></div>
               <button className="radarCloseButton" type="button" aria-label="Закрыть объяснение" onClick={() => setSelectedCandidate(null)}>×</button>
             </div>
             <div className="radarDialogScore"><strong>{Math.round(selectedCandidate.match_score)}</strong><span>из 100 · ProofMatch</span><small>{selectedCandidate.eligibility === "verified" ? "Категория подтверждена assessment-результатом." : "Grade ещё не подтверждён; кандидат остаётся доступен для исследования."}</small></div>

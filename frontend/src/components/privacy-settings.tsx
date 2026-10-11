@@ -152,7 +152,7 @@ export function PrivacySettings({ token }: { token: string }) {
     <section className="privacyPanel" aria-label="Настройки приватности">
       <div className="privacyHeading">
         <div>
-          <span className="authLabel">PRIVACY CONTROL</span>
+          <span className="authLabel">НАСТРОЙКИ ПРИВАТНОСТИ</span>
           <strong>Приватность и доступность профиля</strong>
         </div>
         <small>Политика {privacy.processing_consent_version ?? "не принята"}</small>
@@ -182,7 +182,7 @@ export function PrivacySettings({ token }: { token: string }) {
           disabled={saving || !privacy.publication_consent}
           onChange={(event) => change("discoverable", event.target.checked)}
         />
-        <span>Сделать профиль доступным для Talent Radar</span>
+        <span>Сделать профиль доступным для поиска работодателями</span>
       </label>
       {message && <small className="privacyMessage">{message}</small>}
       <button className="authButton secondaryButton" disabled={saving || requestAction !== null} onClick={requestExport}>
@@ -214,7 +214,7 @@ export function PrivacySettings({ token }: { token: string }) {
       >
         {requestAction === "deletion" ? "Регистрируем запрос…" : "Запросить удаление аккаунта"}
       </button>
-      <small className="privacyMessage">Профиль сразу станет недоступен для Talent Radar. Удаление выполняется после проверки запроса и срока хранения.</small>
+      <small className="privacyMessage">Профиль сразу станет недоступен для поиска работодателями. Удаление выполняется после проверки запроса и срока хранения.</small>
     </section>
   );
 }

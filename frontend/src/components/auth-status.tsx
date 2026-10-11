@@ -134,7 +134,7 @@ export function AuthStatus() {
       return (
         <div className="authPanel onboardingPanel">
           <div>
-            <span className="authLabel">FIRST STEP</span>
+            <span className="authLabel">НАЧАЛО РАБОТЫ</span>
             <strong>Выберите рабочую роль</strong>
             <small>{auth.session.email} · роль можно выбрать один раз</small>
           </div>
@@ -161,7 +161,7 @@ export function AuthStatus() {
     return (
       <div className="authPanel signedInPanel">
         <div>
-          <span className="authLabel">KEYCLOAK SESSION</span>
+          <span className="authLabel">ЛИЧНЫЙ КАБИНЕТ</span>
           <strong>{auth.session.role === "employer" ? "Рабочее пространство работодателя" : "Профиль кандидата"}</strong>
           <small>{auth.session.email}</small>
         </div>
@@ -244,9 +244,9 @@ export function AuthStatus() {
   return (
     <div className="authPanel">
       <div>
-        <span className="authLabel">FSP IDENTITY</span>
+        <span className="authLabel">ДОСТУП К ПЛАТФОРМЕ</span>
         <strong>Войти как кандидат или работодатель</strong>
-        <small>Keycloak · Authorization Code + PKCE · только подтверждённый .ru email</small>
+        <small>Безопасный вход · подтверждённый адрес электронной почты в зоне .ru</small>
       </div>
       <div className="authActions">
         <button className="authButton primaryButton" onClick={() => keycloak.current?.login()}>

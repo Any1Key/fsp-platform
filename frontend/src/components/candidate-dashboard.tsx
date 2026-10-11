@@ -84,7 +84,7 @@ export function CandidateDashboard({ token, refreshKey = 0 }: { token: string; r
     <section className="dashboardPanel" aria-labelledby="dashboard-title">
       <div className="dashboardHeading">
         <div>
-          <span className="authLabel">VERIFIED SKILL PASSPORT</span>
+          <span className="authLabel">ПРОФИЛЬ НАВЫКОВ</span>
           <h2 id="dashboard-title">Твой профессиональный трек</h2>
           <p>Здесь собраны подтверждённая категория и история базовых оценок.</p>
         </div>
@@ -102,7 +102,7 @@ export function CandidateDashboard({ token, refreshKey = 0 }: { token: string; r
             <span>{current.grade_state === "verified" ? "Подтверждённый уровень" : "Заявленный уровень"}</span>
             <strong>{current.verified_grade ?? current.declared_grade}</strong>
             <span className={`dashboardBadge ${current.grade_state}`}>
-              {current.grade_state === "verified" ? "GRADE VERIFIED" : "GRADE NOT CONFIRMED"}
+              {current.grade_state === "verified" ? "УРОВЕНЬ ПОДТВЕРЖДЁН" : "УРОВЕНЬ НЕ ПОДТВЕРЖДЁН"}
             </span>
           </div>
           <div className="dashboardScore">

@@ -37,10 +37,10 @@ export function EmployerInvitations({ token, refreshKey = 0 }: { token: string; 
 
   return (
     <section className="invitationPanel" aria-labelledby="employer-invitations-title">
-      <div className="invitationHeading"><div><span className="authLabel">OUTREACH PIPELINE</span><h2 id="employer-invitations-title">Мои приглашения</h2><p>Статус обновляется после решения кандидата. Контакты доступны только в matched flow.</p></div><span className="profileStatus">{invitations.length} SENT</span></div>
-      {invitations.length === 0 ? <div className="invitationEmpty"><strong>Приглашений пока нет</strong><span>Открой Talent Radar и выбери кандидата для salary-bearing offer.</span></div> : (
+      <div className="invitationHeading"><div><span className="authLabel">ПРЕДЛОЖЕНИЯ КАНДИДАТАМ</span><h2 id="employer-invitations-title">Мои приглашения</h2><p>Статус обновляется после решения кандидата. Контакты открываются после взаимного согласия.</p></div><span className="profileStatus">{invitations.length} отправлено</span></div>
+      {invitations.length === 0 ? <div className="invitationEmpty"><strong>Приглашений пока нет</strong><span>Откройте поиск кандидатов и выберите подходящего специалиста.</span></div> : (
         <div className="employerInvitationRows">
-          {invitations.map((invitation) => <div className="employerInvitationRow" key={invitation.id}><div><strong>{invitation.candidate.display_name}</strong><small>{invitation.company.name} · {invitation.salary_min_rub.toLocaleString("ru-RU")}–{invitation.salary_max_rub.toLocaleString("ru-RU")} ₽ · {invitation.pipeline_stages.length} этапов в snapshot</small></div><span className={`invitationState ${invitation.status}`}>{invitation.status === "pending" ? "Ждёт ответа" : invitation.status === "accepted" ? "MATCH CREATED" : "Отклонено"}</span></div>)}
+          {invitations.map((invitation) => <div className="employerInvitationRow" key={invitation.id}><div><strong>{invitation.candidate.display_name}</strong><small>{invitation.company.name} · {invitation.salary_min_rub.toLocaleString("ru-RU")}–{invitation.salary_max_rub.toLocaleString("ru-RU")} ₽ · {invitation.pipeline_stages.length} этапов</small></div><span className={`invitationState ${invitation.status}`}>{invitation.status === "pending" ? "Ждёт ответа" : invitation.status === "accepted" ? "Совпадение найдено" : "Отклонено"}</span></div>)}
         </div>
       )}
     </section>

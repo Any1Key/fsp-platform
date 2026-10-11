@@ -52,7 +52,7 @@ export function EmptyState({ title, description, className, children }: StatePan
 export function UnconfirmedGradeBadge({ compact = false }: { compact?: boolean }) {
   return (
     <span className={classes("unconfirmedGradeBadge", compact ? "compact" : undefined)} data-ui-state="unconfirmed-grade">
-      <i aria-hidden="true">!</i> {compact ? "NOT CONFIRMED" : "GRADE NOT CONFIRMED"}
+      <i aria-hidden="true">!</i> {compact ? "НЕ ПОДТВЕРЖДЕНО" : "УРОВЕНЬ НЕ ПОДТВЕРЖДЁН"}
     </span>
   );
 }

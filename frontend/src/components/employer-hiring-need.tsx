@@ -125,7 +125,7 @@ export function EmployerHiringNeed({ token, onSaved }: { token: string; onSaved?
       const saved = (await response.json()) as HiringNeed;
       setDraft(draftFromNeed(saved, taxonomy as Taxonomy));
       setExists(true);
-      setMessage("Потребность сохранена — это основа Talent Radar.");
+      setMessage("Параметры поиска сохранены — можно подбирать кандидатов.");
       onSaved?.();
     } catch (error) {
       setMessage(`Не удалось сохранить: ${(error as Error).message}`);
@@ -134,18 +134,18 @@ export function EmployerHiringNeed({ token, onSaved }: { token: string; onSaved?
     }
   }
 
-  if (loading) return <section className="hiringNeedPanel muted">Загружаем каталог и hiring need…</section>;
+  if (loading) return <section className="hiringNeedPanel muted">Загружаем каталог и параметры поиска…</section>;
   if (!taxonomy || !draft) return <section className="hiringNeedPanel error">{message ?? "Потребность недоступна"}</section>;
 
   return (
     <section className="hiringNeedPanel" aria-labelledby="hiring-need-title">
       <div className="companyHeading">
         <div>
-          <span className="authLabel">TALENT RADAR INPUT</span>
-          <h2 id="hiring-need-title">Hiring need</h2>
+          <span className="authLabel">ПАРАМЕТРЫ ПОИСКА</span>
+          <h2 id="hiring-need-title">Параметры поиска</h2>
           <p>Опишите контекст найма и отделите обязательные навыки от желательных.</p>
         </div>
-        <span className="profileStatus">PROOFMATCH READY</span>
+        <span className="profileStatus">ГОТОВО К ПОИСКУ</span>
       </div>
       <form className="hiringNeedForm" onSubmit={save}>
         <div className="profileGrid">

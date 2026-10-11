@@ -300,14 +300,14 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
     <section className="taskPanel" aria-labelledby="employer-task-title">
       <div className="companyHeading">
         <div>
-          <span className="authLabel">EMPLOYER-OWNED EVIDENCE</span>
+          <span className="authLabel">ЗАДАНИЯ КОМПАНИИ</span>
           <h2 id="employer-task-title">Задания для pipeline</h2>
           <p>Создайте черновик и опубликуйте его явно. Это задание не меняет глобальный Verified Grade.</p>
         </div>
         <span className="profileStatus">{tasks.length} TASKS</span>
       </div>
       <div className={`localAiStatus ${localAiStatus}`} aria-live="polite">
-        <span>{localAiStatus === "disabled" ? "LOCAL AI OFF" : localAiStatus === "available" ? "LOCAL AI READY" : localAiStatus === "loading" ? "CHECKING LOCAL AI…" : "LOCAL AI UNAVAILABLE"}</span>
+        <span>{localAiStatus === "disabled" ? "Автопомощник выключен" : localAiStatus === "available" ? "Автопомощник готов" : localAiStatus === "loading" ? "Проверяем автопомощник…" : "Автопомощник недоступен"}</span>
         <small>{localAiStatus === "disabled" ? "Создайте задание вручную — это не блокирует hiring pipeline." : "Подсказки не публикуются автоматически; работодатель всегда редактирует и публикует задание."}</small>
         {localAiStatus !== "disabled" && (
           <div className="taskAiActions">

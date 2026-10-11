@@ -106,15 +106,15 @@ export function CandidateTaskAssignments({ token, refreshKey = 0 }: { token: str
     <section className="candidateTasksPanel" aria-labelledby="candidate-tasks-title">
       <div className="candidateTasksHeading">
         <div>
-          <span className="authLabel">EMPLOYER-OWNED STAGE</span>
-          <h2 id="candidate-tasks-title">Задания после match</h2>
-          <p>Это задания конкретного работодателя. Они не меняют глобальный Verified Grade.</p>
+          <span className="authLabel">ЗАДАЧИ ОТ РАБОТОДАТЕЛЕЙ</span>
+          <h2 id="candidate-tasks-title">Задания после согласия</h2>
+          <p>Это задания конкретного работодателя. Они не меняют подтверждённый уровень в профиле.</p>
         </div>
         <span className="profileStatus">{assignments.length} TASK{assignments.length === 1 ? "" : "S"}</span>
       </div>
       {message && <p className="candidateTasksMessage" aria-live="polite">{message}</p>}
       {assignments.length === 0 ? (
-        <div className="invitationEmpty"><strong>Назначенных заданий пока нет</strong><span>Они появятся после принятия приглашения и создания match.</span></div>
+        <div className="invitationEmpty"><strong>Назначенных заданий пока нет</strong><span>Они появятся после принятия приглашения и взаимного согласия.</span></div>
       ) : (
         <div className="candidateTaskList">
           {assignments.map((assignment) => (

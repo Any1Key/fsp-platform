@@ -17,7 +17,7 @@ const labels: Record<Status, string> = {
   submitted: "Новый отклик",
   reviewing: "На рассмотрении",
   shortlisted: "Следующий этап",
-  accepted: "MATCH CREATED",
+  accepted: "Совпадение найдено",
   rejected: "Отклонён",
   withdrawn: "Отозван",
 };
@@ -84,14 +84,14 @@ export function EmployerApplications({ token, refreshKey = 0 }: { token: string;
     <section className="applicationReviewPanel" aria-labelledby="employer-applications-title">
       <div className="applicationReviewHeading">
         <div>
-          <span className="authLabel">INBOUND TALENT</span>
+          <span className="authLabel">ОТКЛИКИ КАНДИДАТОВ</span>
           <h2 id="employer-applications-title">Отклики на вакансии</h2>
           <p>Примите подходящего кандидата — match создастся сразу, а контакты откроются только внутри рабочего чата.</p>
         </div>
         <span className="profileStatus">{applications.length} APPLICATIONS</span>
       </div>
       {applications.length === 0 ? (
-        <div className="applicationReviewEmpty"><strong>Входящих откликов пока нет</strong><span>Опубликуйте вакансию — кандидат увидит её в Vacancy Radar.</span></div>
+        <div className="applicationReviewEmpty"><strong>Входящих откликов пока нет</strong><span>Опубликуйте вакансию — подходящие кандидаты увидят её в разделе вакансий.</span></div>
       ) : (
         <div className="applicationReviewList">
           {applications.map((application) => (

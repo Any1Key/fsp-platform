@@ -197,11 +197,11 @@ export function CandidateResume({ token }: { token: string }) {
     <section className="resumePanel" aria-label="Резюме кандидата">
       <div className="resumeHeading">
         <div>
-          <span className="authLabel">PRIVATE RESUME</span>
+          <span className="authLabel">РЕЗЮМЕ</span>
           <strong>PDF-резюме</strong>
           <small>Файл хранится приватно и не определяет подтвержденную категорию.</small>
         </div>
-        <span className="profileStatus">CANDIDATE ONLY</span>
+        <span className="profileStatus">ВИДНО ТОЛЬКО ВАМ</span>
       </div>
       {resume ? (
         <div className="resumeStatus">
@@ -209,7 +209,7 @@ export function CandidateResume({ token }: { token: string }) {
             <strong>{resume.original_filename}</strong>
             <small>{formatSize(resume.size_bytes)} · загружено и ожидает проверки полей</small>
           </div>
-          <span>{resume.status === "uploaded" ? "UPLOADED" : resume.status}</span>
+          <span>{resume.status === "uploaded" ? "ЗАГРУЖЕНО" : resume.status}</span>
         </div>
       ) : (
         <p className="resumeEmpty">Резюме еще не загружено.</p>
@@ -229,7 +229,7 @@ export function CandidateResume({ token }: { token: string }) {
         <div className="resumeReview" aria-label="Проверка распознанных полей">
           <div className="resumeReviewHeading">
             <div><strong>Проверьте распознанные поля</strong><small>Это заявленные данные из резюме, не подтвержденная категория.</small></div>
-            <span className="profileStatus">NEEDS REVIEW</span>
+            <span className="profileStatus">ТРЕБУЕТ ПРОВЕРКИ</span>
           </div>
           <div className="resumeReviewGrid">
             <label>Имя и фамилия<input value={reviewDraft.display_name} onChange={(event) => changeDraft("display_name", event.target.value)} /></label>

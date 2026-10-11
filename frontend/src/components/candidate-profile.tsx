@@ -205,7 +205,7 @@ export function CandidateProfile({ token }: { token: string }) {
     <section className="profilePanel" aria-label="Профиль кандидата">
       <div className="profileHeading">
         <div>
-          <span className="authLabel">CANDIDATE PROFILE</span>
+          <span className="authLabel">ПРОФИЛЬ КАНДИДАТА</span>
           <strong>Профессиональный профиль</strong>
           <small>Заполните основу — позже добавятся резюме и подтвержденные навыки.</small>
         </div>
@@ -213,7 +213,7 @@ export function CandidateProfile({ token }: { token: string }) {
           <button className="authButton secondaryButton" type="button" disabled={downloading} onClick={downloadProfile}>
             {downloading ? "Готовим PDF…" : "Скачать профиль PDF"}
           </button>
-          <span className="profileStatus">SELF-SCOPED</span>
+        <span className="profileStatus">ЛИЧНЫЕ ДАННЫЕ</span>
         </div>
       </div>
       <form className="profileForm" onSubmit={save}>
