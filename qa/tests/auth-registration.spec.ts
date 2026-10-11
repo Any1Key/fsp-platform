@@ -4,6 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 const enabled = process.env.AUTH_E2E_ENABLED === "true";
 const keycloakBaseUrl = process.env.KEYCLOAK_E2E_BASE_URL || "http://keycloak:8080";
 const keycloakPublicBaseUrl = process.env.KEYCLOAK_PUBLIC_E2E_BASE_URL || keycloakBaseUrl;
+const frontendRedirectUri = process.env.FRONTEND_E2E_REDIRECT_URI || "http://frontend:3000/";
 const mailpitBaseUrl = process.env.MAILPIT_BASE_URL || "http://mailpit:8025";
 const realm = "fsp";
 
@@ -118,7 +119,7 @@ test.describe("Keycloak email verification", () => {
       registrationUrl.searchParams.set("client_id", "fsp-web");
       registrationUrl.searchParams.set("response_type", "code");
       registrationUrl.searchParams.set("scope", "openid");
-      registrationUrl.searchParams.set("redirect_uri", "http://frontend:3000/");
+      registrationUrl.searchParams.set("redirect_uri", frontendRedirectUri);
       const verifier = randomBytes(32).toString("base64url");
       const challenge = createHash("sha256").update(verifier).digest("base64url");
       registrationUrl.searchParams.set("code_challenge_method", "S256");

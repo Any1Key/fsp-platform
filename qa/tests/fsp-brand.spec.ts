@@ -6,7 +6,7 @@ test("FSP evidence brand entrypoint is visible and responsive", async ({ page })
   await expect(page.locator('img[alt="ФСП"]')).toBeVisible();
   await expect(page.locator('main[data-brand="fsp-talent"]')).toBeVisible();
   await expect(page.getByRole("link", { name: "Как работает FSP Talent" })).toBeVisible();
-  await expect(page.getByText(/FSP evidence becomes a bounded verified signal/i)).toBeVisible();
+  await expect(page.getByText(/Работодатель находит специалистов по подтверждённым навыкам/i)).toBeVisible();
 
   const brand = await page.evaluate(() => ({
     primary: getComputedStyle(document.documentElement).getPropertyValue("--brand-primary").trim(),
