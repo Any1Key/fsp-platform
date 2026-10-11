@@ -64,7 +64,7 @@ VACANCIES = (
 
 
 def _id(kind: str, number: int) -> str:
-    return str(uuid5(NAMESPACE_URL, f"https://fsp.any1key.ru/demo/{kind}/{number}"))
+    return str(uuid5(NAMESPACE_URL, f"https://example.invalid/fsp-demo/{kind}/{number}"))
 
 
 def main() -> None:

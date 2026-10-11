@@ -15,17 +15,18 @@ test("frontend emits baseline browser security headers", async ({ request }) => 
 
 test("backend keeps CORS explicit and supports delete preflight", async ({ request }) => {
   const base = process.env.BACKEND_BASE_URL || "http://backend:8000";
+  const origin = process.env.E2E_FRONTEND_ORIGIN || "http://frontend:3000";
   const response = await request.fetch(`${base}/api/v1/candidate/fsp-link`, {
     method: "OPTIONS",
     headers: {
-      Origin: "https://fsp.any1key.ru",
+      Origin: origin,
       "Access-Control-Request-Method": "DELETE",
       "Access-Control-Request-Headers": "Authorization"
     }
   });
 
   expect(response.status()).toBe(200);
-  expect(response.headers()["access-control-allow-origin"]).toBe("https://fsp.any1key.ru");
+  expect(response.headers()["access-control-allow-origin"]).toBe(origin);
   expect(response.headers()["access-control-allow-methods"]).toContain("DELETE");
   expect(response.headers()["x-content-type-options"]).toBe("nosniff");
 });

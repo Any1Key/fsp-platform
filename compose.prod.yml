@@ -3,7 +3,7 @@ services:
     environment:
       KC_HTTP_ENABLED: "true"
       KC_HTTP_RELATIVE_PATH: /auth
-      KC_HOSTNAME: https://fsp.any1key.ru/auth
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL}
       KC_PROXY_HEADERS: xforwarded
     ports: []
     networks:
@@ -19,10 +19,10 @@ services:
   frontend:
     build:
       args:
-        NEXT_PUBLIC_API_URL: https://fsp.any1key.ru
-        NEXT_PUBLIC_KEYCLOAK_URL: https://fsp.any1key.ru/auth
-        NEXT_PUBLIC_KEYCLOAK_REALM: fsp
-        NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: fsp-web
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_KEYCLOAK_URL: ${NEXT_PUBLIC_KEYCLOAK_URL}
+        NEXT_PUBLIC_KEYCLOAK_REALM: ${NEXT_PUBLIC_KEYCLOAK_REALM:-fsp}
+        NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${NEXT_PUBLIC_KEYCLOAK_CLIENT_ID:-fsp-web}
     ports: []
     networks:
       - default
@@ -31,4 +31,4 @@ services:
 networks:
   web:
     external: true
-    name: arm112-trainer_default
+    name: ${PROXY_NETWORK:-reverse-proxy_default}

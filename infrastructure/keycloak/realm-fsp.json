@@ -54,14 +54,12 @@
       "redirectUris": [
         "http://127.0.0.1:3000/*",
         "http://frontend:3000/*",
-        "http://localhost:3000/*",
-        "https://fsp.any1key.ru/*"
+        "http://localhost:3000/*"
       ],
       "webOrigins": [
         "http://127.0.0.1:3000",
         "http://frontend:3000",
-        "http://localhost:3000",
-        "https://fsp.any1key.ru"
+        "http://localhost:3000"
       ],
       "protocolMappers": [
         {
