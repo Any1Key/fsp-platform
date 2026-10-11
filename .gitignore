@@ -13,16 +13,13 @@ __pycache__/
 coverage/
 playwright-report/
 test-results/
-.agent/runs/*
-!.agent/runs/.gitkeep
-.agent/screenshots/*
-!.agent/screenshots/.gitkeep
 .DS_Store
 .idea/
 .vscode/
 
 # Autonomous agent runtime
 .agent/
+artifacts/
 agent/
 AGENTS.md
 CODEX_START.md

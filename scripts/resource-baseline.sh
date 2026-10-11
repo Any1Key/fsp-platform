@@ -8,7 +8,7 @@ cd "$ROOT"
 : "${BASELINE_ITERATIONS:=20}"
 : "${BASELINE_PAUSE_SECONDS:=0.05}"
 : "${RUN_ID:=$(date -u '+%Y%m%d-%H%M%S')}"
-: "${RESOURCE_BASELINE_OUTPUT_DIR:=$ROOT/.agent/runs/$RUN_ID/performance}"
+: "${RESOURCE_BASELINE_OUTPUT_DIR:=$ROOT/artifacts/runs/$RUN_ID/performance}"
 
 CORE_SERVICES=(app-db keycloak-db mailpit keycloak backend frontend)
 mkdir -p "$RESOURCE_BASELINE_OUTPUT_DIR"

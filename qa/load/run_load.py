@@ -533,7 +533,7 @@ def main() -> int:
             environment_name="FSP_LOAD_EMPLOYER_TOKENS",
             file_environment_name="FSP_LOAD_EMPLOYER_TOKEN_FILE",
         )
-        output_dir = args.output_dir or Path(".agent/runs") / args.run_id / "performance"
+        output_dir = args.output_dir or Path("artifacts/runs") / args.run_id / "performance"
         output_dir.mkdir(parents=True, exist_ok=True)
         _write_host_specs(output_dir, args)
         if not args.skip_docker_stats:

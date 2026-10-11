@@ -61,7 +61,7 @@ AI. Keep scenarios and thresholds in the repository. Capture:
 - database slow-query observations.
 
 Write actual load results to `docs/PERFORMANCE_RESULTS.md` and keep raw
-reports under `.agent/runs/<run-id>/performance/`.
+reports under `artifacts/runs/<run-id>/performance/`.
 
 The authenticated runner's `report.json` is the canonical machine-readable
 report. Its `metrics` object contains request/error and latency percentiles;
@@ -92,7 +92,7 @@ runtime, GPU device request, or CUDA/NVIDIA device reservation is present. It
 then starts only the core services, probes real bootstrap API reads while
 Compose readiness checks exercise the database-backed path, and records host
 metadata, service health, request timings, and Docker CPU/RAM snapshots in
-`.agent/runs/<run-id>/performance/`.
+`artifacts/runs/<run-id>/performance/`.
 
 This bootstrap probe is resource evidence for NFR-011; it is deliberately not
 the NFR-010 release load test. The authenticated runner exercises the

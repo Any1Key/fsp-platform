@@ -14,7 +14,7 @@ Status: **REPORTING IMPLEMENTED; AUTHENTICATED TARGET MEASUREMENT PENDING**
 - Default profile: 50 virtual users, 60-second ramp, 600-second hold; mixed
   authenticated candidate/employer profile, Talent Radar, invitation-list and
   accepted-match chat traffic.
-- Raw artifact contract: `.agent/runs/<run-id>/performance/report.json`,
+- Raw artifact contract: `artifacts/runs/<run-id>/performance/report.json`,
   `summary.txt`, `request-times.tsv`, host metadata and Docker snapshots.
 - Actual target measurements are intentionally not claimed here until an
   operator supplies valid Keycloak access tokens and runs the core Compose
@@ -36,7 +36,7 @@ Status: **REPORTING IMPLEMENTED; AUTHENTICATED TARGET MEASUREMENT PENDING**
 - Docker snapshot memory: app-db 40.76 MiB during the sample; backend 108.9
   MiB; frontend 153.6 MiB; keycloak 977.2 MiB; keycloak-db 44.34 MiB;
   mailpit 20.73 MiB
-- Raw report: `.agent/runs/20261006-m00-resource-baseline-rerun/performance/`
+- Raw report: `artifacts/runs/20261006-m00-resource-baseline-rerun/performance/`
 
 This is bootstrap resource evidence for NFR-011, not a pass for NFR-010. The
 final target scenario still requires authenticated candidate/employer reads and

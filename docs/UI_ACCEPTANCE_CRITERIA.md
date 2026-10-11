@@ -29,6 +29,6 @@ and mobile projects. Focus uses a two-tone ring so it remains visible on both
 the charcoal hero and white evidence surfaces; forced-colors mode defers to
 the platform highlight color.
 
-Playwright stores evidence in `.agent/screenshots/`. The responsive screenshot suite captures the
+Playwright stores evidence in `artifacts/screenshots/`. The responsive screenshot suite captures the
 hero, synthetic evidence card, and full public journey for all five projects; see
 `docs/SCREENSHOT_EVIDENCE.md` for the artifact contract and privacy boundary.

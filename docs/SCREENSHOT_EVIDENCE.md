@@ -6,7 +6,7 @@ viewport. It does not use an authenticated storage state.
 
 ## Captured surfaces
 
-Each Playwright project writes three PNGs to `.agent/screenshots/latest/`:
+Each Playwright project writes three PNGs to `artifacts/screenshots/latest/`:
 
 - `fsp-<project>-hero.png` — the branded entrypoint and primary CTA;
 - `fsp-<project>-evidence.png` — the synthetic verified-profile evidence card;
@@ -42,7 +42,7 @@ The fixture is the public landing card:
 
 These values are product demonstration content, not a candidate record. Screenshots must not be
 captured from authenticated storage states and must not contain real candidate PII, resumes, chat,
-contacts, tokens, or minor-consent documents. `.agent/screenshots/` is runtime evidence and is
+contacts, tokens, or minor-consent documents. `artifacts/screenshots/` is runtime evidence and is
 ignored by Git; external supervision may archive a reviewed capture.
 
 ## Running the suite

@@ -151,7 +151,7 @@ services:
       MAILPIT_BASE_URL: http://mailpit:8025
       SCREENSHOT_OUTPUT: /workspace/screenshots
     volumes:
-      - ./.agent/screenshots/latest:/workspace/screenshots
+      - ./artifacts/screenshots/latest:/workspace/screenshots
     depends_on:
       frontend:
         condition: service_healthy

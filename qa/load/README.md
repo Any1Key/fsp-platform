@@ -32,7 +32,7 @@ profile. To reuse prepared data without setup, pass
 
 The runner records `report.json`, `summary.txt`, `request-times.tsv`,
 `host-specs.txt`, Compose state and Docker CPU/RAM snapshots under
-`.agent/runs/<run-id>/performance/`. `report.json` contains request
+`artifacts/runs/<run-id>/performance/`. `report.json` contains request
 count/error rate/p50/p95/p99, per-endpoint metrics, threshold decisions, and a
 `resources` section with before/during/after snapshot rows plus peak CPU and
 memory values. The raw `*-docker-stats.tsv` files retain Docker's original

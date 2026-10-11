@@ -3,7 +3,7 @@
 Audit date: 2026-10-11
 
 The audit compares `docs/source/TZ_EXTRACTED.txt`, the requirements matrix,
-the implementation on `agent/autonomous`, the production Compose override and
+the current implementation, the production Compose override and
 the deployment configuration.
 
 ## Configuration contract
