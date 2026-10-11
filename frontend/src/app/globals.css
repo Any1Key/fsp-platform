@@ -829,11 +829,11 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .candidateVacancyFilters input, .candidateVacancyFilters select { width: 100%; border: 1px solid rgba(255,255,255,.16); border-radius: 9px; padding: 9px 10px; background: rgba(255,255,255,.06); color: white; font: inherit; font-size: 10px; }
 .candidateVacancyFilters select option { color: var(--text); }
 .candidateVacancyFilters input:focus, .candidateVacancyFilters select:focus { border-color: #a9a1ff; outline: none; box-shadow: 0 0 0 3px rgba(169,161,255,.18); }
-.candidateVacancyList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; min-width: 0; align-content: start; }
+.candidateVacancyList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; min-width: 0; align-content: start; align-items: start; }
 .candidateApplicationsPanel { display: grid; gap: 9px; min-width: 0; }
 .candidateVacancyCard, .candidateApplicationCard {
   display: grid; gap: 10px; border: 1px solid rgba(169,161,255,.26); border-radius: 13px;
-  min-width: 0; padding: 13px; background: rgba(27,28,33,.42);
+  min-width: 0; align-self: start; padding: 13px; background: rgba(27,28,33,.42);
 }
 .candidateVacancyCardTop { display: flex; min-width: 0; justify-content: space-between; gap: 12px; align-items: flex-start; }
 .candidateVacancyCardTop > div { min-width: 0; }
