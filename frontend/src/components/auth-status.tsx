@@ -253,11 +253,17 @@ export function AuthStatus() {
         <button className="authButton primaryButton" onClick={() => keycloak.current?.login()}>
           Войти через Keycloak
         </button>
-        <button className="authButton secondaryButton" onClick={() => { setRegistrationNotice(true); keycloak.current?.register(); }}>
+        <button className="authButton secondaryButton" onClick={() => setRegistrationNotice(true)}>
           Создать аккаунт
         </button>
       </div>
-      {registrationNotice && <small className="registrationNotice" role="status">Регистрация доступна только с адресом электронной почты, который заканчивается на .ru</small>}
+      {registrationNotice && (
+        <div className="registrationNotice" role="status">
+          <strong>Регистрация только по адресу .ru</strong>
+          <span>Используйте почту, которая заканчивается на .ru, например name@company.ru.</span>
+          <button className="authButton primaryButton" type="button" onClick={() => keycloak.current?.register()}>Продолжить регистрацию</button>
+        </div>
+      )}
     </div>
   );
 }

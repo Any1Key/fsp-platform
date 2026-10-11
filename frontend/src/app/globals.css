@@ -112,7 +112,10 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .authActions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .authButton { border: 0; border-radius: 10px; padding: 11px 13px; color: white; cursor: pointer; font: inherit; font-size: 11px; white-space: nowrap; }
 .authButton:disabled { cursor: wait; opacity: .58; }
-.registrationNotice { grid-column: 1 / -1; color: #ffd28a; font-size: 10px; line-height: 1.45; }
+.registrationNotice { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; flex-basis: 100%; color: #ffd28a; font-size: 10px; line-height: 1.45; }
+.registrationNotice strong, .registrationNotice span { min-width: 0; }
+.registrationNotice span { color: #d5d5dc; }
+.registrationNotice .authButton { grid-column: 2; grid-row: 1 / span 2; }
 .authPanel:has(.registrationNotice) { flex-wrap: wrap; }
 .authPanel:has(.registrationNotice) .registrationNotice { flex-basis: 100%; }
 .primaryButton { background: var(--brand-primary); }
