@@ -260,27 +260,27 @@ def _candidate_card(
     missing_required = sorted(set(required) - evidence_skills)
     reasons: list[str] = []
     if specialization_fit:
-        reasons.append(f"Category matches {specialization_names.get(need_specialization, need_specialization)}.")
+        reasons.append(f"Специализация соответствует запросу: {specialization_names.get(need_specialization, need_specialization)}.")
     if verified:
-        reasons.append(f"Platform-verified {grade_names.get(candidate_grade, candidate_grade)} grade.")
+        reasons.append(f"Уровень подтверждён оценкой платформы: {grade_names.get(candidate_grade, candidate_grade)}.")
     elif assessed:
-        reasons.append(f"Declared {grade_names.get(candidate_grade, candidate_grade)} grade is not confirmed.")
+        reasons.append(f"Указанный уровень {grade_names.get(candidate_grade, candidate_grade)} пока не подтверждён.")
     else:
-        reasons.append("No submitted platform assessment yet.")
+        reasons.append("Оценка навыков на платформе ещё не пройдена.")
     if required:
-        reasons.append(f"Evidence covers {len(matched_required)}/{len(required)} required skills.")
+        reasons.append(f"Подтверждены обязательные навыки: {len(matched_required)} из {len(required)}.")
     if fsp.score:
         reasons.extend(fsp.reasons)
     elif fsp.history_status == "no_history":
-        reasons.append("No FSP history; no bonus or penalty.")
+        reasons.append("Внешняя история отсутствует; это не даёт ни бонуса, ни штрафа.")
 
-    gaps = [f"Required skill not evidenced: {skill}" for skill in missing_required]
+    gaps = [f"Обязательный навык пока не подтверждён: {skill}" for skill in missing_required]
     if not specialization_fit:
-        gaps.append("Assessment category does not match this hiring need.")
+        gaps.append("Категория оценки не совпадает с требованиями поиска.")
     if not verified:
-        gaps.append("Platform grade confirmation is still missing.")
+        gaps.append("Подтверждённого уровня пока нет.")
     if not gaps:
-        gaps.append("No blocking evidence gaps for this need.")
+        gaps.append("Критичных пробелов по требованиям не найдено.")
 
     category_label = None
     if assessed_specialization and candidate_grade:

@@ -69,7 +69,7 @@ export function CandidateDashboard({ token, refreshKey = 0 }: { token: string; r
   }, [token, refreshKey]);
 
   if (state === "loading") {
-    return <section className="dashboardPanel muted" aria-busy="true">Загружаем твой Skill Passport…</section>;
+    return <section className="dashboardPanel muted" aria-busy="true">Загружаем профиль навыков…</section>;
   }
   if (state === "error" || !dashboard) {
     return (

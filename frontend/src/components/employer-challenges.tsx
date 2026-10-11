@@ -58,7 +58,7 @@ export function EmployerChallenges({ token, refreshKey = 0 }: { token: string; r
     try {
       const response = await fetch(`${apiUrl}/api/v1/employer/challenges/${item.id}/result`, { method: "PUT", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ rubric_scores: rubricScores, release_to_candidate: true, feedback: "Результат проверен по короткой challenge-рубрике." }) });
       if (!response.ok) throw new Error("challenge_grade_failed");
-      setMessage("Результат опубликован как employer evidence; следующий цикл запланирован.");
+      setMessage("Результат опубликован в профиле кандидата; следующий цикл запланирован.");
       await load();
     } catch { setMessage("Не удалось сохранить результат. Проверьте баллы по рубрике."); }
     finally { setBusy(null); }

@@ -48,9 +48,9 @@ type Passport = {
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const sourceLabels: Record<Evidence["source"], string> = {
-  platform_assessment: "Проверка платформы",
+  platform_assessment: "Оценка навыков",
   fsp: "Внешнее подтверждение",
-  profile: "Заявлено в профиле",
+  profile: "Указано в профиле",
 };
 
 const freshnessLabels: Record<Evidence["freshness"], string> = {
@@ -70,9 +70,9 @@ function formatDate(value: string) {
 }
 
 function passportStatus(passport: Passport) {
-  if (passport.status === "verified") return "Паспорт подтверждён";
+  if (passport.status === "verified") return "Профиль подтверждён";
   if (passport.status === "unconfirmed") return "Уровень пока не подтверждён";
-  return "Паспорт ещё формируется";
+  return "Профиль ещё формируется";
 }
 
 export function CandidateSkillPassport({ token, refreshKey = 0 }: { token: string; refreshKey?: number }) {
@@ -115,8 +115,8 @@ export function CandidateSkillPassport({ token, refreshKey = 0 }: { token: strin
       <div className="passportHeading">
         <div>
           <span className="authLabel">ПРОФИЛЬ НАВЫКОВ</span>
-          <h2 id="passport-title">Профиль доказательств</h2>
-          <p>Работодатели видят проверяемые сигналы отдельно от твоих заявлений.</p>
+          <h2 id="passport-title">Профиль навыков</h2>
+          <p>Здесь собраны результаты оценки, внешние подтверждения и данные, указанные в профиле. Подтверждённые результаты отмечены отдельно.</p>
         </div>
         <div className={`passportStatus ${passport.status}`}>
           <i aria-hidden="true" />
@@ -146,17 +146,17 @@ export function CandidateSkillPassport({ token, refreshKey = 0 }: { token: strin
         <EmptyState className="passportEmpty" title="Подтверждённой категории пока нет" description="Пройди базовую оценку, чтобы добавить первую платформенную проверку." />
       )}
 
-      <div className="passportFreshness" aria-label="Свежесть доказательств">
+      <div className="passportFreshness" aria-label="Актуальность данных">
         <span className="freshness-fresh"><strong>{passport.freshness.fresh}</strong> свежих</span>
         <span className="freshness-aging"><strong>{passport.freshness.aging}</strong> теряют актуальность</span>
         <span className="freshness-stale"><strong>{passport.freshness.stale}</strong> устаревших</span>
-        {passport.fsp.history_status === "no_history" && <span className="passportNoHistory">FSP history отсутствует — это нормально</span>}
+        {passport.fsp.history_status === "no_history" && <span className="passportNoHistory">Внешняя история пока не добавлена — это нормально</span>}
       </div>
 
       {passport.evidence.length === 0 ? (
-        <EmptyState className="passportEvidenceEmpty" title="Доказательств пока нет" description="Они появятся после оценки, FSP link или заполнения профиля." />
+        <EmptyState className="passportEvidenceEmpty" title="Подтверждений пока нет" description="Они появятся после оценки навыков, подключения внешнего профиля или заполнения данных." />
       ) : (
-        <div className="passportEvidence" aria-label="Доказательства навыков">
+        <div className="passportEvidence" aria-label="Подтверждения навыков">
           {passport.evidence.map((item) => (
             <article className={`passportEvidenceCard ${item.status}`} key={item.id}>
               <div className="passportEvidenceTop">

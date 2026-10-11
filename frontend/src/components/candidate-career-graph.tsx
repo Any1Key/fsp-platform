@@ -54,9 +54,9 @@ type CareerGraph = {
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const statusLabels: Record<GraphNode["status"], string> = {
-  verified: "VERIFIED",
+  verified: "ПОДТВЕРЖДЕНО",
   unconfirmed: "НЕ ПОДТВЕРЖДЕНО",
-  declared: "DECLARED",
+  declared: "УКАЗАНО В ПРОФИЛЕ",
 };
 
 const relationLabels: Record<GraphPath["relation"], string> = {
@@ -102,10 +102,10 @@ export function CandidateCareerGraph({ token, refreshKey = 0 }: { token: string;
   }, [token, refreshKey]);
 
   if (state === "loading") {
-    return <section className="careerGraphPanel muted" aria-busy="true">Строим твою Career Graph…</section>;
+    return <section className="careerGraphPanel muted" aria-busy="true">Формируем карьерный профиль…</section>;
   }
   if (state === "error" || !graph) {
-    return <section className="careerGraphPanel error" role="alert">Не удалось загрузить Career Graph. Обнови страницу и попробуй ещё раз.</section>;
+    return <section className="careerGraphPanel error" role="alert">Не удалось загрузить карьерный профиль. Обновите страницу и попробуйте ещё раз.</section>;
   }
 
   const skillNodes = graph.nodes.filter((node) => node.kind === "skill");
@@ -115,7 +115,7 @@ export function CandidateCareerGraph({ token, refreshKey = 0 }: { token: string;
         <div>
           <span className="authLabel">КАРЬЕРНЫЙ ПРОФИЛЬ · КАРТА НАВЫКОВ</span>
           <h2 id="career-graph-title">Куда растёт твой профиль</h2>
-          <p>Связываем проверенные сигналы с соседними профессиональными треками.</p>
+          <p>Показываем, какие навыки уже подтверждены и какие шаги могут открыть следующий уровень.</p>
         </div>
         <span className={`careerGraphStatus ${graph.status}`}>
           {graph.status === "active" ? "ПЛАН РАЗВИТИЯ АКТИВЕН" : graph.status === "unconfirmed" ? "УРОВЕНЬ НЕ ПОДТВЕРЖДЁН" : "НАЧАЛЬНАЯ ТОЧКА"}
@@ -145,7 +145,7 @@ export function CandidateCareerGraph({ token, refreshKey = 0 }: { token: string;
       {graph.current_position && (
         <div className="careerGraphFlow" aria-label="Карьерные пути">
           <div className="careerGraphColumn">
-            <div className="careerGraphColumnHeading"><span>01</span><strong>ТВОИ СИГНАЛЫ</strong><small>{skillNodes.length} nodes</small></div>
+            <div className="careerGraphColumnHeading"><span>01</span><strong>ТВОИ НАВЫКИ</strong><small>{skillNodes.length} навыков</small></div>
             <div className="careerGraphNodes">
               {skillNodes.map((node) => (
                 <article className={`careerGraphNode ${node.status}`} key={node.id}>
@@ -160,14 +160,14 @@ export function CandidateCareerGraph({ token, refreshKey = 0 }: { token: string;
           </div>
           <div className="careerGraphConnector" aria-hidden="true">→</div>
           <div className="careerGraphColumn careerGraphPaths">
-            <div className="careerGraphColumnHeading"><span>02</span><strong>ВОЗМОЖНЫЕ ТРЕКИ</strong><small>{graph.paths.length} paths</small></div>
+            <div className="careerGraphColumnHeading"><span>02</span><strong>ВОЗМОЖНЫЕ ТРЕКИ</strong><small>{graph.paths.length} вариантов</small></div>
             {graph.paths.map((path) => (
               <article className={`careerGraphPath ${path.relation}`} key={path.id}>
                 <div className="careerGraphPathTop">
                   <div><span>{relationLabels[path.relation]}</span><strong>{path.specialization.name} · {path.grade.name}</strong></div>
                   <b>{path.match_score}%</b>
                 </div>
-                {path.gap_skills.length > 0 && <p><i>GAP</i> {path.gap_skills.join(" · ")}</p>}
+                {path.gap_skills.length > 0 && <p><i>ЧЕГО НЕ ХВАТАЕТ</i> {path.gap_skills.join(" · ")}</p>}
                 <small>{path.reasons[0]}</small>
               </article>
             ))}
