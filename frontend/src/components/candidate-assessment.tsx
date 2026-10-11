@@ -13,6 +13,7 @@ type TaxonomyGrade = {
 };
 
 type Taxonomy = {
+  industries: { slug: string; name: string }[];
   specializations: TaxonomySpecialization[];
   grades: TaxonomyGrade[];
 };
@@ -57,6 +58,7 @@ type Attempt = {
   integrity_signals?: string[];
   integrity_evidence?: IntegrityEvidence[];
   canonical_review?: CanonicalReview;
+  grade_offers?: { grade: string; reason: string }[];
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -81,6 +83,7 @@ export function CandidateAssessment({
   const [taxonomy, setTaxonomy] = useState<Taxonomy | null>(null);
   const [selectionState, setSelectionState] = useState<"loading" | "ready" | "error">("loading");
   const [specialization, setSpecialization] = useState("Backend Engineering");
+  const [industry, setIndustry] = useState("IT / Software Development");
   const [grade, setGrade] = useState("Middle");
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -132,7 +135,7 @@ export function CandidateAssessment({
       const response = await fetch(`${apiUrl}/api/v1/assessments/attempts`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ specialization, declared_grade: grade }),
+        body: JSON.stringify({ industry, specialization, declared_grade: grade }),
       });
       if (!response.ok) throw new Error(await responseError(response, "Не удалось сформировать оценку."));
       const value = (await response.json()) as Attempt;
@@ -204,6 +207,16 @@ export function CandidateAssessment({
                   ? `Уровень ${attempt.declared_grade} подтверждён и добавлен в Skill Passport.`
                   : `Заявленный уровень ${attempt.declared_grade} пока не подтверждён. Профиль остаётся видимым работодателям.`}
               </p>
+              {!!attempt.grade_offers?.length && (
+                <div className="assessmentReviewSignals" role="status">
+                  <strong>Следующий доступный уровень</strong>
+                  {attempt.grade_offers.map((offer) => (
+                    <button key={offer.grade} className="authButton secondaryButton" type="button" onClick={() => { setGrade(offer.grade); setAttempt(null); }}>
+                      Пройти тест на {offer.grade}
+                    </button>
+                  ))}
+                </div>
+              )}
               {!!attempt.integrity_evidence?.length && (
                 <div className="assessmentReviewSignals" role="status">
                   <strong>Сигналы для ручной проверки</strong>
@@ -232,6 +245,12 @@ export function CandidateAssessment({
             </div>
           )}
           <div className="assessmentSelection">
+            <label>
+              Отрасль
+              <select value={industry} onChange={(event) => setIndustry(event.target.value)}>
+                {(taxonomy?.industries ?? []).map((item) => <option key={item.slug} value={item.name}>{item.name}</option>)}
+              </select>
+            </label>
             <label>
               Специализация
               <select value={specialization} onChange={(event) => setSpecialization(event.target.value)}>

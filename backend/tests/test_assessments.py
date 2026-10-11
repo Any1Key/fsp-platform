@@ -8,6 +8,7 @@ from app.assessments import (
     AssessmentError,
     AssessmentService,
     _submission_similarity,
+    form_assessment_from_descriptions,
     public_attempt,
 )
 
@@ -43,6 +44,47 @@ def test_retest_is_locked_and_failed_declared_grade_is_not_downgraded() -> None:
     assert result.declared_grade == "Senior"
     with pytest.raises(AssessmentError, match="retest_locked"):
         service.create_attempt("candidate-b", "Backend Engineering", "Senior")
+
+
+def test_failed_declared_grade_offers_one_lower_assessment_without_downgrading() -> None:
+    service = AssessmentService(now=datetime(2026, 10, 6, tzinfo=UTC))
+    attempt = service.create_attempt("candidate-lower", "Backend Engineering", "Senior")
+    result = service.submit(attempt.attempt_id, {item.item_id: 9 for item in attempt.items})
+
+    assert result.declared_grade == "Senior"
+    assert result.grade_state == "not_confirmed"
+    assert service.grade_offers(result) == [{"grade": "Middle", "reason": "lower_grade_after_unconfirmed_result"}]
+    lower = service.create_attempt("candidate-lower", "Backend Engineering", "Middle")
+    assert lower.declared_grade == "Middle"
+
+
+def test_strong_result_offers_one_higher_assessment() -> None:
+    service = AssessmentService(now=datetime(2026, 10, 6, tzinfo=UTC))
+    attempt = service.create_attempt("candidate-higher", "Backend Engineering", "Junior")
+    result = service.submit(attempt.attempt_id, attempt.answer_keys.copy())
+
+    assert result.grade_state == "verified"
+    assert service.grade_offers(result) == [{"grade": "Middle", "reason": "higher_grade_after_strong_result"}]
+    higher = service.create_attempt("candidate-higher", "Backend Engineering", "Middle")
+    assert higher.declared_grade == "Middle"
+
+
+def test_assessment_formation_uses_several_hiring_descriptions_deterministically() -> None:
+    formation = form_assessment_from_descriptions(
+        [
+            "Backend API engineer: REST endpoints and PostgreSQL",
+            "Platform engineer: secure services and automated tests",
+        ]
+    )
+
+    assert formation.source_count == 2
+    assert formation.source_domains == (
+        "api_fundamentals",
+        "sql_data",
+        "testing_debugging",
+        "security_operations",
+    )
+    assert {"api-1", "sql-1", "test-1", "sec-1"}.issubset(formation.family_ids)
 
 
 def test_progressive_followup_and_integrity_signal_are_advisory() -> None:
@@ -259,10 +301,15 @@ def test_api_does_not_expose_answer_keys_and_scores_submission(auth_context) -> 
     response = client.post(
         "/api/v1/assessments/attempts",
         headers=headers,
-        json={"specialization": "Backend Engineering", "declared_grade": "Junior"},
+        json={
+            "industry": "IT / Software Development",
+            "specialization": "Backend Engineering",
+            "declared_grade": "Junior",
+        },
     )
     assert response.status_code == 200
     body = response.json()
+    assert body["industry"] == "IT / Software Development"
     assert "answer_keys" not in body
     assert "hidden_checks" not in body
     assert all("correct_option" not in item for item in body["items"])

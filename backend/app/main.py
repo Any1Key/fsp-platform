@@ -174,6 +174,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 class CreateAttemptRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    industry: str = "IT / Software Development"
     specialization: str
     declared_grade: str
 
@@ -1101,7 +1102,13 @@ class TaxonomyCategoryResponse(BaseModel):
     label: str
 
 
+class TaxonomyIndustryResponse(BaseModel):
+    slug: str
+    name: str
+
+
 class TaxonomyResponse(BaseModel):
+    industries: list[TaxonomyIndustryResponse]
     specializations: list[TaxonomySpecializationResponse]
     grades: list[TaxonomyGradeResponse]
     categories: list[TaxonomyCategoryResponse]
@@ -3224,6 +3231,7 @@ def create_assessment_attempt(
             principal.subject,
             request.specialization,
             request.declared_grade,
+            industry=request.industry,
         )
     except AssessmentError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc

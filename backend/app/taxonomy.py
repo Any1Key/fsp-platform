@@ -70,6 +70,7 @@ def list_taxonomy(db: Session) -> dict[str, Any]:
         for grade in grades
     ]
     return {
+        "industries": [{"slug": "it-software", "name": "IT / Software Development"}],
         "specializations": list(specializations.values()),
         "grades": grades,
         "categories": categories,

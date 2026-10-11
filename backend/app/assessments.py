@@ -19,6 +19,8 @@ from typing import Any
 from uuid import uuid4
 
 GRADES = ("Junior", "Middle", "Senior")
+INDUSTRIES = ("IT / Software Development",)
+GRADE_RANK = {grade: index for index, grade in enumerate(GRADES)}
 RETEST_COOLDOWN_DAYS = 90
 EXPOSURE_COOLDOWN = timedelta(minutes=30)
 CANONICAL_EXPOSURE_WINDOW = timedelta(days=90)
@@ -125,6 +127,17 @@ class Blueprint:
 
 
 @dataclass(frozen=True)
+class AssessmentFormation:
+    """Deterministic explanation of how several hiring descriptions shape a form."""
+
+    specialization: str
+    grade: str
+    source_count: int
+    source_domains: tuple[str, ...]
+    family_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class AssessmentItem:
     item_id: str
     family_id: str
@@ -164,6 +177,7 @@ class SimilarityMatch:
 class Attempt:
     attempt_id: str
     candidate_id: str
+    industry: str
     specialization: str
     declared_grade: str
     seed: str
@@ -254,8 +268,52 @@ def _select_families(blueprint: Blueprint, seed: str) -> list[TemplateFamily]:
     return rotated
 
 
+def form_assessment_from_descriptions(
+    descriptions: tuple[str, ...] | list[str],
+    *,
+    specialization: str = "Backend Engineering",
+    grade: str = "Middle",
+) -> AssessmentFormation:
+    """Build a reproducible blueprint summary from multiple hiring descriptions.
+
+    Descriptions influence competency coverage only through an explicit keyword
+    map; question wording and scoring remain template/grade controlled.
+    """
+
+    blueprint = BLUEPRINTS.get((specialization, grade))
+    if not blueprint or not descriptions:
+        raise AssessmentError("assessment_descriptions_required")
+    text = " ".join(descriptions).casefold()
+    domain_terms = {
+        "api_fundamentals": ("api", "rest", "endpoint", "интеграц"),
+        "sql_data": ("sql", "database", "баз данных", "postgres"),
+        "testing_debugging": ("test", "тест", "debug", "качества"),
+        "architecture": ("architecture", "архитект", "design", "систем"),
+        "security_operations": ("security", "secure", "безопас", "privacy", "доступ"),
+        "language_runtime": ("python", "java", "runtime", "код"),
+    }
+    domains = tuple(domain for domain, terms in domain_terms.items() if any(term in text for term in terms))
+    selected = tuple(
+        family_id for family_id in blueprint.family_ids
+        if not domains or TEMPLATES[family_id].domain in domains
+    )
+    return AssessmentFormation(specialization, grade, len(descriptions), domains, selected)
+
+
 class AssessmentError(ValueError):
     pass
+
+
+def _grade_offers(attempt: Attempt) -> list[dict[str, str]]:
+    if not attempt.submitted or attempt.score is None:
+        return []
+    rank = GRADE_RANK[attempt.declared_grade]
+    offers: list[dict[str, str]] = []
+    if attempt.score < 70 and rank > 0:
+        offers.append({"grade": GRADES[rank - 1], "reason": "lower_grade_after_unconfirmed_result"})
+    if attempt.score >= 80 and rank < len(GRADES) - 1:
+        offers.append({"grade": GRADES[rank + 1], "reason": "higher_grade_after_strong_result"})
+    return offers
 
 
 class AssessmentService:
@@ -287,13 +345,25 @@ class AssessmentService:
     def now(self, value: datetime) -> None:
         self._now_override = value
 
-    def create_attempt(self, candidate_id: str, specialization: str, declared_grade: str) -> Attempt:
+    def create_attempt(
+        self,
+        candidate_id: str,
+        specialization: str,
+        declared_grade: str,
+        *,
+        industry: str = INDUSTRIES[0],
+    ) -> Attempt:
         blueprint = BLUEPRINTS.get((specialization, declared_grade))
         if not blueprint:
             raise AssessmentError("unsupported specialization or grade")
+        if industry not in INDUSTRIES:
+            raise AssessmentError("unsupported industry")
         recent = [self.attempts[item] for item in self.history.get(candidate_id, [])]
         if recent and self.now - recent[-1].created_at < timedelta(days=RETEST_COOLDOWN_DAYS):
-            raise AssessmentError("retest_locked_until_90_days")
+            latest = recent[-1]
+            eligible = self.grade_offers(latest)
+            if not latest.submitted or declared_grade not in {item["grade"] for item in eligible}:
+                raise AssessmentError("retest_locked_until_90_days")
         seed = self._seed_factory()
         families = _select_families(blueprint, seed)
         if recent:
@@ -346,6 +416,7 @@ class AssessmentService:
         attempt = Attempt(
             uuid4().hex,
             candidate_id,
+            industry,
             specialization,
             declared_grade,
             seed,
@@ -472,6 +543,10 @@ class AssessmentService:
         attempt.submitted = True
         return attempt
 
+    def grade_offers(self, attempt: Attempt) -> list[dict[str, str]]:
+        """Return one-step grade choices without changing the declaration."""
+        return _grade_offers(attempt)
+
     def _find_similarity_evidence(
         self, attempt: Attempt, submitted_followups: dict[str, str]
     ) -> list[dict[str, Any]]:
@@ -560,6 +635,7 @@ def public_attempt(
     """Serialize an attempt without answer keys or scoring internals."""
     return {
         "attempt_id": attempt.attempt_id,
+        "industry": attempt.industry,
         "specialization": attempt.specialization,
         "declared_grade": attempt.declared_grade,
         "status": "submitted" if attempt.submitted else "in_progress",
@@ -582,6 +658,7 @@ def public_attempt(
                         default=attempt.created_at,
                     ),
                 },
+                "grade_offers": _grade_offers(attempt),
             }
             if attempt.submitted
             else {}
