@@ -840,8 +840,8 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .candidateVacancyCompany { display: block; color: #a9a1ff; font-size: 9px; letter-spacing: .04em; }
 .candidateVacancyCard h3 { margin: 5px 0 0; font-size: 13px; overflow-wrap: anywhere; }
 .candidateVacancySalary { color: #8be0b2; font-size: 11px; white-space: nowrap; }
-.candidateVacancyMeta { display: flex; min-width: 0; flex-wrap: wrap; gap: 6px; }
-.candidateVacancyMeta span { max-width: 100%; border: 1px solid rgba(169,161,255,.25); border-radius: 999px; padding: 5px 7px; color: #c3bdff; font-size: 8px; overflow-wrap: anywhere; word-break: break-word; }
+.candidateVacancyMeta { display: flex; min-width: 0; flex-wrap: wrap; align-items: flex-start; gap: 6px; }
+.candidateVacancyMeta span { display: inline-flex; max-width: 100%; align-items: center; border: 1px solid rgba(169,161,255,.25); border-radius: 999px; padding: 5px 7px; color: #c3bdff; font-size: 8px; line-height: 1.2; overflow-wrap: anywhere; word-break: break-word; }
 .candidateVacancyCard p { margin: 0; color: #d5d5dc; font-size: 10px; line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; word-break: break-word; }
 .candidateVacancyDetails { min-width: 0; border-top: 1px solid rgba(255,255,255,.08); padding-top: 8px; overflow-wrap: anywhere; }
 .candidateVacancyDetails summary { cursor: pointer; color: #c3bdff; font-size: 9px; }
