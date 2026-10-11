@@ -302,6 +302,77 @@ def test_candidate_privacy_requires_consent_and_records_safe_audit(auth_context)
     assert privacy_requests == [("export", "requested")]
 
 
+def test_candidate_privacy_requests_are_scoped_idempotent_and_deletion_withdraws_immediately(auth_context):
+    client, private_key, settings = auth_context
+    candidate_headers = {"Authorization": f"Bearer {_token(private_key, settings)}"}
+
+    granted = client.patch(
+        "/api/v1/candidate/privacy",
+        headers=candidate_headers,
+        json={"processing_consent": True, "publication_consent": True, "discoverable": True},
+    )
+    assert granted.status_code == 200
+
+    initial = client.get("/api/v1/candidate/privacy/requests", headers=candidate_headers)
+    assert initial.status_code == 200
+    assert initial.json() == {"requests": []}
+
+    first_export = client.post("/api/v1/candidate/privacy/export", headers=candidate_headers)
+    retry_export = client.post("/api/v1/candidate/privacy/export", headers=candidate_headers)
+    assert first_export.status_code == retry_export.status_code == 202
+    assert first_export.json() == retry_export.json()
+    assert first_export.json()["scheduled_for"]
+
+    deletion = client.post("/api/v1/candidate/privacy/delete", headers=candidate_headers)
+    retry_deletion = client.post("/api/v1/candidate/privacy/delete", headers=candidate_headers)
+    assert deletion.status_code == retry_deletion.status_code == 202
+    assert deletion.json() == retry_deletion.json()
+    assert deletion.json()["request_type"] == "deletion"
+    assert deletion.json()["scheduled_for"]
+
+    withdrawn = client.get("/api/v1/candidate/privacy", headers=candidate_headers)
+    assert withdrawn.status_code == 200
+    assert withdrawn.json()["processing_consent"] is False
+    assert withdrawn.json()["publication_consent"] is False
+    assert withdrawn.json()["discoverable"] is False
+
+    requests = client.get("/api/v1/candidate/privacy/requests", headers=candidate_headers)
+    assert requests.status_code == 200
+    assert {item["request_type"] for item in requests.json()["requests"]} == {"export", "deletion"}
+    assert all(item["status"] == "requested" for item in requests.json()["requests"])
+
+    engine = create_engine(settings.database_url)
+    try:
+        with engine.connect() as connection:
+            audit = connection.execute(
+                text("SELECT event_type, details FROM audit_event ORDER BY occurred_at, id")
+            ).all()
+    finally:
+        engine.dispose()
+    event_types = [event[0] for event in audit]
+    assert event_types.count("privacy_export_requested") == 1
+    assert event_types.count("privacy_deletion_requested") == 1
+    assert event_types.count("processing_consent_withdrawn") == 1
+    assert event_types.count("publication_consent_withdrawn") == 1
+    assert event_types.count("discoverability_changed") == 2
+    assert all("candidate@team.ru" not in event[1] for event in audit)
+
+
+def test_employer_cannot_read_or_create_privacy_requests(auth_context):
+    client, private_key, settings = auth_context
+    headers = {
+        "Authorization": f"Bearer {_token(private_key, settings, sub='kc-employer-lifecycle', email='employer@company.ru', role='employer')}"
+    }
+
+    for method, path in (
+        ("get", "/api/v1/candidate/privacy/requests"),
+        ("post", "/api/v1/candidate/privacy/delete"),
+    ):
+        response = getattr(client, method)(path, headers=headers)
+        assert response.status_code == 403
+        assert response.json()["error"]["code"] == "ROLE_REQUIRED"
+
+
 def test_employer_cannot_read_or_change_candidate_privacy(auth_context):
     client, private_key, settings = auth_context
     headers = {

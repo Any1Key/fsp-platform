@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from fastapi import HTTPException, status
@@ -33,6 +33,16 @@ class PrivacyState:
     publication_consent_version: str | None
     publication_consent_at: datetime | None
     discoverable: bool
+
+
+@dataclass(frozen=True)
+class PrivacyRequest:
+    id: str
+    request_type: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    scheduled_for: datetime | None
 
 
 def _ensure_candidate_profile(db: Session, principal: Principal) -> tuple[str, str]:
@@ -205,16 +215,127 @@ def update_privacy(
     return get_privacy(db, principal)
 
 
-def request_export(db: Session, principal: Principal) -> tuple[str, str]:
-    identity_id, _ = _ensure_candidate_profile(db, principal)
+def _request_from_row(row) -> PrivacyRequest:
+    return PrivacyRequest(
+        id=row["id"],
+        request_type=row["request_type"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        scheduled_for=row["scheduled_for"],
+    )
+
+
+def _active_request(db: Session, identity_id: str, request_type: str):
+    return db.execute(
+        text(
+            "SELECT id, request_type, status, created_at, updated_at, scheduled_for "
+            "FROM privacy_request WHERE identity_id = :identity_id "
+            "AND request_type = :request_type AND status IN ('requested', 'processing') "
+            "ORDER BY created_at DESC, id DESC LIMIT 1"
+        ),
+        {"identity_id": identity_id, "request_type": request_type},
+    ).mappings().one_or_none()
+
+
+def _create_request(
+    db: Session,
+    identity_id: str,
+    settings: Settings,
+    request_type: str,
+) -> tuple[PrivacyRequest, bool]:
+    existing = _active_request(db, identity_id, request_type)
+    if existing is not None:
+        return _request_from_row(existing), False
     request_id = str(uuid4())
+    scheduled_for = datetime.now(UTC) + timedelta(days=settings.privacy_retention_days)
     db.execute(
         text(
             "INSERT INTO privacy_request (id, identity_id, request_type, status) "
-            "VALUES (:id, :identity_id, 'export', 'requested')"
+            "VALUES (:id, :identity_id, :request_type, 'requested')"
         ),
-        {"id": request_id, "identity_id": identity_id},
+        {"id": request_id, "identity_id": identity_id, "request_type": request_type},
     )
-    _audit(db, identity_id, "privacy_export_requested", {"request_type": "export"})
+    db.execute(
+        text(
+            "UPDATE privacy_request SET scheduled_for = :scheduled_for, "
+            "updated_at = CURRENT_TIMESTAMP WHERE id = :id"
+        ),
+        {"scheduled_for": scheduled_for, "id": request_id},
+    )
+    row = db.execute(
+        text(
+            "SELECT id, request_type, status, created_at, updated_at, scheduled_for "
+            "FROM privacy_request WHERE id = :id"
+        ),
+        {"id": request_id},
+    ).mappings().one()
+    return _request_from_row(row), True
+
+
+def request_export(db: Session, principal: Principal, settings: Settings) -> PrivacyRequest:
+    identity_id, _ = _ensure_candidate_profile(db, principal)
+    request, created = _create_request(db, identity_id, settings, "export")
+    if created:
+        _audit(
+            db,
+            identity_id,
+            "privacy_export_requested",
+            {"request_type": "export", "request_id": request.id},
+        )
     db.commit()
-    return request_id, "requested"
+    return request
+
+
+def list_requests(db: Session, principal: Principal) -> list[PrivacyRequest]:
+    identity_id, _ = _ensure_candidate_profile(db, principal)
+    rows = db.execute(
+        text(
+            "SELECT id, request_type, status, created_at, updated_at, scheduled_for "
+            "FROM privacy_request WHERE identity_id = :identity_id "
+            "ORDER BY created_at DESC, id DESC"
+        ),
+        {"identity_id": identity_id},
+    ).mappings().all()
+    return [_request_from_row(row) for row in rows]
+
+
+def request_deletion(db: Session, principal: Principal, settings: Settings) -> PrivacyRequest:
+    identity_id, profile_id = _ensure_candidate_profile(db, principal)
+    existing = _active_request(db, identity_id, "deletion")
+    if existing is not None:
+        db.commit()
+        return _request_from_row(existing)
+
+    current = db.execute(
+        text(
+            "SELECT is_discoverable, processing_consent_version, publication_consent_version "
+            "FROM candidate_profile WHERE id = :profile_id"
+        ),
+        {"profile_id": profile_id},
+    ).mappings().one()
+    db.execute(
+        text(
+            "UPDATE candidate_profile SET is_discoverable = FALSE, "
+            "processing_consent_version = NULL, processing_consent_at = NULL, "
+            "processing_consent_source = NULL, publication_consent_version = NULL, "
+            "publication_consent_at = NULL, publication_consent_source = NULL, "
+            "updated_at = CURRENT_TIMESTAMP WHERE id = :profile_id"
+        ),
+        {"profile_id": profile_id},
+    )
+    request, _ = _create_request(db, identity_id, settings, "deletion")
+    if current["processing_consent_version"] is not None:
+        _audit(db, identity_id, "processing_consent_withdrawn", {"source": "deletion_request"})
+    if current["publication_consent_version"] is not None:
+        _audit(db, identity_id, "publication_consent_withdrawn", {"source": "deletion_request"})
+    if current["is_discoverable"]:
+        _audit(db, identity_id, "discoverability_changed", {"enabled": False})
+    _audit(
+        db,
+        identity_id,
+        "privacy_deletion_requested",
+        {"request_type": "deletion", "request_id": request.id},
+    )
+    db.commit()
+    return request

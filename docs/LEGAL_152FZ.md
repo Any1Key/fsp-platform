@@ -24,6 +24,15 @@ Provide:
 - profile export concept;
 - clear separation of public professional profile and protected contacts/documents.
 
+The implemented candidate request ledger is exposed through `GET
+/api/v1/candidate/privacy/requests`. Export and deletion requests are created by
+candidate-only `POST` actions, are idempotent while active, and carry a
+server-derived `scheduled_for` timestamp based on `PRIVACY_RETENTION_DAYS`.
+Deletion withdraws processing/publication consent and discoverability in the
+same transaction, but destructive deletion/anonymization remains the
+responsibility of a reviewed retention worker after legal-hold checks. This is
+an engineering workflow/concept and not a legal certification.
+
 ## Minor candidates
 
 Date of birth/age is private and excluded from ranking. For a candidate below the configured adult threshold:

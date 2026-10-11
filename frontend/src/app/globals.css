@@ -592,6 +592,11 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .privacyOption { display: flex; gap: 9px; align-items: flex-start; color: #d5d5dc; font-size: 11px; line-height: 1.5; }
 .privacyOption input { accent-color: var(--brand-primary); margin-top: 2px; }
 .privacyPanel > button { justify-self: start; margin-top: 4px; }
+.privacyRequests { display: grid; gap: 8px; margin-top: 5px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.1); }
+.privacyRequestsHeading { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.privacyRequestsHeading small, .privacyRequest small { color: #b7b7c1; font-size: 9px; line-height: 1.5; }
+.privacyRequest { display: flex; justify-content: space-between; gap: 12px; color: #d5d5dc; font-size: 10px; line-height: 1.5; }
+.privacyDeleteButton { border-color: rgba(236,29,53,.48); color: #ffb6bd; }
 .profilePanel {
   flex: 1 1 100%; display: grid; gap: 14px; border-top: 1px solid rgba(255,255,255,.14);
   padding-top: 16px; color: #ededed;

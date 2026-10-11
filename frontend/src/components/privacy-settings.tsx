@@ -12,6 +12,15 @@ type PrivacyState = {
   discoverable: boolean;
 };
 
+type PrivacyRequest = {
+  request_id: string;
+  request_type: "export" | "deletion";
+  status: "requested" | "processing" | "fulfilled" | "rejected" | "cancelled";
+  created_at: string;
+  updated_at: string;
+  scheduled_for: string | null;
+};
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 async function readError(response: Response): Promise<string> {
@@ -29,18 +38,39 @@ export function PrivacySettings({ token }: { token: string }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
+  const [requests, setRequests] = useState<PrivacyRequest[]>([]);
+  const [requestAction, setRequestAction] = useState<"export" | "deletion" | null>(null);
+
+  async function loadRequests() {
+    const response = await fetch(`${apiUrl}/api/v1/candidate/privacy/requests`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error(await readError(response));
+    const result = (await response.json()) as { requests: PrivacyRequest[] };
+    setRequests(result.requests);
+  }
 
   useEffect(() => {
     let active = true;
-    fetch(`${apiUrl}/api/v1/candidate/privacy`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(async (response) => {
+    Promise.all([
+      fetch(`${apiUrl}/api/v1/candidate/privacy`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(async (response) => {
         if (!response.ok) throw new Error(await readError(response));
         return (await response.json()) as PrivacyState;
-      })
-      .then((state) => {
-        if (active) setPrivacy(state);
+      }),
+      fetch(`${apiUrl}/api/v1/candidate/privacy/requests`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(async (response) => {
+        if (!response.ok) throw new Error(await readError(response));
+        return (await response.json()) as { requests: PrivacyRequest[] };
+      }),
+    ])
+      .then(([state, requestResult]) => {
+        if (active) {
+          setPrivacy(state);
+          setRequests(requestResult.requests);
+        }
       })
       .catch((error: Error) => {
         if (active) setMessage(`Не удалось загрузить настройки: ${error.message}`);
@@ -73,6 +103,7 @@ export function PrivacySettings({ token }: { token: string }) {
   }
 
   async function requestExport() {
+    setRequestAction("export");
     setExportStatus("Отправляем запрос…");
     try {
       const response = await fetch(`${apiUrl}/api/v1/candidate/privacy/export`, {
@@ -80,10 +111,37 @@ export function PrivacySettings({ token }: { token: string }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error(await readError(response));
-      const result = (await response.json()) as { status: string };
+      const result = (await response.json()) as PrivacyRequest;
       setExportStatus(`Запрос зарегистрирован: ${result.status}`);
+      await loadRequests();
     } catch (error) {
       setExportStatus(`Не удалось отправить запрос: ${(error as Error).message}`);
+    } finally {
+      setRequestAction(null);
+    }
+  }
+
+  async function requestDeletion() {
+    if (!window.confirm("Запросить удаление аккаунта и отозвать публикацию профиля?")) return;
+    setRequestAction("deletion");
+    setMessage(null);
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/candidate/privacy/delete`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error(await readError(response));
+      const result = (await response.json()) as PrivacyRequest;
+      setMessage(`Запрос на удаление зарегистрирован: ${result.status}`);
+      const nextPrivacy = await fetch(`${apiUrl}/api/v1/candidate/privacy`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (nextPrivacy.ok) setPrivacy((await nextPrivacy.json()) as PrivacyState);
+      await loadRequests();
+    } catch (error) {
+      setMessage(`Запрос не сохранён: ${(error as Error).message}`);
+    } finally {
+      setRequestAction(null);
     }
   }
 
@@ -127,10 +185,36 @@ export function PrivacySettings({ token }: { token: string }) {
         <span>Сделать профиль доступным для Talent Radar</span>
       </label>
       {message && <small className="privacyMessage">{message}</small>}
-      <button className="authButton secondaryButton" disabled={saving} onClick={requestExport}>
+      <button className="authButton secondaryButton" disabled={saving || requestAction !== null} onClick={requestExport}>
         Запросить экспорт моих данных
       </button>
       {exportStatus && <small className="privacyMessage">{exportStatus}</small>}
+      <div className="privacyRequests" aria-label="Запросы по данным">
+        <div className="privacyRequestsHeading">
+          <strong>Журнал запросов</strong>
+          <small>Срок обработки задаётся действующей политикой хранения</small>
+        </div>
+        {requests.length === 0 ? (
+          <small className="privacyMessage">Активных запросов нет</small>
+        ) : (
+          requests.map((request) => (
+            <div className="privacyRequest" key={request.request_id}>
+              <span>{request.request_type === "export" ? "Экспорт данных" : "Удаление аккаунта"}</span>
+              <small>
+                {request.status} · до {request.scheduled_for ? new Date(request.scheduled_for).toLocaleDateString("ru-RU") : "—"}
+              </small>
+            </div>
+          ))
+        )}
+      </div>
+      <button
+        className="authButton secondaryButton privacyDeleteButton"
+        disabled={requestAction !== null || requests.some((request) => request.request_type === "deletion" && ["requested", "processing"].includes(request.status))}
+        onClick={requestDeletion}
+      >
+        {requestAction === "deletion" ? "Регистрируем запрос…" : "Запросить удаление аккаунта"}
+      </button>
+      <small className="privacyMessage">Профиль сразу станет недоступен для Talent Radar. Удаление выполняется после проверки запроса и срока хранения.</small>
     </section>
   );
 }

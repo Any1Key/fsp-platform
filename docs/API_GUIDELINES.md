@@ -44,6 +44,17 @@ The API applies baseline security headers to success, error, and preflight
 responses. Production adds HSTS; local HTTP development does not. See
 `docs/SECURITY.md` for the policy and deployment boundary.
 
+## Candidate privacy requests
+
+`GET /api/v1/candidate/privacy/requests` returns only the authenticated
+candidate's export/deletion request ledger. `POST
+/api/v1/candidate/privacy/export` and `POST
+/api/v1/candidate/privacy/delete` are idempotent while a same-type request is
+`requested` or `processing`, return `202`, and include the server-generated
+`scheduled_for` timestamp. Deletion withdraws publication and discoverability
+in the same transaction as queueing the request; destructive fulfillment is a
+retention-worker responsibility and is not performed by the request endpoint.
+
 ## ATS integration contract
 
 `GET /api/v1/integrations/ats/v1/contract` is a public, data-free discovery

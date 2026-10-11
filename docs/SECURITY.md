@@ -80,9 +80,17 @@ Publication requires processing consent; discoverability requires publication
 consent. Withdrawal cascades to dependent settings, so discoverability off
 removes a candidate from future search.
 
-`POST /api/v1/candidate/privacy/export` records an authenticated export
-request as `requested` and creates an audit event. This is an MVP concept until
-the fulfillment worker and legally reviewed retention/deletion policy exist.
+`POST /api/v1/candidate/privacy/export` records an authenticated export request
+as `requested` and creates a non-PII audit event. `GET
+/api/v1/candidate/privacy/requests` exposes only the authenticated candidate's
+request ledger, including status and the server-scheduled processing date.
+Repeated active requests are idempotent. `POST
+/api/v1/candidate/privacy/delete` queues deletion and immediately withdraws
+processing/publication consent and discoverability; it does not run destructive
+deletion inline. The configurable `PRIVACY_RETENTION_DAYS` window gives the
+reviewed fulfillment worker time to apply retention and legal holds. Until that
+worker and final legal policy are deployed, these endpoints are a demonstrable
+MVP workflow rather than a claim of completed legal deletion.
 
 For a configured minor threshold, publication/discoverability requires a
 current submitted or approved legal-representative document. If a saved DOB

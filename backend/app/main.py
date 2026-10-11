@@ -85,7 +85,15 @@ from .local_ai import (
 )
 from .minor_consent import get_document_status, upload_document
 from .pipelines import get_hiring_pipeline, update_hiring_pipeline
-from .privacy import PrivacyState, get_privacy, request_export, update_privacy
+from .privacy import (
+    PrivacyRequest,
+    PrivacyState,
+    get_privacy,
+    list_requests,
+    request_deletion,
+    request_export,
+    update_privacy,
+)
 from .profile_pdf import render_profile_pdf
 from .protected_candidate import MinorState, get_protected_profile, update_protected_profile
 from .resume import get_resume, review_resume, upload_resume
@@ -1157,8 +1165,15 @@ class CandidatePrivacyResponse(BaseModel):
 
 class PrivacyRequestResponse(BaseModel):
     request_id: str
-    request_type: Literal["export"]
-    status: Literal["requested"]
+    request_type: Literal["export", "deletion"]
+    status: Literal["requested", "processing", "fulfilled", "rejected", "cancelled"]
+    created_at: datetime
+    updated_at: datetime
+    scheduled_for: datetime | None
+
+
+class PrivacyRequestsResponse(BaseModel):
+    requests: list[PrivacyRequestResponse]
 
 
 class FspLinkRequest(BaseModel):
@@ -2699,6 +2714,17 @@ def _privacy_response(state: PrivacyState) -> CandidatePrivacyResponse:
     )
 
 
+def _privacy_request_response(request: PrivacyRequest) -> PrivacyRequestResponse:
+    return PrivacyRequestResponse(
+        request_id=request.id,
+        request_type=request.request_type,
+        status=request.status,
+        created_at=request.created_at,
+        updated_at=request.updated_at,
+        scheduled_for=request.scheduled_for,
+    )
+
+
 @app.get(
     "/api/v1/candidate/privacy",
     tags=["candidate privacy"],
@@ -2750,8 +2776,36 @@ def request_candidate_export(
     principal: Annotated[Principal, Depends(candidate_principal)],
     db: Annotated[Session, Depends(get_db_session)],
 ) -> PrivacyRequestResponse:
-    request_id, request_status = request_export(db, principal)
-    return PrivacyRequestResponse(request_id=request_id, request_type="export", status=request_status)
+    return _privacy_request_response(request_export(db, principal, get_settings()))
+
+
+@app.get(
+    "/api/v1/candidate/privacy/requests",
+    tags=["candidate privacy"],
+    response_model=PrivacyRequestsResponse,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def candidate_privacy_requests(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> PrivacyRequestsResponse:
+    return PrivacyRequestsResponse(
+        requests=[_privacy_request_response(request) for request in list_requests(db, principal)]
+    )
+
+
+@app.post(
+    "/api/v1/candidate/privacy/delete",
+    tags=["candidate privacy"],
+    response_model=PrivacyRequestResponse,
+    status_code=202,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def request_candidate_deletion(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> PrivacyRequestResponse:
+    return _privacy_request_response(request_deletion(db, principal, get_settings()))
 
 
 @app.get(
