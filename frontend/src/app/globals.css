@@ -835,6 +835,7 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   display: grid; gap: 10px; border: 1px solid rgba(169,161,255,.26); border-radius: 13px;
   min-width: 0; align-self: start; padding: 13px; background: rgba(27,28,33,.42);
 }
+.candidateVacancyCard { grid-template-rows: auto auto minmax(0, 1fr) auto; height: 310px; min-height: 310px; max-height: 310px; overflow: hidden; }
 .candidateVacancyCardTop { display: flex; min-width: 0; justify-content: space-between; gap: 12px; align-items: flex-start; }
 .candidateVacancyCardTop > div { min-width: 0; }
 .candidateVacancyCompany { display: block; color: #a9a1ff; font-size: 9px; letter-spacing: .04em; }
@@ -843,7 +844,7 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .candidateVacancyMeta { display: flex; min-width: 0; flex-wrap: wrap; align-items: flex-start; gap: 6px; }
 .candidateVacancyMeta span { display: inline-flex; max-width: 100%; align-items: center; border: 1px solid rgba(169,161,255,.25); border-radius: 999px; padding: 5px 7px; color: #c3bdff; font-size: 8px; line-height: 1.2; overflow-wrap: anywhere; word-break: break-word; }
 .candidateVacancyCard p { margin: 0; color: #d5d5dc; font-size: 10px; line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; word-break: break-word; }
-.candidateVacancyDetails { min-width: 0; border-top: 1px solid rgba(255,255,255,.08); padding-top: 8px; overflow-wrap: anywhere; }
+.candidateVacancyDetails { min-width: 0; min-height: 0; border-top: 1px solid rgba(255,255,255,.08); padding-top: 8px; overflow: auto; overflow-wrap: anywhere; }
 .candidateVacancyDetails summary { cursor: pointer; color: #c3bdff; font-size: 9px; }
 .candidateVacancyDetails[open] summary { margin-bottom: 7px; }
 .candidateVacancyFooter { display: flex; min-width: 0; justify-content: space-between; gap: 10px; align-items: center; border-top: 1px solid rgba(255,255,255,.08); padding-top: 9px; }
