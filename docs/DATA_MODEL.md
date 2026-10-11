@@ -10,7 +10,10 @@
 - `minor_consent_document`: candidate, policy version/status, original filename,
   content type/size/digest, UUID storage key, timestamps, and optional
   reviewer/audit metadata. File bytes are stored outside the database in a
-  configured private directory and are never employer-visible.
+  configured private directory and are never employer-visible. Candidate
+  replacement marks the previous row `replaced` and removes its private bytes;
+  candidate withdrawal marks the current row `withdrawn` and removes its
+  private bytes while retaining non-PII lifecycle history.
 - `company`: one employer-owned row per identity; name, description, industry,
   website, location, explicitly supplied public contact method, and timestamps.
   The empty draft row is provisioned on the employer's first company-profile

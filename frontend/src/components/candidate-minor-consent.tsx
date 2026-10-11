@@ -48,6 +48,7 @@ export function CandidateMinorConsent({ token }: { token: string }) {
   const [state, setState] = useState<MinorConsentState | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -97,6 +98,25 @@ export function CandidateMinorConsent({ token }: { token: string }) {
     }
   }
 
+  async function withdraw() {
+    if (!state?.document) return;
+    setRemoving(true);
+    setMessage(null);
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/candidate/minor-consent-document`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error(await readError(response));
+      setState((current) => current ? { ...current, document: null } : current);
+      setMessage("Документ отозван и удалён из защищённого хранилища.");
+    } catch (error) {
+      setMessage(`Не удалось отозвать документ: ${humanError((error as Error).message)}`);
+    } finally {
+      setRemoving(false);
+    }
+  }
+
   if (loading) return <section className="minorConsentPanel muted">Проверяем статус документа…</section>;
   if (!state) return <section className="minorConsentPanel error">{message ?? "Статус документа недоступен"}</section>;
   if (!state.required) return null;
@@ -120,10 +140,22 @@ export function CandidateMinorConsent({ token }: { token: string }) {
         ) : (
           <small>Загрузите PDF с разрешением законного представителя. Точная формулировка остаётся предметом юридической настройки.</small>
         )}
-        <label className="uploadButton">
-          {uploading ? "Загружаем…" : state.document ? "Заменить PDF" : "Выбрать PDF"}
-          <input type="file" accept="application/pdf,.pdf" disabled={uploading} onChange={upload} />
-        </label>
+        <div className="minorConsentActions">
+          <label className="uploadButton">
+            {uploading ? "Загружаем…" : state.document ? "Заменить PDF" : "Выбрать PDF"}
+            <input type="file" accept="application/pdf,.pdf" disabled={uploading || removing} onChange={upload} />
+          </label>
+          {state.document && (
+            <button
+              className="textButton minorConsentRemove"
+              type="button"
+              disabled={uploading || removing}
+              onClick={withdraw}
+            >
+              {removing ? "Удаляем…" : "Отозвать документ"}
+            </button>
+          )}
+        </div>
       </div>
       {message && <small className="minorConsentMessage" aria-live="polite">{message}</small>}
     </section>

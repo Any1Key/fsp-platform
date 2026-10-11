@@ -140,7 +140,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 ## M15 — Security / 152-FZ-oriented controls
 - [x] upload hardening
 - [x] consent/withdrawal/retention/delete/export concepts/flows
-- [ ] minor-document privacy
+- [x] minor-document privacy
 - [ ] rate limits where appropriate
 - [x] security headers/CORS
 - [ ] secret/log audit

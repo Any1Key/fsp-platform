@@ -1,17 +1,15 @@
 # Status
 
 Current phase: IMPLEMENTATION  
-Current milestone: M14 — Official FSP brand audit
+Current milestone: M15 — Minor-document privacy
 Last verified run: none (external supervisor required)
 
-The current work block audits the public FSP Talent shell against the official
-palette, typography and supplied logo assets, adds shared keyboard/reduced-
-motion behavior, and records responsive browser evidence across the required
-viewport matrix.
+The current work block completes the private minor-consent document lifecycle:
+candidate-only withdrawal, private artifact cleanup on replacement/withdrawal,
+publication rollback, and responsive UI evidence hooks.
 
 Requirement status for this block: IMPLEMENTED pending supervisor evidence:
-NFR-008 and NFR-009. External supervisor owns verification and READY state.
+CAND-013. External supervisor owns verification and READY state.
 
-Important open scope: remaining M14 responsive/accessibility states and
-screenshot evidence, M15 security controls, M16 submission/docs/demo, and M17
-final audit work remain unimplemented.
+Important open scope: remaining M15 security controls, M16 submission/docs/demo,
+and M17 final audit work remain unimplemented.

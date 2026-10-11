@@ -83,7 +83,7 @@ from .local_ai import (
     retrieve_approved_task_examples,
     schedule_task_draft_job,
 )
-from .minor_consent import get_document_status, upload_document
+from .minor_consent import get_document_status, upload_document, withdraw_document
 from .pipelines import get_hiring_pipeline, update_hiring_pipeline
 from .privacy import (
     PrivacyRequest,
@@ -3095,6 +3095,19 @@ def upload_candidate_minor_consent_document(
     return MinorConsentDocumentResponse.model_validate(
         upload_document(db, principal, get_settings(), document)
     )
+
+
+@app.delete(
+    "/api/v1/candidate/minor-consent-document",
+    tags=["candidate privacy"],
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+)
+def withdraw_candidate_minor_consent_document(
+    principal: Annotated[Principal, Depends(candidate_principal)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> None:
+    withdraw_document(db, principal, get_settings())
 
 
 @app.get(

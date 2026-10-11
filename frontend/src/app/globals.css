@@ -628,6 +628,9 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .minorConsentBody > small, .minorConsentStatus { color: #b7b7c1; font-size: 10px; line-height: 1.5; }
 .minorConsentStatus { display: grid; gap: 4px; }
 .minorConsentStatus strong { color: #ededed; font-size: 11px; }
+.minorConsentActions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.minorConsentRemove { color: #ffb6bd; font-size: 10px; }
+.minorConsentRemove:disabled { cursor: wait; opacity: .6; }
 .uploadButton {
   position: relative; overflow: hidden; display: inline-flex; justify-content: center;
   border: 1px solid rgba(169,161,255,.48); border-radius: 10px; padding: 10px 13px;

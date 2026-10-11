@@ -155,6 +155,7 @@ def test_upload_replaces_current_document_and_is_self_scoped(auth_context, monke
         headers=candidate_headers,
         files=_pdf_file(body=b"%PDF-1.7\nfirst"),
     )
+    first_storage_file = next((tmp_path / "private").glob("*.pdf"))
     second = client.post(
         "/api/v1/candidate/minor-consent-document",
         headers=candidate_headers,
@@ -163,7 +164,10 @@ def test_upload_replaces_current_document_and_is_self_scoped(auth_context, monke
     assert first.status_code == second.status_code == 201
     assert first.json()["document"]["id"] != second.json()["document"]["id"]
     assert second.json()["document"]["original_filename"] == "guardian-consent-v2.pdf"
-    assert len(list((tmp_path / "private").glob("*.pdf"))) == 2
+    assert not first_storage_file.exists()
+    second_storage_files = list((tmp_path / "private").glob("*.pdf"))
+    assert len(second_storage_files) == 1
+    assert second_storage_files[0].read_bytes() == b"%PDF-1.7\nsecond"
 
     engine = create_engine(private_settings.database_url)
     try:
@@ -216,6 +220,87 @@ def test_upload_replaces_current_document_and_is_self_scoped(auth_context, monke
         )
         assert response.status_code == 403
         assert response.json()["error"]["code"] == "ROLE_REQUIRED"
+
+
+def test_candidate_can_withdraw_minor_document_and_publication_is_revoked(
+    auth_context, monkeypatch, tmp_path
+):
+    client, private_key, settings = auth_context
+    private_settings = settings.model_copy(update={"private_storage_dir": str(tmp_path / "private")})
+    monkeypatch.setattr(main, "get_settings", lambda: private_settings)
+    headers = _headers(private_key, private_settings)
+    _grant_processing_consent(client, headers)
+    _set_minor_dob(client, headers)
+
+    uploaded = client.post(
+        "/api/v1/candidate/minor-consent-document",
+        headers=headers,
+        files=_pdf_file(body=b"%PDF-1.7\nwithdraw-me"),
+    )
+    assert uploaded.status_code == 201
+    assert len(list((tmp_path / "private").glob("*.pdf"))) == 1
+
+    published = client.patch(
+        "/api/v1/candidate/privacy",
+        headers=headers,
+        json={"publication_consent": True, "discoverable": True},
+    )
+    assert published.status_code == 200
+
+    withdrawn = client.delete(
+        "/api/v1/candidate/minor-consent-document", headers=headers
+    )
+    assert withdrawn.status_code == 204
+    assert withdrawn.content == b""
+    assert not list((tmp_path / "private").glob("*.pdf"))
+
+    state = client.get("/api/v1/candidate/minor-consent-document", headers=headers)
+    assert state.status_code == 200
+    assert state.json()["required"] is True
+    assert state.json()["document"] is None
+
+    privacy = client.get("/api/v1/candidate/privacy", headers=headers)
+    assert privacy.status_code == 200
+    assert privacy.json()["publication_consent"] is False
+    assert privacy.json()["discoverable"] is False
+
+    engine = create_engine(private_settings.database_url)
+    try:
+        with engine.connect() as connection:
+            document = connection.execute(
+                text("SELECT status, storage_key FROM minor_consent_document")
+            ).one()
+            audit = connection.execute(
+                text(
+                    "SELECT event_type, details FROM audit_event "
+                    "WHERE event_type = 'minor_consent_document_deleted'"
+                )
+            ).all()
+    finally:
+        engine.dispose()
+    assert document[0] == "withdrawn"
+    assert document[1].endswith(".pdf")
+    assert len(audit) == 1
+    assert "withdraw-me" not in audit[0][1]
+    assert "sha256" not in audit[0][1]
+
+    # Repeating the candidate-owned withdrawal is idempotent and does not
+    # create a second audit event for an already withdrawn document.
+    repeated = client.delete("/api/v1/candidate/minor-consent-document", headers=headers)
+    assert repeated.status_code == 204
+
+    employer_headers = _headers(
+        private_key,
+        private_settings,
+        sub="kc-minor-withdraw-employer",
+        email="employer-withdraw@company.ru",
+        role="employer",
+    )
+    forbidden = client.delete(
+        "/api/v1/candidate/minor-consent-document", headers=employer_headers
+    )
+    assert forbidden.status_code == 403
+    assert forbidden.json()["error"]["code"] == "ROLE_REQUIRED"
 
 
 def test_becoming_minor_revokes_existing_publication_until_document_is_submitted(

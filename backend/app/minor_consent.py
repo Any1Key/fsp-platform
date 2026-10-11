@@ -64,7 +64,8 @@ def _current_document(db: Session, profile_id: str):
         text(
             "SELECT id, policy_version, original_filename, content_type, size_bytes, "
             "status, uploaded_at FROM minor_consent_document "
-            "WHERE candidate_profile_id = :profile_id AND status != 'replaced' "
+            "WHERE candidate_profile_id = :profile_id "
+            "AND status IN ('submitted', 'approved', 'rejected') "
             "ORDER BY uploaded_at DESC, id DESC LIMIT 1"
         ),
         {"profile_id": profile_id},
@@ -152,12 +153,14 @@ def upload_document(
         store_private_bytes(settings, storage_key, content)
         previous = db.execute(
             text(
-                "SELECT id FROM minor_consent_document "
-                "WHERE candidate_profile_id = :profile_id AND status != 'replaced'"
+                "SELECT id, storage_key FROM minor_consent_document "
+                "WHERE candidate_profile_id = :profile_id "
+                "AND status IN ('submitted', 'approved', 'rejected')"
             ),
             {"profile_id": profile_id},
-        ).scalars().all()
-        for previous_id in previous:
+        ).mappings().all()
+        for previous_document in previous:
+            previous_id = previous_document["id"]
             db.execute(
                 text("UPDATE minor_consent_document SET status = 'replaced' WHERE id = :id"),
                 {"id": previous_id},
@@ -188,7 +191,51 @@ def upload_document(
         db.rollback()
         remove_private_file(settings, storage_key)
         raise
+
+    # The database keeps the superseded row for audit/retention history, but
+    # its PDF is no longer needed after the replacement transaction commits.
+    for previous_document in previous:
+        remove_private_file(settings, previous_document["storage_key"])
+
     return get_document_status(db, principal, settings)
+
+
+def withdraw_document(db: Session, principal: Principal, settings: Settings) -> None:
+    """Withdraw the candidate's current document and remove its private PDF."""
+
+    identity_id, profile_id = _ensure_candidate_profile(db, principal)
+    row = db.execute(
+        text(
+            "SELECT id, storage_key FROM minor_consent_document "
+            "WHERE candidate_profile_id = :profile_id "
+            "AND status IN ('submitted', 'approved', 'rejected') "
+            "ORDER BY uploaded_at DESC, id DESC LIMIT 1"
+        ),
+        {"profile_id": profile_id},
+    ).mappings().one_or_none()
+    if row is None:
+        return
+
+    db.execute(
+        text("UPDATE minor_consent_document SET status = 'withdrawn' WHERE id = :id"),
+        {"id": row["id"]},
+    )
+    _audit(db, identity_id, "minor_consent_document_deleted", row["id"], "withdrawn")
+    revoke_publication_if_minor_document_missing(
+        db,
+        identity_id=identity_id,
+        profile_id=profile_id,
+        state=_minor_state(db, profile_id, settings),
+    )
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    # Keep the status/audit row but remove the sensitive artifact from private
+    # storage once the withdrawal is durable.
+    remove_private_file(settings, row["storage_key"])
 
 
 def revoke_publication_if_minor_document_missing(

@@ -116,3 +116,34 @@ Continue autonomously unless:
 - proceeding requires destructive host-level actions.
 
 Record blockers in `.agent/PROBLEMS.md`.
+
+## DEADLINE MODE — 2026-10-11
+
+Hard submission deadline: 2026-10-11 23:59 MSK.
+
+If a coherent work unit is already in progress, finish it without broadening its scope.
+For all subsequent work units, optimize for submission readiness and minimize the
+number of remaining autonomous cycles.
+
+Rules:
+- Do not start optional product features.
+- Do not perform cosmetic polish unless it blocks jury acceptance or a requirement.
+- Batch closely related unfinished backlog items from the same milestone into one
+  coherent work unit where this can be done safely.
+- Preserve all existing verification, regression, recovery and external-supervisor gates.
+- Never weaken or delete valid tests merely to save time.
+- P0 and P1 defects must be fixed.
+- P2 defects may be documented and deferred when they do not block requirements,
+  the jury demo, security, deployment, or acceptance.
+- Do not deliberately consume all remaining cycles.
+
+Priority:
+1. Finish all remaining submission-blocking M15 security/privacy work.
+2. Complete M16: OpenAPI/docs/dependency audit, deterministic demo reset,
+   clean-clone deployment and complete jury E2E.
+3. Complete M17: requirements audit, P0/P1/P2 triage and P0/P1 fixes.
+4. Run final CPU-only deployment, load validation and responsive screenshot evidence.
+5. Set READY only through the existing external acceptance mechanism.
+
+The objective is a complete, demonstrable, deployable submission before the deadline,
+not maximum feature count.

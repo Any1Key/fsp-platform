@@ -100,11 +100,14 @@ receives the document.
 
 ## Minor documents
 - private protected storage;
-- candidate-only `GET/POST /api/v1/candidate/minor-consent-document` boundary;
+- candidate-only `GET/POST/DELETE /api/v1/candidate/minor-consent-document` boundary;
 - validate PDF type/signature/size and store under a UUID key;
 - return status and safe metadata, never file bytes or storage paths;
 - authorization checks;
 - audit upload/replace/review/delete without filenames, hashes, or raw content;
+- replacement removes the superseded private artifact after the new row commits;
+- candidate withdrawal marks the current row `withdrawn`, removes its private
+  artifact, and withdraws minor publication/discoverability before commit;
 - configurable retention;
 - do not include in Telegram or logs.
 
