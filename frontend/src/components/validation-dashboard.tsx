@@ -23,7 +23,7 @@ type AssessmentGroup = {
   confusion_matrix: Record<string, Record<string, number>>;
   predicted_distribution: Record<string, number>;
   grade_collapse: boolean;
-  grade_collapse_threshold: number;
+  grade_collapse_порог: number;
   grade_collapse_dominant_grade: string | null;
   grade_collapse_share: number;
   equivalent_form_score_difference: number;
@@ -78,7 +78,7 @@ export function ValidationDashboard({ token }: { token: string }) {
   }, [token]);
 
   if (state === "loading") {
-    return <section className="validationPanel muted"><LoadingState title="Загружаем Validation Dashboard…" description="Читаем воспроизводимые matching и assessment результаты." /></section>;
+    return <section className="validationPanel muted"><LoadingState title="Загружаем отчёт о качестве подбора…" description="Читаем воспроизводимые matching и assessment результаты." /></section>;
   }
   if (state === "error" || !dashboard) {
     return <section className="validationPanel error"><ErrorState title="Не удалось загрузить Validation Dashboard" description="Проверь права доступа и обнови страницу." /></section>;
@@ -92,8 +92,8 @@ export function ValidationDashboard({ token }: { token: string }) {
       <div className="validationHeading">
         <div>
           <span className="authLabel">ОТЧЁТ О КАЧЕСТВЕ ПЛАТФОРМЫ · {dashboard.dashboard_version}</span>
-          <h2 id="validation-dashboard-title">Доказательная база подбора</h2>
-          <p>Синтетическая калибровка matching и assessment в одном проверяемом срезе.</p>
+          <h2 id="validation-dashboard-title">Контроль качества подбора</h2>
+          <p>Проверка качества подбора и оценки навыков на контрольном наборе данных.</p>
         </div>
         <span className="validationBadge">РАСЧЁТНЫЕ ПОКАЗАТЕЛИ</span>
       </div>
@@ -113,12 +113,12 @@ export function ValidationDashboard({ token }: { token: string }) {
       <div className="validationSection">
         <div className="validationSectionHeading">
           <div><span className="authLabel">КАЧЕСТВО ПОДБОРА</span><h3>Точность рекомендаций</h3></div>
-          <small>{matching.ranking_count} complete need rankings</small>
+          <small>{matching.ranking_count} полных расчётов подбора</small>
         </div>
         <div className="validationMetricGrid">
-          <div className="validationMetric"><span>Precision@5</span><strong>{percent(matching.precision_at_5)}</strong><small>relevant + adjacent</small></div>
-          <div className="validationMetric"><span>nDCG@5</span><strong>{percent(matching.ndcg_at_5)}</strong><small>graded relevance gain</small></div>
-          <div className="validationMetric"><span>Recall@10</span><strong>{percent(matching.recall_at_10)}</strong><small>positive labels found</small></div>
+          <div className="validationMetric"><span>Precision@5</span><strong>{percent(matching.precision_at_5)}</strong><small>релевантные и смежные</small></div>
+          <div className="validationMetric"><span>nDCG@5</span><strong>{percent(matching.ndcg_at_5)}</strong><small>степень релевантности</small></div>
+          <div className="validationMetric"><span>Recall@10</span><strong>{percent(matching.recall_at_10)}</strong><small>найденные релевантные</small></div>
         </div>
       </div>
 
@@ -131,7 +131,7 @@ export function ValidationDashboard({ token }: { token: string }) {
           <div className="validationMetric"><span>Macro-F1</span><strong>{percent(assessment.macro_f1)}</strong><small>grade discrimination</small></div>
           <div className="validationMetric"><span>Совпадение уровня</span><strong>{percent(assessment.grade_agreement)}</strong><small>целевой и рассчитанный уровень</small></div>
           <div className="validationMetric"><span>Unique forms</span><strong>{percent(assessment.form_uniqueness_rate)}</strong><small>session-specific variants</small></div>
-          <div className="validationMetric"><span>Retest agreement</span><strong>{percent(assessment.retest_agreement)}</strong><small>same synthetic ability</small></div>
+          <div className="validationMetric"><span>Retest agreement</span><strong>{percent(assessment.retest_agreement)}</strong><small>одинаковый уровень навыков</small></div>
         </div>
 
         <div className="validationEvidenceGrid">
@@ -156,11 +156,11 @@ export function ValidationDashboard({ token }: { token: string }) {
 
         <div className={`validationCollapse ${assessment.grade_collapse ? "attention" : "pass"}`}>
           <strong>{assessment.grade_collapse ? "Обнаружено снижение качества по уровням" : "Проверка распределения уровней пройдена"}</strong>
-          <span>{assessment.grade_collapse ? `${assessment.grade_collapse_dominant_grade} = ${percent(assessment.grade_collapse_share)} of predictions` : `dominant grade share ${percent(assessment.grade_collapse_share)} · threshold ${percent(assessment.grade_collapse_threshold)}`}</span>
+          <span>{assessment.grade_collapse ? `${assessment.grade_collapse_dominant_grade} = ${percent(assessment.grade_collapse_share)} от всех результатов` : `доля преобладающего уровня ${percent(assessment.grade_collapse_share)} · порог ${percent(assessment.grade_collapse_порог)}`}</span>
         </div>
       </div>
 
-      <small className="validationFooter">Source versions: matching {matching.matching_metrics_version} · baseline {matching.keyword_baseline_version} · assessment {assessment.validation_version}. Negative item signals remain visible for calibration follow-up.</small>
+      <small className="validationFooter">Версии расчётов: matching {matching.matching_metrics_version} · baseline {matching.keyword_baseline_version} · assessment {assessment.validation_version}. Отрицательные сигналы по заданиям доступны для дальнейшей проверки.</small>
     </section>
   );
 }

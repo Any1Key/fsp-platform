@@ -202,7 +202,7 @@ export function CandidateAssessment({
               </div>
               <p>
                 {attempt.grade_state === "verified"
-                  ? `Уровень ${attempt.declared_grade} подтверждён и добавлен в Skill Passport.`
+                  ? `Уровень ${attempt.declared_grade} подтверждён и добавлен в профиль навыков.`
                   : `Заявленный уровень ${attempt.declared_grade} пока не подтверждён. Профиль остаётся видимым работодателям.`}
               </p>
               {!!attempt.grade_offers?.length && (

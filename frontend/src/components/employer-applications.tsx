@@ -68,7 +68,7 @@ export function EmployerApplications({ token, refreshKey = 0 }: { token: string;
         body: JSON.stringify({ status: nextStatus }),
       });
       if (!response.ok) throw new Error(await readError(response));
-      setMessage(nextStatus === "accepted" ? "Отклик принят — match и внутренний чат созданы." : "Статус отклика обновлён.");
+      setMessage(nextStatus === "accepted" ? "Отклик принят — рабочий контакт и внутренний чат созданы." : "Статус отклика обновлён.");
       await load();
     } catch (error) {
       setMessage(`Не удалось обновить отклик: ${(error as Error).message}`);
@@ -86,7 +86,7 @@ export function EmployerApplications({ token, refreshKey = 0 }: { token: string;
         <div>
           <span className="authLabel">ОТКЛИКИ КАНДИДАТОВ</span>
           <h2 id="employer-applications-title">Отклики на вакансии</h2>
-          <p>Примите подходящего кандидата — match создастся сразу, а контакты откроются только внутри рабочего чата.</p>
+          <p>Примите подходящего кандидата — рабочий контакт создастся сразу, а контакты откроются только внутри рабочего чата.</p>
         </div>
         <span className="profileStatus">{applications.length} APPLICATIONS</span>
       </div>
@@ -101,11 +101,11 @@ export function EmployerApplications({ token, refreshKey = 0 }: { token: string;
                 <span className={`candidateApplicationStatus ${application.status}`}>{labels[application.status]}</span>
               </div>
               <small>Отклик от {new Date(application.applied_at).toLocaleDateString("ru-RU")} · ₽{application.vacancy.salary_min_rub.toLocaleString("ru-RU")}–{application.vacancy.salary_max_rub.toLocaleString("ru-RU")}</small>
-              {application.status === "accepted" ? <p className="candidateMatchNotice">✓ Match создан · кандидат может открыть рабочий чат</p> : application.status === "rejected" || application.status === "withdrawn" ? null : (
+              {application.status === "accepted" ? <p className="candidateMatchNotice">✓ Контакт создан · кандидат может открыть рабочий чат</p> : application.status === "rejected" || application.status === "withdrawn" ? null : (
                 <div className="applicationReviewActions">
                   <button className="authButton secondaryButton" disabled={busyId === application.id} onClick={() => void update(application.id, "reviewing")}>На рассмотрение</button>
                   <button className="authButton secondaryButton" disabled={busyId === application.id} onClick={() => void update(application.id, "shortlisted")}>Следующий этап</button>
-                  <button className="authButton primaryButton" disabled={busyId === application.id} onClick={() => void update(application.id, "accepted")}>Принять · создать match</button>
+                  <button className="authButton primaryButton" disabled={busyId === application.id} onClick={() => void update(application.id, "accepted")}>Принять отклик</button>
                   <button className="authButton dangerButton" disabled={busyId === application.id} onClick={() => void update(application.id, "rejected")}>Отклонить</button>
                 </div>
               )}

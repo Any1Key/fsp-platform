@@ -176,8 +176,8 @@ export function CandidateCareerGraph({ token, refreshKey = 0 }: { token: string;
       )}
 
       <div className="careerGraphSummary" aria-label="Сводка графа">
-        <span><strong>{graph.summary.verified_skills}</strong> verified</span>
-        <span><strong>{graph.summary.declared_skills}</strong> declared</span>
+        <span><strong>{graph.summary.verified_skills}</strong> подтверждено</span>
+        <span><strong>{graph.summary.declared_skills}</strong> указано в профиле</span>
         <span><strong>{graph.summary.gap_count}</strong> gaps to explore</span>
         <small>{graph.next_step}</small>
       </div>

@@ -126,7 +126,7 @@ export function EmployerTalentRadar({ token, refreshKey = 0, onInvitationCreated
       if (!response.ok) {
         const code = await readError(response);
         if (code === "HIRING_NEED_REQUIRED_FOR_TALENT_RADAR") {
-          throw new Error("Сначала сохраните hiring need — она задаёт контекст Talent Radar.");
+          throw new Error("Сначала сохраните параметры поиска — они задают контекст подбора.");
         }
         throw new Error(code);
       }

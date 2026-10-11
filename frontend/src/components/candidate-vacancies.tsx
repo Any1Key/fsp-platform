@@ -35,7 +35,7 @@ const statusLabels: Record<ApplicationStatus, string> = {
   submitted: "Отклик отправлен",
   reviewing: "На рассмотрении",
   shortlisted: "Следующий этап",
-  accepted: "Принято · match создан",
+  accepted: "Принято · контакт создан",
   rejected: "Не подошло",
   withdrawn: "Отозван",
 };

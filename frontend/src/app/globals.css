@@ -55,10 +55,14 @@ body { font-family: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, m
   padding: 9px 13px; font-size: 11px; color: #ededed;
 }
 .hero {
+  position: relative; isolation: isolate; overflow: hidden;
   width: 100%; margin: 0; padding: 54px max(32px, calc((100% - 1216px) / 2)) 78px;
   display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 64px; align-items: start; color: white;
   background: var(--surface-inverse);
 }
+.heroBrandVisual { position: absolute; z-index: -1; top: 12px; right: max(30px, calc((100% - 1216px) / 2)); width: min(38vw, 460px); height: 470px; pointer-events: none; opacity: .22; }
+.heroBrandFace { position: absolute; right: 0; bottom: -36px; width: min(31vw, 380px); height: auto; mix-blend-mode: screen; }
+.heroBrandLine { position: absolute; top: 72px; left: -40px; width: min(28vw, 340px); height: auto; opacity: .7; }
 .heroText { width: min(100%, 820px); margin-inline: auto; }
 .heroText, .proofCard, .authPanel, .signedInPanel, .signedInPanel > * { min-width: 0; }
 .hero:has(.signedInPanel) { grid-template-columns: 1fr; padding-top: 32px; }
@@ -68,6 +72,7 @@ body { font-family: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, m
 .heroText:has(.signedInPanel) > .lead,
 .heroText:has(.signedInPanel) > .actions,
 .hero:has(.signedInPanel) > .proofCard { display: none; }
+.hero:has(.signedInPanel) .heroBrandVisual { display: none; }
 .eyebrow { color: #a9a1ff; font-size: 12px; letter-spacing: .13em; }
 h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055em; margin: 20px 0; }
 .lead { max-width: 760px; color: #d5d5dc; line-height: 1.7; font-size: 15px; }
@@ -1042,6 +1047,7 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
      content column; keeping the hero split here makes every dashboard panel
      compete with the proof card for a narrow desktop-width column. */
   .hero { grid-template-columns: minmax(0, 1fr); gap: 34px; padding: 46px 32px 64px; }
+  .heroBrandVisual { right: 18px; width: 340px; opacity: .12; }
   .proofCard { width: min(100%, 560px); justify-self: end; }
   .signedInPanel { display: grid; grid-template-columns: 200px minmax(0, 1fr); }
   .signedInPanel > :not(.authButton) { grid-column: 1 / -1; }

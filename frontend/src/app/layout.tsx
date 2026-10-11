@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "FSP Talent",
-  description: "Verified IT talent discovery by FSP"
+  description: "Платформа подбора ИТ-специалистов по подтверждённым навыкам ФСП"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

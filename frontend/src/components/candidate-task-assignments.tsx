@@ -99,7 +99,7 @@ export function CandidateTaskAssignments({ token, refreshKey = 0 }: { token: str
     }
   }
 
-  if (state === "loading") return <section className="candidateTasksPanel muted">Проверяем задания после match…</section>;
+  if (state === "loading") return <section className="candidateTasksPanel muted">Проверяем назначенные задания…</section>;
   if (state === "error") return <section className="candidateTasksPanel error">Не удалось загрузить задания работодателя.</section>;
 
   return (

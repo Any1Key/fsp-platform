@@ -14,16 +14,20 @@ export default function Home() {
       </header>
 
       <section className="hero" id="main-content" tabIndex={-1}>
+        <div className="heroBrandVisual" aria-hidden="true">
+          <Image className="heroBrandFace" src="/brand/official/face1.png" alt="" width={420} height={420} priority />
+          <Image className="heroBrandLine" src="/brand/official/lineline1.png" alt="" width={360} height={250} priority />
+        </div>
         <div className="heroText">
           <p className="eyebrow">FSP TALENT · ПЛАТФОРМА ПРОФЕССИОНАЛЬНОГО ПОДБОРА</p>
           <h1>Проверенные навыки.<br />Точный подбор.</h1>
           <p className="lead">
             Работодатель находит специалистов по подтверждённым навыкам и сразу видит объяснимое
-            соответствие задаче. Кандидат управляет профилем, доказательствами и каждым приглашением.
+            соответствие задаче. Кандидат управляет профилем навыков и каждым приглашением.
           </p>
           <nav className="actions" aria-label="Основные разделы">
             <a className="primary" href="#principles">Как работает FSP Talent</a>
-            <a className="secondary" href="#proof">Пример доказательств</a>
+            <a className="secondary" href="#proof">Пример профиля навыков</a>
           </nav>
           <AuthStatus />
         </div>

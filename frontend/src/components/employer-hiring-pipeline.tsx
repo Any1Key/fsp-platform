@@ -117,7 +117,7 @@ export function EmployerHiringPipeline({ token, refreshKey = 0 }: { token: strin
   }
 
   if (state === "loading") return <section className="pipelinePanel muted">Загружаем этапы найма…</section>;
-  if (state === "error") return <section className="pipelinePanel error">Сначала сохраните hiring need, чтобы настроить этапы найма. <small>{message}</small></section>;
+  if (state === "error") return <section className="pipelinePanel error">Сначала сохраните параметры поиска, чтобы настроить этапы найма. <small>{message}</small></section>;
   if (!pipeline) return null;
 
   return (
@@ -125,7 +125,7 @@ export function EmployerHiringPipeline({ token, refreshKey = 0 }: { token: strin
       <div className="companyHeading">
         <div>
           <span className="authLabel">ЭТАПЫ ПОДБОРА</span>
-          <h2 id="hiring-pipeline-title">Этапы после match</h2>
+          <h2 id="hiring-pipeline-title">Этапы после согласия</h2>
           <p>Соберите прозрачный порядок отбора. Кандидат увидит формат и примерное время до принятия приглашения.</p>
         </div>
         <span className="profileStatus">{pipeline.stages.length} STAGES</span>

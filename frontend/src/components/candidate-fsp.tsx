@@ -143,14 +143,14 @@ export function CandidateFsp({ token }: { token: string }) {
         setMessage(code === "PROCESSING_CONSENT_REQUIRED"
           ? "Сначала включи согласие на обработку данных в настройках приватности."
           : code === "FSP_PARTICIPANT_NOT_FOUND"
-            ? "Такой демонстрационный FSP ID не найден."
-            : "Не удалось привязать FSP ID.");
+            ? "Такой идентификатор участника ФСП не найден."
+            : "Не удалось подключить профиль участника ФСП.");
         return;
       }
       setFsp((await response.json()) as FspState);
       await loadIntegration();
       setFspId("");
-      setMessage("FSP ID привязан.");
+      setMessage("Профиль участника ФСП подключён.");
     } catch {
       setMessage("Сервис FSP пока недоступен.");
     } finally {
@@ -169,9 +169,9 @@ export function CandidateFsp({ token }: { token: string }) {
       if (!response.ok) throw new Error("unlink_failed");
       await load();
       await loadIntegration();
-      setMessage("FSP ID отвязан. История не влияет на доступность профиля.");
+      setMessage("Профиль участника ФСП отключён. Это не влияет на доступность основного профиля.");
     } catch {
-      setMessage("Не удалось отвязать FSP ID.");
+      setMessage("Не удалось отключить профиль участника ФСП.");
     } finally {
       setSaving(false);
     }
@@ -226,7 +226,7 @@ export function CandidateFsp({ token }: { token: string }) {
               <small>{integration.registry_adapter} · {integration.fsp.status === "linked" ? "подтверждён" : "ожидает link"}</small>
             </div>
           </div>
-          <small className="fspBridgeNote">Схема готова к замене synthetic adapter на реальный FSP-провайдер без связывания по email или раскрытия OIDC subject.</small>
+          <small className="fspBridgeNote">Профиль ФСП подключается отдельно от учётной записи платформы. Личные данные и технические идентификаторы не раскрываются работодателю.</small>
         </div>
       )}
 
@@ -234,7 +234,7 @@ export function CandidateFsp({ token }: { token: string }) {
         <>
           <div className="fspLinkedRow">
             <div>
-              <span className="fspFieldLabel">ПРИВЯЗАННЫЙ FSP ID</span>
+              <span className="fspFieldLabel">ПРОФИЛЬ УЧАСТНИКА ФСП</span>
               <strong>{fsp.participant_id}</strong>
             </div>
             <span className="fspLinkState"><i aria-hidden="true" />{fsp.history_status === "has_history" ? "Связь подтверждена" : "ID подтверждён"}</span>
@@ -254,7 +254,7 @@ export function CandidateFsp({ token }: { token: string }) {
                   <article className="fspAchievement" key={achievement.id}>
                     <div className="fspAchievementHeading">
                       <div>
-                        <span className="fspAchievementIndex">EVIDENCE {String(index + 1).padStart(2, "0")}</span>
+                        <span className="fspAchievementIndex">ДОСТИЖЕНИЕ {String(index + 1).padStart(2, "0")}</span>
                         <strong>{achievement.event_name}</strong>
                         <small>{formatDate(achievement.event_date)} · {achievement.discipline}</small>
                       </div>
@@ -282,7 +282,7 @@ export function CandidateFsp({ token }: { token: string }) {
       ) : (
         <div className="fspNoHistory" role="status">
           <span className="fspStateKicker">ДОПОЛНИТЕЛЬНОЕ ПОДТВЕРЖДЕНИЕ</span>
-          <strong>FSP ID пока не привязан</strong>
+          <strong>Профиль участника ФСП пока не подключён</strong>
           <p>Это нормальное состояние: оценки платформы и профиль работают независимо от FSP.</p>
         </div>
       )}

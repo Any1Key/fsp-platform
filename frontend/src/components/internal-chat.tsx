@@ -113,7 +113,7 @@ export function InternalChat({ token }: { token: string }) {
       if (!response.ok) throw new Error("contact_failed");
       setContact("");
       await loadDetail(selectedId);
-      setMessage("Контакт доступен участникам этого match.");
+      setMessage("Контакт доступен участникам этого рабочего контакта.");
     } catch {
       setMessage("Не удалось обменяться контактом.");
     } finally {
@@ -150,7 +150,7 @@ export function InternalChat({ token }: { token: string }) {
       </div>
       {message && <p className="chatMessage" aria-live="polite">{message}</p>}
       {conversations.length === 0 ? (
-        <div className="chatEmpty"><strong>Активных match пока нет</strong><span>После принятия приглашения здесь появится защищённый разговор с участником.</span></div>
+        <div className="chatEmpty"><strong>Активных рабочих контактов пока нет</strong><span>После принятия приглашения здесь появится защищённый разговор с участником.</span></div>
       ) : (
         <div className="chatLayout">
           <div className="chatConversations">
@@ -158,7 +158,7 @@ export function InternalChat({ token }: { token: string }) {
           </div>
           {detail && <div className="chatThread">
             <div className="chatThreadTop"><strong>{detail.participant_label}</strong><button className="textButton" disabled={busy} onClick={() => void report()}>Пожаловаться</button></div>
-            <div className="chatMessages" aria-live="polite">{detail.messages.length === 0 ? <span className="chatNoMessages">Начните разговор после match.</span> : detail.messages.map((item) => <div className={`chatBubble ${item.sender_is_current ? "mine" : "theirs"}`} key={item.id}>{item.body}</div>)}</div>
+            <div className="chatMessages" aria-live="polite">{detail.messages.length === 0 ? <span className="chatNoMessages">Начните разговор после взаимного согласия.</span> : detail.messages.map((item) => <div className={`chatBubble ${item.sender_is_current ? "mine" : "theirs"}`} key={item.id}>{item.body}</div>)}</div>
             {detail.contacts.length > 0 && <div className="chatContacts"><span>ОБМЕН КОНТАКТАМИ</span>{detail.contacts.map((item) => <small key={item.id}>{item.contact_value}</small>)}</div>}
             <div className="chatComposer"><textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Написать сообщение…" maxLength={4000} /><button className="authButton primaryButton" disabled={busy || !draft.trim()} onClick={() => void sendMessage()}>Отправить</button></div>
             <div className="chatContactForm"><input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="Контакт для обмена" maxLength={160} /><button className="authButton secondaryButton" disabled={busy || !contact.trim()} onClick={() => void shareContact()}>Поделиться контактом</button></div>

@@ -78,7 +78,7 @@ export function EmployerTaskEvaluations({ token, refreshKey = 0 }: { token: stri
       if (!response.ok) throw new Error("evaluation_failed");
       const updated = (await response.json()) as Assignment;
       setAssignments((current) => current.map((item) => item.id === updated.id ? updated : item));
-      setMessage("Оценка сохранена как evidence работодателя.");
+      setMessage("Оценка сохранена в истории задания работодателя.");
     } catch {
       setMessage("Не удалось сохранить оценку. Проверьте баллы по рубрике.");
     } finally {
@@ -95,13 +95,13 @@ export function EmployerTaskEvaluations({ token, refreshKey = 0 }: { token: stri
         <div>
           <span className="authLabel">ОЦЕНКА ЗАДАНИЙ КОМПАНИЕЙ</span>
           <h2 id="employer-evaluations-title">Ответы кандидатов</h2>
-          <p>Вы — финальный грейдер своих заданий. Результат остаётся employer-specific evidence.</p>
+          <p>Вы проверяете задания, созданные вашей компанией. Результат относится к конкретной вакансии и кандидату.</p>
         </div>
         <span className="profileStatus">{assignments.length} SUBMISSIONS</span>
       </div>
       {message && <p className="candidateTasksMessage" aria-live="polite">{message}</p>}
       {assignments.length === 0 ? (
-        <div className="invitationEmpty"><strong>Ответов пока нет</strong><span>Здесь появятся задания после match и отправки ответа кандидатом.</span></div>
+        <div className="invitationEmpty"><strong>Ответов пока нет</strong><span>Здесь появятся задания после взаимного согласия и отправки ответа кандидатом.</span></div>
       ) : (
         <div className="candidateTaskList">
           {assignments.map((assignment) => {

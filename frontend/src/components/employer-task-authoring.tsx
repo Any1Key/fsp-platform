@@ -302,7 +302,7 @@ export function EmployerTaskAuthoring({ token, refreshKey = 0 }: { token: string
         <div>
           <span className="authLabel">ЗАДАНИЯ КОМПАНИИ</span>
           <h2 id="employer-task-title">Задания для pipeline</h2>
-          <p>Создайте черновик и опубликуйте его явно. Это задание не меняет глобальный Verified Grade.</p>
+          <p>Создайте черновик и опубликуйте его явно. Это задание не меняет подтверждённый уровень в профиле.</p>
         </div>
         <span className="profileStatus">{tasks.length} TASKS</span>
       </div>
