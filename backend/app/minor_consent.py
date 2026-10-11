@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import os
-from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -15,8 +13,13 @@ from sqlalchemy.orm import Session
 from .auth import Principal, sync_identity
 from .config import Settings
 from .protected_candidate import MinorState, minor_state_for
+from .upload_security import (
+    ALLOWED_CONTENT_TYPE,
+    read_bounded_pdf,
+    remove_private_file,
+    store_private_bytes,
+)
 
-ALLOWED_CONTENT_TYPE = "application/pdf"
 DOCUMENT_STATUS_FOR_PUBLICATION = ("submitted", "approved")
 
 
@@ -93,28 +96,12 @@ def get_document_status(db: Session, principal: Principal, settings: Settings) -
     }
 
 
-def _private_path(settings: Settings, storage_key: str) -> Path:
-    root = Path(settings.private_storage_dir).resolve()
-    root.mkdir(mode=0o700, parents=True, exist_ok=True)
-    path = (root / storage_key).resolve()
-    if path.parent != root:
-        raise HTTPException(status_code=500, detail="private_storage_invalid")
-    return path
-
-
 def _read_pdf(upload: UploadFile, settings: Settings) -> tuple[str, bytes]:
-    filename = (upload.filename or "").strip()
-    safe_filename = Path(filename).name
-    if not safe_filename or len(safe_filename) > 255 or not safe_filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=422, detail="minor_document_invalid_filename")
-    if upload.content_type != ALLOWED_CONTENT_TYPE:
-        raise HTTPException(status_code=422, detail="minor_document_invalid_type")
-    content = upload.file.read(settings.minor_consent_document_max_bytes + 1)
-    if len(content) > settings.minor_consent_document_max_bytes:
-        raise HTTPException(status_code=422, detail="minor_document_too_large")
-    if not content.startswith(b"%PDF-"):
-        raise HTTPException(status_code=422, detail="minor_document_invalid_pdf")
-    return safe_filename, content
+    return read_bounded_pdf(
+        upload,
+        max_bytes=settings.minor_consent_document_max_bytes,
+        error_prefix="minor_document",
+    )
 
 
 def _audit(db: Session, identity_id: str, event_type: str, document_id: str, status_value: str) -> None:
@@ -161,11 +148,8 @@ def upload_document(
     safe_filename, content = _read_pdf(upload, settings)
     document_id = str(uuid4())
     storage_key = f"{document_id}.pdf"
-    destination = _private_path(settings, storage_key)
     try:
-        with destination.open("xb") as stored:
-            stored.write(content)
-        os.chmod(destination, 0o600)
+        store_private_bytes(settings, storage_key, content)
         previous = db.execute(
             text(
                 "SELECT id FROM minor_consent_document "
@@ -202,7 +186,7 @@ def upload_document(
         db.commit()
     except Exception:
         db.rollback()
-        destination.unlink(missing_ok=True)
+        remove_private_file(settings, storage_key)
         raise
     return get_document_status(db, principal, settings)
 

@@ -109,10 +109,16 @@ No passwords/tokens. Avoid raw resume/chat text. Mask contact data where possibl
 ## Uploads
 Resume and minor-consent uploads are candidate-scoped and require processing
 consent. Validate the PDF filename, MIME, signature and configured size before
-writing. Use UUID storage keys below the configured private root with restrictive
-permissions; never return storage paths, hashes, raw bytes or resume text from
-the upload API. Isolate the later parser and require review before extracted
-fields become profile data. Failed writes must not leave a database row or file.
+writing. The shared upload boundary rejects filename control characters,
+normalizes path separators for display metadata only, and enforces the UTF-8
+filename byte limit. Use UUID storage keys below the configured private root;
+the root is reasserted as mode `0700`, configured root symlinks are rejected,
+and files are created exclusively without following a final symlink at mode
+`0600`. Writes are flushed before the transaction is committed, and failures
+remove the private artifact. Never return storage paths, hashes, raw bytes or
+resume text from the upload API. Isolate the later parser and require review
+before extracted fields become profile data. Failed writes must not leave a
+database row or file.
 
 ## Assessment integrity telemetry
 If focus/paste/timing events are collected, disclose the behavior, minimize the data, retain only what is necessary and use signals for review rather than automatic accusations.

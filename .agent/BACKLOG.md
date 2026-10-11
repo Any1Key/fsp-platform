@@ -138,7 +138,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] screenshot evidence suite using synthetic demo data
 
 ## M15 — Security / 152-FZ-oriented controls
-- [ ] upload hardening
+- [x] upload hardening
 - [ ] consent/withdrawal/retention/delete/export concepts/flows
 - [ ] minor-document privacy
 - [ ] rate limits where appropriate
