@@ -112,14 +112,20 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .authActions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .authButton { border: 0; border-radius: 10px; padding: 11px 13px; color: white; cursor: pointer; font: inherit; font-size: 11px; white-space: nowrap; }
 .authButton:disabled { cursor: wait; opacity: .58; }
+.registrationNotice { grid-column: 1 / -1; color: #ffd28a; font-size: 10px; line-height: 1.45; }
+.authPanel:has(.registrationNotice) { flex-wrap: wrap; }
+.authPanel:has(.registrationNotice) .registrationNotice { flex-basis: 100%; }
 .primaryButton { background: var(--brand-primary); }
 .secondaryButton { background: #34353d; }
 .onboardingPanel { border-color: rgba(169,161,255,.48); }
 .onboardingError { color: #ffb6bd; }
 .signedInPanel {
+  position: relative; overflow: hidden;
   width: 100%; display: grid; grid-template-columns: 220px minmax(0, 1fr); align-items: start; gap: 22px;
   padding: 22px; border-color: rgba(169,161,255,.28); background: #23242b;
 }
+.signedInPanel::after { content: ""; position: absolute; z-index: 0; right: 24px; top: 18px; width: 190px; height: 120px; background: url("/brand/official/lineline1.png") center / contain no-repeat; opacity: .16; pointer-events: none; }
+.signedInPanel > * { position: relative; z-index: 1; }
 .signedInPanel > div:first-child { grid-column: 1; grid-row: 1; }
 .signedInPanel > .authButton { grid-column: 2; grid-row: 1; justify-self: end; }
 .workspaceTabs {

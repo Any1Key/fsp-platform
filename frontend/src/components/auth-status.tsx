@@ -58,6 +58,7 @@ export function AuthStatus() {
   const [invitationRefreshKey, setInvitationRefreshKey] = useState(0);
   const [taskRefreshKey, setTaskRefreshKey] = useState(0);
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>("overview");
+  const [registrationNotice, setRegistrationNotice] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -252,10 +253,11 @@ export function AuthStatus() {
         <button className="authButton primaryButton" onClick={() => keycloak.current?.login()}>
           Войти через Keycloak
         </button>
-        <button className="authButton secondaryButton" onClick={() => keycloak.current?.register()}>
+        <button className="authButton secondaryButton" onClick={() => { setRegistrationNotice(true); keycloak.current?.register(); }}>
           Создать аккаунт
         </button>
       </div>
+      {registrationNotice && <small className="registrationNotice" role="status">Регистрация доступна только с адресом электронной почты, который заканчивается на .ru</small>}
     </div>
   );
 }
