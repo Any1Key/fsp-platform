@@ -10,7 +10,10 @@ const nextConfig = {
   output: "standalone",
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [
+      { source: "/", headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }, ...securityHeaders] },
+      { source: "/(.*)", headers: securityHeaders },
+    ];
   }
 };
 export default nextConfig;
