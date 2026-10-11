@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 
 const enabled = process.env.AUTH_E2E_ENABLED === "true";
 const keycloakBaseUrl = process.env.KEYCLOAK_E2E_BASE_URL || "http://keycloak:8080";
+const keycloakPublicBaseUrl = process.env.KEYCLOAK_PUBLIC_E2E_BASE_URL || keycloakBaseUrl;
 const mailpitBaseUrl = process.env.MAILPIT_BASE_URL || "http://mailpit:8025";
 const realm = "fsp";
 
@@ -113,7 +114,7 @@ test.describe("Keycloak email verification", () => {
     let user: KeycloakUser | undefined;
 
     try {
-      const registrationUrl = new URL(`${keycloakBaseUrl}/realms/${realm}/protocol/openid-connect/registrations`);
+      const registrationUrl = new URL(`${keycloakPublicBaseUrl}/realms/${realm}/protocol/openid-connect/registrations`);
       registrationUrl.searchParams.set("client_id", "fsp-web");
       registrationUrl.searchParams.set("response_type", "code");
       registrationUrl.searchParams.set("scope", "openid");
