@@ -1,4 +1,7 @@
-# Pitch / presentation outline
+# Pitch / presentation-source outline
+
+Use this as the concise source for a 7–10 minute jury presentation. Keep the
+reverse-recruitment and verified-evidence story central; show only synthetic data.
 
 1. Problem: keyword resumes and noisy generic job boards.
 2. Product insight: reverse recruitment + verified evidence, not resume self-description.
@@ -14,8 +17,9 @@
 12. Validation: matching metrics vs keyword baseline + assessment confusion/stability/discrimination.
 13. Load test on CPU-only target host; no GPU dependency.
 14. Architecture / Keycloak / Docker / OpenAPI / local adapters.
-15. Brand-responsive UI and Telegram autonomous-development evidence/screenshots.
-16. Live demo.
-17. Roadmap: real FSP registry/Keycloak integration, ATS, employer trust.
+15. Technology stack: Next.js, FastAPI, PostgreSQL, Keycloak/OIDC, Docker Compose, Playwright; no GPU dependency.
+16. Live demo: registration → Mailpit verification → role/profile → assessment/FSP → Talent Radar/ProofMatch → salary invitation → accepted MATCH → chat → employer task → evaluation.
+17. Responsive evidence, validation artifacts, and supervisor/manual gates: authenticated target load and complete jury E2E.
+18. Roadmap: real FSP registry/Keycloak integration, ATS, employer trust.
 
 Keep the core 35% matching criterion and 25% assessment criterion central in the narrative.

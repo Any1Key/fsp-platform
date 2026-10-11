@@ -10,7 +10,9 @@ grep -Fq 'FSP_LOAD_CANDIDATE_TOKEN_FILE' "$RUNNER"
 grep -Fq 'FSP_LOAD_EMPLOYER_TOKEN_FILE' "$RUNNER"
 grep -Fq '/api/v1/employer/talent-radar' "$RUNNER"
 grep -Fq '/api/v1/chat/conversations' "$RUNNER"
-grep -Fq 'docker stats --no-stream' "$RUNNER"
+# The runner invokes Docker through an argument list, so audit the actual
+# subprocess form rather than a shell command that does not occur in source.
+grep -Fq '"stats", "--no-stream"' "$RUNNER"
 grep -Fq 'request-times.tsv' "$RUNNER"
 grep -Fq 'NFR-010' "$ROOT/docs/PERFORMANCE_TESTING.md"
 

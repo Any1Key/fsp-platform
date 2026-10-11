@@ -2,8 +2,12 @@
 
 Reset:
 ```bash
-./scripts/demo-reset.sh
+DEMO_RESET_CONFIRM=YES ./scripts/demo-reset.sh
 ```
+
+The reset is a deterministic empty-database baseline, not a fixture containing
+pre-authenticated people. The jury operator creates synthetic accounts through
+Keycloak/Mailpit so no credentials or personal data are stored in the repository.
 
 Primary scenario:
 1. branded landing;

@@ -90,10 +90,16 @@ Logs:
 docker compose logs -f --tail=200
 ```
 
-Fresh destructive demo reset:
+Fresh destructive demo reset (removes only this Compose project's named volumes;
+the confirmation guard is intentional):
 ```bash
-./scripts/demo-reset.sh
+DEMO_RESET_CONFIRM=YES ./scripts/demo-reset.sh
 ```
+
+The reset applies the empty-database migrations and runs `python -m app.seed_demo`,
+which verifies the deterministic taxonomy baseline. It does not create Keycloak
+users, passwords, verification messages, chat, or candidate documents. Create
+synthetic `.ru` accounts through normal Keycloak registration during the jury demo.
 
 Do not expose bootstrap directly to the public Internet as production. Add TLS/reverse proxy, production
 secrets, real SMTP, backups, monitoring and hardened identity before public deployment.

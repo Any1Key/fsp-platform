@@ -2,6 +2,11 @@
 
 Base: `/api/v1`.
 
+FastAPI's generated OpenAPI at `/openapi.json` is the authoritative machine-readable
+contract (`/docs` is the interactive view). The 2026-10-11 audit found 71 HTTP
+paths under `/health`, `/health/ready`, and `/api/v1`; this document describes
+domain and privacy semantics rather than maintaining a second route inventory.
+
 Use:
 - resource-oriented URLs;
 - typed Pydantic schemas;

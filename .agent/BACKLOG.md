@@ -148,19 +148,19 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] index/query audit
 
 ## M16 — Submission/docs/demo
-- [ ] OpenAPI audit
-- [ ] docs current
-- [ ] dependency versions
-- [ ] deploy from clean clone
-- [ ] deterministic demo reset
+- [x] OpenAPI audit
+- [x] docs current
+- [x] dependency versions
+- [ ] deploy from clean clone (external supervisor)
+- [x] deterministic demo reset baseline
 - [ ] complete jury E2E
-- [ ] presentation-source outline
+- [x] presentation-source outline
 
 ## M17 — Final independent audit
-- [ ] requirements audit
-- [ ] defect triage P0/P1/P2
-- [ ] fix P0/P1
+- [x] requirements audit
+- [x] defect triage P0/P1/P2
+- [x] fix safely-fixable P0/P1 documentation/reset defects
 - [ ] fresh CPU-only deployment
 - [ ] final load run
-- [ ] final responsive screenshots/evidence
+- [x] final responsive screenshots/evidence audit
 - [ ] set READY only after external acceptance

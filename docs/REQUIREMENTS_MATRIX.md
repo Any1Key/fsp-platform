@@ -13,7 +13,7 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | AST-004 | P0 | Assessment resists leaked fixed questions | Variants/anchors implementation | VERIFIED | backend/tests/test_assessments.py; docs/ASSESSMENT_ENGINE.md |
 | AST-005 | P0 | Different forms have comparable difficulty | Blueprint/anchor validation | VERIFIED | backend/tests/test_assessment_validation.py::test_synthetic_validation_is_reproducible_and_reports_discrimination; docs/VALIDATION_RESULTS.json; docs/ASSESSMENT_VALIDATION.md |
 | AST-006 | P0 | Show test formation from several vacancy/need descriptions | Demo data/tests | TODO |  |
-| AST-007 | P0 | Failed declared-grade test does not forcibly downgrade | Domain test | TODO |  |
+| AST-007 | P0 | Failed declared-grade test does not forcibly downgrade | Domain test | IMPLEMENTED | backend/tests/test_assessments.py::test_retest_is_locked_and_failed_declared_grade_is_not_downgraded |
 | AST-008 | P0 | Candidate can take lower-grade test | Domain/E2E | TODO |  |
 | AST-009 | P0 | Strong result can offer higher-grade test | Domain/E2E | TODO |  |
 | AST-010 | P0 | Grade change/retest frequency limited | 90-day configurable test | VERIFIED | backend/tests/test_assessments.py; backend/app/assessments.py |
@@ -34,7 +34,7 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | CAND-009 | P2 | Candidate sees application statuses | Candidate-scoped current status and append-only history integration test/UI | VERIFIED | backend/tests/test_candidate_vacancies.py; frontend/src/components/candidate-vacancies.tsx; docs/CANDIDATE_VACANCIES.md |
 | CAND-010 | P0 | Privacy settings + processing/publication consent | Domain + E2E | VERIFIED | backend/tests/test_auth.py; backend/app/privacy.py; frontend/src/components/privacy-settings.tsx |
 | CAND-011 | P0 | Link profile to FSP ID | Candidate-scoped consent-gated link/read/unlink integration tests + UI | VERIFIED | backend/tests/test_fsp.py; frontend/src/components/candidate-fsp.tsx |
-| CAND-012 | P0 | Candidate cannot access others' private data | Authorization tests | TODO |  |
+| CAND-012 | P0 | Candidate cannot access others' private data | Authorization tests | IMPLEMENTED | backend/tests/test_auth.py; backend/tests/test_candidate_profile.py; backend/tests/test_protected_candidate.py |
 | CAND-013 | P0 | Minor candidate can upload private parent/legal-representative consent documentation | Minor-flow API/UI + authorization tests | VERIFIED | backend/tests/test_minor_consent.py; frontend/src/components/candidate-minor-consent.tsx |
 | CAND-014 | P0 | Age/minor data is private and excluded from matching | Protected candidate API/UI + self-scope/privacy tests | VERIFIED | backend/tests/test_protected_candidate.py; backend/tests/test_talent_radar.py; backend/app/discovery.py |
 | EMP-001 | P0 | Employer company profile | Employer-scoped API/UI, migration, validation and ownership tests | VERIFIED | backend/tests/test_company_profile.py; frontend/src/components/employer-company-profile.tsx |
@@ -79,8 +79,8 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | FSP-004 | P0 | Keycloak/FSP identity bridge is demonstrable while keeping platform identity and FSP participant identity separate | Candidate-scoped bridge endpoint/UI exposes issuer, one-way subject fingerprint, explicit-link mode and replaceable adapter contract; raw subject/token disclosure and cross-candidate access tests | VERIFIED | backend/tests/test_fsp.py; backend/app/fsp.py; docs/FSP_INTEGRATION.md |
 | VAL-001 | P0 | Own candidate/vacancy dataset | Versioned synthetic generator with candidate/need/assessment fixtures and complete relevance-label matrix | VERIFIED | backend/app/validation_dataset.py; backend/tests/test_validation_dataset.py; docs/VALIDATION_DATASET.md |
 | VAL-002 | P0 | Own validation procedure + real results | Fixed-seed labeled matching-relevance materialization, offline keyword baseline, and reproducible Precision@5/nDCG@5/Recall@10 report; assessment metrics and load validation remain separate M13 work units | VERIFIED | backend/app/validation_report.py; backend/tests/test_validation_report.py; docs/VALIDATION_RESULTS.json |
-| NFR-001 | P0 | Runs on ordinary machine with reasonable memory | Compose review | TODO |  |
-| NFR-002 | P0 | Open unobfuscated source | Repository | TODO |  |
+| NFR-001 | P0 | Runs on ordinary machine with reasonable memory | Compose review | IMPLEMENTED | docs/PERFORMANCE_RESULTS.md; docker-compose.yml |
+| NFR-002 | P0 | Open unobfuscated source | Repository | IMPLEMENTED | repository source tree; no build-time obfuscation |
 | NFR-003 | P0 | Clear frontend/backend/storage separation | Architecture review + database session boundary tests | VERIFIED | docs/ARCHITECTURE.md; backend/app/db.py; backend/tests/test_database.py |
 | NFR-004 | P0 | Reproducible Docker Compose startup | Locked installs, startup migration, and empty-database migration test | VERIFIED | backend/tests/test_migrations.py; .agent/runs/20261011-115226-c074/verification.log; .agent/runs/20261011-115226-c074/compose-ps.txt |
 | NFR-005 | P0 | OpenAPI documents API/errors | OpenAPI audit | VERIFIED | backend/tests/test_errors.py; backend/app/errors.py; docs/API_GUIDELINES.md |
@@ -97,15 +97,15 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | LEGAL-001 | P0 | 152-FZ-oriented data minimization, consent, RBAC and audit controls are documented/implemented | Security/privacy audit including bounded request-rate controls, private-upload boundary, safe-log redaction, reviewed SQL indexes and cleanup tests | IMPLEMENTED | backend/tests/test_upload_security.py; backend/tests/test_auth.py; backend/tests/test_security.py; backend/tests/test_rate_limit.py; backend/tests/test_logging_safety.py; agent/test-secret-log-contract.sh; backend/tests/test_query_indexes.py; backend/alembic/versions/20261011_0030_security_query_audit.py; docs/SECURITY_QUERY_AUDIT.md; docs/LEGAL_152FZ.md |
 | LEGAL-002 | P1 | Withdrawal/deletion/export/retention workflows or demonstrable MVP concepts exist | Candidate-scoped request ledger, idempotent export/deletion actions, immediate withdrawal, retention scheduling and privacy E2E/docs | VERIFIED | backend/tests/test_auth.py; backend/app/privacy.py; backend/alembic/versions/20261011_0029_privacy_lifecycle.py; docs/LEGAL_152FZ.md |
 | LEGAL-003 | P0 | Telegram agent reporting never sends real PII/chat/minor documents | `agent/test-telegram-contract.sh`; `agent/telegram.sh`; docs/TELEGRAM_REPORTING.md; docs/SECURITY.md; docs/LEGAL_152FZ.md | VERIFIED | agent/telegram.sh; agent/test-telegram-contract.sh; docs/TELEGRAM_REPORTING.md; .agent/runs/20261011-140127-c075/verification.log |
-| DOC-001 | P0 | Architecture docs | Docs audit | TODO |  |
-| DOC-002 | P0 | Assessment/leak-resistance docs | Docs audit | TODO |  |
+| DOC-001 | P0 | Architecture docs | Docs audit | IMPLEMENTED | docs/ARCHITECTURE.md; docs/DATA_MODEL.md |
+| DOC-002 | P0 | Assessment/leak-resistance docs | Docs audit | IMPLEMENTED | docs/ASSESSMENT_ENGINE.md; docs/AI_ASSESSMENT_INTEGRITY.md |
 | DOC-003 | P0 | Matching/category docs | Matching engine, Talent Radar API contract and employer UI docs | VERIFIED | docs/MATCHING_ENGINE.md; docs/API_GUIDELINES.md; frontend/src/components/employer-talent-radar.tsx |
 | DOC-004 | P0 | Validation procedure/results docs | Reproducible aggregate result artifact, procedure/summary docs, privacy contract tests | VERIFIED | backend/app/validation_report.py; backend/tests/test_validation_report.py; docs/VALIDATION_RESULTS.md; docs/VALIDATION_RESULTS.json |
 | DOC-005 | P0 | FSP integration scheme docs | Docs audit | VERIFIED | docs/FSP_INTEGRATION.md; docs/DATA_MODEL.md; backend/app/fsp.py |
-| DOC-006 | P0 | API description | OpenAPI/docs | VERIFIED | docs/API_GUIDELINES.md; backend/tests/test_errors.py; backend/app/main.py |
+| DOC-006 | P0 | API description | OpenAPI/docs | IMPLEMENTED | docs/API_GUIDELINES.md; docs/OPENAPI_AUDIT.md; backend/app/main.py |
 | DOC-007 | P0 | Libraries/components with versions | COMPONENTS.md | VERIFIED | docs/COMPONENTS.md; backend/requirements.lock; frontend/package-lock.json; qa/package-lock.json; docker-compose.yml |
 | DOC-008 | P0 | Step-by-step build/deploy/local run | Setup/deployment docs | VERIFIED | docs/DEPLOYMENT.md; .env.example; scripts/demo-reset.sh |
-| DEMO-001 | P0 | Full candidate→assessment→employer→contact demo | Playwright + demo reset | TODO |  |
+| DEMO-001 | P0 | Full candidate→assessment→employer→contact demo | Playwright + demo reset | TODO | docs/DEMO_SCENARIO.md; complete authenticated E2E remains outstanding |
 | BONUS-001 | P2 | Fake-vacancy / bad-employer protection concept/MVP | Employer trust projection, invitation-scoped candidate report/reviewer queue, conservative outbound throttle, and UI/API integration tests | VERIFIED | backend/tests/test_employer_trust.py; backend/app/trust.py; frontend/src/components/employer-trust.tsx; docs/TRUST_AND_ANTI_FRAUD.md |
 | BONUS-002 | P2 | ATS integration concept | Versioned OpenAPI contract endpoint, typed event envelope, HMAC/replay/idempotency/contact-boundary tests, and adapter documentation | VERIFIED | backend/tests/test_ats.py; backend/app/ats.py; docs/ATS_INTEGRATION.md |
 | INNOV-001 | P2 | Verified Skill Passport | Candidate-only `/api/v1/candidate/skill-passport` projection, evidence-source/freshness tests, and responsive candidate UI | VERIFIED | backend/tests/test_skill_passport.py; backend/app/skill_passport.py; frontend/src/components/candidate-skill-passport.tsx |
@@ -115,4 +115,4 @@ Status: `TODO`, `IN_PROGRESS`, `IMPLEMENTED`, `VERIFIED`, `BLOCKED`.
 | INNOV-005 | P2 | Assessment Integrity signals | Advisory telemetry, hidden-check and cross-submission similarity signals rendered in candidate result UI | VERIFIED | backend/tests/test_assessments.py; frontend/src/components/candidate-assessment.tsx; docs/AI_ASSESSMENT_INTEGRITY.md |
 | INNOV-006 | P2 | Career Graph | Candidate UI | VERIFIED | backend/tests/test_career_graph.py; backend/app/career_graph.py; frontend/src/components/candidate-career-graph.tsx; docs/INNOVATIONS.md |
 | INNOV-007 | P2 | Validation Dashboard | Role-protected aggregate validation API/UI with matching metrics, assessment confusion matrix, item discrimination, loading/error states, and PII-free integration tests | VERIFIED | backend/tests/test_validation_dashboard.py; backend/app/validation_dashboard.py; frontend/src/components/validation-dashboard.tsx; docs/VALIDATION_DASHBOARD.md |
-| INNOV-008 | P1 | Deterministic Jury Demo reset | Script/E2E | TODO |  |
+| INNOV-008 | P1 | Deterministic Jury Demo reset | Script/E2E | IMPLEMENTED | scripts/demo-reset.sh; backend/app/seed_demo.py; docs/DEPLOYMENT.md |

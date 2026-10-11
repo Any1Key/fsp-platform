@@ -137,7 +137,11 @@ rate_limit_store = InMemoryRateLimitStore(max_keys=runtime_settings.rate_limit_m
 app = FastAPI(
     title="FSP Talent Platform API",
     version="0.1.0",
-    description="Bootstrap API. Codex implements the target domain from the requirements matrix.",
+    description=(
+        "FSP Talent Platform REST API for verified evidence, ProofMatch reverse "
+        "recruitment, salary-bearing invitations, post-match chat, and employer tasks. "
+        "Core operation is CPU-only; optional local AI is disabled by default."
+    ),
 )
 app.add_middleware(
     CORSMiddleware,
