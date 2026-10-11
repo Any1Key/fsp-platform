@@ -33,6 +33,17 @@ exception text is never returned.
 Document 400/401/403/404/409/422 cases where relevant.
 Do not leak protected resource existence across authorization boundaries.
 
+## Browser security boundary
+
+`CORS_ALLOWED_ORIGINS` is a comma-separated list of explicit HTTP(S) origins;
+wildcards and URL paths are rejected. Credentials are disabled because the API
+uses Bearer access tokens. Preflight supports `GET`, `POST`, `PATCH`, `PUT`,
+`DELETE`, and `OPTIONS`, and the API exposes only `X-Request-ID`.
+
+The API applies baseline security headers to success, error, and preflight
+responses. Production adds HSTS; local HTTP development does not. See
+`docs/SECURITY.md` for the policy and deployment boundary.
+
 ## ATS integration contract
 
 `GET /api/v1/integrations/ats/v1/contract` is a public, data-free discovery

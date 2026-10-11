@@ -9,6 +9,24 @@ The project handles personal/employment data. Treat the 152-FZ requirement as a 
 - server-side JWT validation;
 - server-side role authorization.
 
+## Browser boundary
+
+The API accepts only explicit HTTP(S) origins from `CORS_ALLOWED_ORIGINS`; the
+configuration rejects wildcards, paths, credentials in the origin, and empty
+origin lists. Bearer-token requests do not use ambient browser credentials, so
+CORS credentials remain disabled. The preflight contract covers every REST
+method used by the application, including `DELETE`, and exposes only the safe
+`X-Request-ID` response header.
+
+API responses, including errors and CORS preflight responses, set
+`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: strict-origin-when-cross-origin`, and a restrictive
+`Permissions-Policy` for camera, microphone, geolocation, and payment. The
+API adds HSTS only when `APP_ENV=production`; local HTTP development is not
+forced into an HTTPS policy. The Next.js frontend sends the same non-HSTS
+browser policy. TLS termination and certificate management remain deployment
+responsibilities.
+
 The backend identity boundary validates issuer, audience, RS256 signature,
 expiry, required claims, verified email and the candidate/employer role before
 creating or refreshing a local `user_identity`. Tokens and passwords are never

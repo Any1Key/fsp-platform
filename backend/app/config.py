@@ -1,8 +1,9 @@
 """Application settings loaded at the infrastructure boundary."""
 
 from functools import lru_cache
+from urllib.parse import urlsplit
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -41,6 +42,30 @@ class Settings(BaseSettings):
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
+
+    @field_validator("cors_allowed_origins")
+    @classmethod
+    def validate_cors_allowed_origins(cls, value: str) -> str:
+        """Keep browser access explicit and limited to origin-only URLs."""
+
+        origins = [origin.strip().rstrip("/") for origin in value.split(",") if origin.strip()]
+        if not origins:
+            raise ValueError("cors_allowed_origins must contain at least one explicit origin")
+        for origin in origins:
+            parsed = urlsplit(origin)
+            if (
+                origin == "*"
+                or "*" in origin
+                or parsed.scheme not in {"http", "https"}
+                or not parsed.netloc
+                or parsed.path not in {"", "/"}
+                or parsed.query
+                or parsed.fragment
+                or parsed.username
+                or parsed.password
+            ):
+                raise ValueError(f"invalid explicit CORS origin: {origin}")
+        return ",".join(origins)
 
     model_config = SettingsConfigDict(
         env_file=".env",

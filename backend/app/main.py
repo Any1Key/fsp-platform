@@ -89,6 +89,7 @@ from .privacy import PrivacyState, get_privacy, request_export, update_privacy
 from .profile_pdf import render_profile_pdf
 from .protected_candidate import MinorState, get_protected_profile, update_protected_profile
 from .resume import get_resume, review_resume, upload_resume
+from .security import SecurityHeadersMiddleware
 from .skill_passport import get_skill_passport
 from .task_assignments import list_candidate_assignments, submit_candidate_assignment
 from .taxonomy import list_taxonomy
@@ -98,7 +99,6 @@ from .trust import (
     list_trust_reports,
     resolve_trust_report,
 )
-from .validation_dashboard import build_validation_dashboard
 from .vacancies import (
     close_vacancy,
     create_vacancy,
@@ -114,6 +114,7 @@ from .vacancy_applications import (
     list_published_vacancies,
     update_employer_application,
 )
+from .validation_dashboard import build_validation_dashboard
 
 app = FastAPI(
     title="FSP Talent Platform API",
@@ -124,9 +125,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "PATCH", "PUT", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+    expose_headers=["X-Request-ID"],
+    max_age=600,
 )
+app.add_middleware(SecurityHeadersMiddleware, app_env=get_settings().app_env)
 
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
 

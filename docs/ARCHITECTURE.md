@@ -123,7 +123,11 @@ profile applies the same `.ru` pattern during self-registration, while
 `POST /api/v1/auth/registration/check` gives the frontend a deterministic
 preflight. The API allows only the documented localhost/127.0.0.1 frontend
 origins for browser requests, with explicit Bearer-header preflight support;
-credentials are not enabled.
+credentials are not enabled. `backend/app/security.py` applies response
+headers to success, error, and preflight responses. The browser policy blocks
+MIME sniffing and framing, limits referrer/capability leakage, and adds HSTS
+only for production deployments. The Next.js boundary mirrors the non-HSTS
+policy, while TLS remains an infrastructure responsibility.
 
 Keycloak identity and FSP participant identity remain separate. Candidate
 `GET /api/v1/candidate/fsp/integration` exposes a safe, one-way subject
