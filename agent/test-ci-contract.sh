@@ -33,4 +33,5 @@ fi
 bash "$ROOT/agent/test-qa-contract.sh"
 bash "$ROOT/agent/test-resource-baseline-contract.sh"
 bash "$ROOT/agent/test-local-ai-profile-contract.sh"
+bash "$ROOT/agent/test-telegram-contract.sh"
 echo 'CI contract OK (locked Python/Node installs, QA contract, Compose config)'

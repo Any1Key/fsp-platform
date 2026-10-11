@@ -118,7 +118,12 @@ fields become profile data. Failed writes must not leave a database row or file.
 If focus/paste/timing events are collected, disclose the behavior, minimize the data, retain only what is necessary and use signals for review rather than automatic accusations.
 
 ## Telegram/agent reporting
-Never send real candidate PII, resumes, chat text, minor documents or tokens to Telegram. UI screenshots sent by the autonomous agent must use deterministic synthetic/demo accounts or redaction.
+Never send real candidate PII, resumes, chat text, minor documents or tokens to
+Telegram. `agent/telegram.sh` enforces this boundary by mapping only known
+supervisor events to fixed safe summaries, rejecting arbitrary messages,
+restricting photos to PNG-signature files under `.agent/screenshots/latest`,
+and disabling document uploads. UI screenshots sent by the autonomous agent
+must use deterministic synthetic/demo accounts or redaction.
 
 ## Authorization tests
 

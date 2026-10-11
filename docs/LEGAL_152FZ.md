@@ -37,4 +37,9 @@ Exact document wording and legal threshold are configuration/legal-review items.
 
 ## Telegram/agent reporting
 
-Agent Telegram reports must never contain real candidate PII, resume contents, chat contents, tokens or consent documents. Screenshots sent to Telegram must use deterministic synthetic demo users or a redacted demo mode.
+Agent Telegram reports must never contain real candidate PII, resume contents,
+chat contents, tokens or consent documents. The reporting wrapper maps known
+supervisor events to fixed safe summaries, rejects arbitrary message text,
+restricts photos to PNG-signature screenshots, and disables document uploads.
+Screenshots sent to Telegram must use deterministic synthetic demo users or a
+redacted demo mode.
