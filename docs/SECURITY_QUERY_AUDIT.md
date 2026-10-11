@@ -13,14 +13,13 @@ parameters). It also sanitizes logging arguments, exception tracebacks and
 stack text before a handler formats them.
 
 The API does not log request bodies. Access-sensitive state is represented by
-request IDs and safe status metadata. The supervisor shell boundary separately
-redacts configured database, identity-provider, Telegram, API and repository
-token variables when it writes diagnostic tails. Tokens,
+request IDs and safe status metadata. The deployment boundary separately
+redacts configured database, identity-provider, API and repository token
+variables when it writes diagnostic tails. Tokens,
 passwords, raw resume/minor-document bytes, full chat bodies, contact values
 and unnecessary protected attributes remain excluded from audit details.
 
-Regression coverage is in `backend/tests/test_logging_safety.py` and
-`agent/test-secret-log-contract.sh`. It verifies
+Regression coverage is in `backend/tests/test_logging_safety.py`. It verifies
 direct messages, format arguments, URLs, search parameters and exception text;
 the test uses synthetic values only.
 

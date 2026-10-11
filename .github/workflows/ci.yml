@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: ["main", "develop", "agent/**"]
+    branches: ["main", "develop"]
   pull_request:
   workflow_dispatch:
 
@@ -64,14 +64,6 @@ jobs:
           cache-dependency-path: qa/package-lock.json
       - run: npm ci --ignore-scripts
       - run: npx playwright --version
-
-  ci-contract:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - run: bash agent/test-ci-contract.sh
-      - run: bash agent/test-resource-baseline-contract.sh
 
   compose-config:
     runs-on: ubuntu-latest

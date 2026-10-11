@@ -4,7 +4,7 @@
 
 This document records live conference Q&A notes supplied by the project owner on 2026-10-06.
 It is a **working clarification source**, not a verbatim organizer transcript. The original 2026 technical specification remains the baseline.
-Where these notes clarify an ambiguous part of the specification, implement the clarification. Where an apparent conflict exists, record it in `.agent/DECISIONS.md` and make the safest demo-capable choice without silently deleting an original requirement.
+Where these notes clarify an ambiguous part of the specification, implement the clarification and document the resulting product decision in the relevant architecture or requirements document.
 
 ## Organizer clarifications reported by the project owner
 

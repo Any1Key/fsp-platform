@@ -22,6 +22,12 @@ test-results/
 .vscode/
 
 # Autonomous agent runtime
+.agent/
+agent/
+AGENTS.md
+CODEX_START.md
+docs/SETUP_SYNOLOGY_CODEX_RU.md
+docs/TELEGRAM_REPORTING.md
 .agent/autopilot.out
 .agent/autopilot.pid
 .agent/autopilot.lock/

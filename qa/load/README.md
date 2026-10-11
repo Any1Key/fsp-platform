@@ -42,7 +42,7 @@ not as a zero measurement. `--fail-on-thresholds` applies the targets from
 
 ```sh
 python3 -m unittest discover -s qa/load -p 'test_*.py'
-./agent/test-load-contract.sh
+python3 -m pytest qa/load/test_run_load.py
 ```
 
 The bootstrap CPU-only resource baseline remains separate:

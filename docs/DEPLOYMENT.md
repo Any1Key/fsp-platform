@@ -122,7 +122,7 @@ read-only repository permissions and cancel superseded runs.
 The local contract check is repeatable without starting services:
 
 ```bash
-bash agent/test-ci-contract.sh
+docker compose --profile test config -q
 ```
 
 CI configuration and contract checks establish the automated gate only. The

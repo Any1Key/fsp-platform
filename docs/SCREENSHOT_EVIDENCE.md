@@ -50,7 +50,7 @@ ignored by Git; external supervision may archive a reviewed capture.
 With the Compose services available:
 
 ```sh
-./agent/capture-screenshots.sh
+docker compose --profile test run --rm qa npm run screenshots
 ```
 
 Or directly inside the QA container:

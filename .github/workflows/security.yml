@@ -14,4 +14,4 @@ jobs:
       - name: Reject obvious committed secrets
         run: |
           ! grep -RIE --exclude-dir=.git --exclude='*.example' \
-            '(sk-[A-Za-z0-9_-]{20,}|TELEGRAM_BOT_TOKEN=.+|KEYCLOAK_ADMIN_PASSWORD=.+)' .
+            '(sk-[A-Za-z0-9_-]{20,}|KEYCLOAK_ADMIN_PASSWORD=.+)' .

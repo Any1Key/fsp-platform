@@ -6,8 +6,7 @@ Status: **REPORTING IMPLEMENTED; AUTHENTICATED TARGET MEASUREMENT PENDING**
 
 - Requirement: NFR-010.
 - Runner: `qa/load/run_load.py`.
-- Contract/unit evidence: `agent/test-load-contract.sh` and
-  `qa/load/test_run_load.py`.
+- Contract/unit evidence: `qa/load/test_run_load.py`.
 - Report evidence: `report.json` now includes request/error percentiles,
   threshold decisions, and a `resources` section with before/during/after
   Docker CPU/RAM observations and peak values; raw `*-docker-stats.tsv` files
