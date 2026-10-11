@@ -34,6 +34,7 @@
 git clone <repository-url>
 cd fsp-platform
 cp .env.example .env
+touch email_confirmation_links.txt
 ```
 
 В `.env` замените значения `CHANGE_ME_*` и оставьте локальные URL:
@@ -105,11 +106,23 @@ PROXY_NETWORK=your_reverse_proxy_network
 
 ```bash
 docker compose -f docker-compose.yml -f compose.prod.yml config -q
+touch email_confirmation_links.txt
 docker compose -f docker-compose.yml -f compose.prod.yml up -d --build
 docker compose -f docker-compose.yml -f compose.prod.yml ps
 ```
 
 После изменения любого `NEXT_PUBLIC_*` значения frontend нужно пересобрать: restart контейнера не меняет значения, уже встроенные в Next.js bundle.
+
+### Ссылки подтверждения email
+
+В локальном/demo-контуре Mailpit принимает письма Keycloak. Сервис
+`mailpit-link-writer` автоматически сохраняет найденные ссылки подтверждения
+в файл `email_confirmation_links.txt` в корне проекта. Файл исключён из Git,
+поскольку ссылки содержат одноразовые токены.
+
+```bash
+tail -n 1 email_confirmation_links.txt
+```
 
 ### Keycloak client
 
@@ -193,6 +206,7 @@ Full backend pytest suite и длительный load test не требуют�
 - [Performance testing](docs/PERFORMANCE_TESTING.md)
 - [Security](docs/SECURITY.md)
 - [Presentation outline](docs/PRESENTATION_OUTLINE.md)
+- [Полная документация проекта (PDF)](docs/FSP_Talent_Документация.pdf)
 
 ## Структура проекта
 
@@ -202,11 +216,11 @@ frontend/                Next.js application
 qa/                      Playwright smoke and E2E checks
 infrastructure/keycloak Keycloak realm template
 docs/                    TZ, architecture, API and validation documents
-scripts/                 deployment and demo utilities
+scripts/                 deployment, demo and email-link utilities
 compose.prod.yml         production network/URL override
 docker-compose.yml       local and test Compose profile
 ```
 
 ## Статус
 
-Основные P0/P1 механики реализованы и покрыты targeted/backend/QA проверками. Перед формальным статусом `READY` остаются единый authenticated DEMO-001 E2E-сценарий, фактический target load report и экспорт финальной презентации в PDF или PPTX. Подробный статус находится в [DOCUMENTATION_AUDIT.md](docs/DOCUMENTATION_AUDIT.md).
+Основные P0/P1 механики реализованы и покрыты targeted/backend/QA проверками. Перед формальным статусом `READY` остаются единый authenticated DEMO-001 E2E-сценарий и фактический target load report. Подробный статус находится в [DOCUMENTATION_AUDIT.md](docs/DOCUMENTATION_AUDIT.md).
