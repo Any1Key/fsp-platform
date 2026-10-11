@@ -11,6 +11,8 @@ This is an engineering control set, not a legal opinion or certification of comp
 - audit of consent, access-sensitive transitions and data changes;
 - configurable retention/deletion/anonymization workflows;
 - secure transport and secret handling;
+- bounded request-rate controls around public registration and private-data
+  mutation boundaries;
 - avoid external transfer of personal data by default;
 - production deployment/storage location must be reviewed for Russian data-localization requirements.
 
@@ -32,6 +34,12 @@ Deletion withdraws processing/publication consent and discoverability in the
 same transaction, but destructive deletion/anonymization remains the
 responsibility of a reviewed retention worker after legal-hold checks. This is
 an engineering workflow/concept and not a legal certification.
+
+The API also applies bounded request-rate controls to registration checks,
+assessment writes, candidate private uploads, invitations, chat messages, and
+export/deletion requests. Counters use only one-way connection-peer and
+bearer-token fingerprints and are not an audit trail or a substitute for a
+trusted ingress/shared store in a multi-worker deployment.
 
 ## Minor candidates
 

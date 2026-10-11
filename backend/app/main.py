@@ -96,6 +96,11 @@ from .privacy import (
 )
 from .profile_pdf import render_profile_pdf
 from .protected_candidate import MinorState, get_protected_profile, update_protected_profile
+from .rate_limit import (
+    InMemoryRateLimitStore,
+    RateLimitMiddleware,
+    build_rate_limit_policies,
+)
 from .resume import get_resume, review_resume, upload_resume
 from .security import SecurityHeadersMiddleware
 from .skill_passport import get_skill_passport
@@ -124,6 +129,9 @@ from .vacancy_applications import (
 )
 from .validation_dashboard import build_validation_dashboard
 
+runtime_settings = get_settings()
+rate_limit_store = InMemoryRateLimitStore(max_keys=runtime_settings.rate_limit_max_keys)
+
 app = FastAPI(
     title="FSP Talent Platform API",
     version="0.1.0",
@@ -131,14 +139,20 @@ app = FastAPI(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=get_settings().cors_origins,
+    allow_origins=runtime_settings.cors_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
     expose_headers=["X-Request-ID"],
     max_age=600,
 )
-app.add_middleware(SecurityHeadersMiddleware, app_env=get_settings().app_env)
+app.add_middleware(SecurityHeadersMiddleware, app_env=runtime_settings.app_env)
+app.add_middleware(
+    RateLimitMiddleware,
+    policies=build_rate_limit_policies(runtime_settings),
+    store=rate_limit_store,
+    enabled=runtime_settings.rate_limit_enabled,
+)
 
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
 
@@ -1409,7 +1423,10 @@ def validation_dashboard(
     "/api/v1/auth/registration/check",
     tags=["auth"],
     response_model=RegistrationCheckResponse,
-    responses={403: {"model": ErrorResponse, "description": "Email domain is not allowed"}},
+    responses={
+        403: {"model": ErrorResponse, "description": "Email domain is not allowed"},
+        429: {"model": ErrorResponse, "description": "Request rate limit exceeded"},
+    },
 )
 def check_registration(request: RegistrationCheckRequest) -> RegistrationCheckResponse:
     """Preflight the same domain policy applied at the authenticated boundary."""
@@ -2242,6 +2259,7 @@ def employer_talent_radar(
         404: {"model": ErrorResponse, "description": "Candidate is not available"},
         409: {"model": ErrorResponse, "description": "Pending invitation already exists"},
         422: {"model": ErrorResponse, "description": "Salary, offer, or company contact is invalid"},
+        429: {"model": ErrorResponse, "description": "Request rate limit exceeded"},
     },
 )
 def create_employer_invitation(
@@ -2619,6 +2637,7 @@ def chat_conversation(
         403: {"model": ErrorResponse, "description": "Candidate or employer role required"},
         404: {"model": ErrorResponse, "description": "Conversation not found or not accessible"},
         422: {"model": ErrorResponse, "description": "Message body is invalid"},
+        429: {"model": ErrorResponse, "description": "Request rate limit exceeded"},
     },
 )
 def create_chat_message(
@@ -2770,7 +2789,10 @@ def update_candidate_privacy(
     tags=["candidate privacy"],
     response_model=PrivacyRequestResponse,
     status_code=202,
-    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        429: {"model": ErrorResponse, "description": "Request rate limit exceeded"},
+    },
 )
 def request_candidate_export(
     principal: Annotated[Principal, Depends(candidate_principal)],
@@ -2799,7 +2821,10 @@ def candidate_privacy_requests(
     tags=["candidate privacy"],
     response_model=PrivacyRequestResponse,
     status_code=202,
-    responses={403: {"model": ErrorResponse, "description": "Candidate role required"}},
+    responses={
+        403: {"model": ErrorResponse, "description": "Candidate role required"},
+        429: {"model": ErrorResponse, "description": "Request rate limit exceeded"},
+    },
 )
 def request_candidate_deletion(
     principal: Annotated[Principal, Depends(candidate_principal)],
@@ -3085,6 +3110,7 @@ def candidate_minor_consent_document(
         403: {"model": ErrorResponse, "description": "Candidate role required"},
         409: {"model": ErrorResponse, "description": "Minor document prerequisite is not satisfied"},
         422: {"model": ErrorResponse, "description": "Invalid PDF upload"},
+        429: {"model": ErrorResponse, "description": "Request rate limit exceeded"},
     },
 )
 def upload_candidate_minor_consent_document(
@@ -3132,6 +3158,7 @@ def candidate_resume(
         403: {"model": ErrorResponse, "description": "Candidate role required"},
         409: {"model": ErrorResponse, "description": "Processing consent is required"},
         422: {"model": ErrorResponse, "description": "Invalid PDF upload"},
+        429: {"model": ErrorResponse, "description": "Request rate limit exceeded"},
     },
 )
 def upload_candidate_resume(
@@ -3179,6 +3206,7 @@ def review_candidate_resume(
         403: {"model": ErrorResponse, "description": "Candidate role required"},
         409: {"model": ErrorResponse, "description": "Assessment cannot be created"},
         422: {"model": ErrorResponse, "description": "Invalid request"},
+        429: {"model": ErrorResponse, "description": "Request rate limit exceeded"},
     },
 )
 def create_assessment_attempt(
@@ -3236,6 +3264,7 @@ def get_assessment_attempt(
         404: {"model": ErrorResponse, "description": "Assessment attempt not found"},
         409: {"model": ErrorResponse, "description": "Assessment cannot be submitted"},
         422: {"model": ErrorResponse, "description": "Invalid request"},
+        429: {"model": ErrorResponse, "description": "Request rate limit exceeded"},
     },
 )
 def submit_assessment_attempt(

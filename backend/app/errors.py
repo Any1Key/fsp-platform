@@ -88,6 +88,10 @@ ERROR_MESSAGES: dict[str, tuple[str, str]] = {
         "EMPLOYER_INVITATION_RATE_LIMITED",
         "This employer has reached the current invitation limit while trust review is pending.",
     ),
+    "rate_limited": (
+        "RATE_LIMITED",
+        "Request rate limit exceeded. Retry later.",
+    ),
     "employer_trust_report_reason_invalid": (
         "EMPLOYER_TRUST_REPORT_REASON_INVALID",
         "Choose a supported reason for the employer report.",

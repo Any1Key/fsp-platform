@@ -58,3 +58,12 @@ def auth_context(tmp_path, monkeypatch):
         yield client, private_key, settings
     main.app.dependency_overrides.clear()
     engine.dispose()
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limit_store():
+    """Keep process-local request counters isolated between tests."""
+
+    main.rate_limit_store.clear()
+    yield
+    main.rate_limit_store.clear()

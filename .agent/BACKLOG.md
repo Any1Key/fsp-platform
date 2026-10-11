@@ -141,7 +141,7 @@ Markers: `[ ] TODO`, `[~] IN_PROGRESS`, `[x] IMPLEMENTED`, `[v] VERIFIED`, `[!] 
 - [x] upload hardening
 - [x] consent/withdrawal/retention/delete/export concepts/flows
 - [x] minor-document privacy
-- [ ] rate limits where appropriate
+- [x] rate limits where appropriate
 - [x] security headers/CORS
 - [ ] secret/log audit
 - [x] Telegram no-PII audit

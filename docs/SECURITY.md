@@ -117,6 +117,35 @@ Never commit DB passwords, Keycloak admin password, AI tokens, Telegram bot toke
 ## Logs
 No passwords/tokens. Avoid raw resume/chat text. Mask contact data where possible. Use request IDs and safe metadata.
 
+## Request rate limits
+
+The API applies a bounded fixed-window limiter before request bodies and
+dependencies are processed for abuse-sensitive operations:
+
+- registration-domain checks: 10 per minute per connection peer;
+- assessment creation/submission: 6 per hour per bearer-token fingerprint;
+- candidate resume and minor-consent uploads: 5 per hour per bearer-token
+  fingerprint;
+- employer invitations: 30 per minute per bearer-token fingerprint, in
+  addition to the employer-trust business limit;
+- matched-chat messages: 60 per minute per bearer-token fingerprint;
+- candidate privacy export/deletion requests: 5 per hour per bearer-token
+  fingerprint.
+
+Limited responses use the shared error envelope with `429 RATE_LIMITED`,
+`Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and
+`X-Request-ID` headers. Health checks, preflight, reads, and normal navigation
+remain available. The limiter stores only short-lived counters keyed by a
+one-way connection-peer or bearer-token fingerprint; it does not store tokens,
+raw addresses, request bodies, or personal data. Forwarded headers are not
+trusted by this boundary.
+
+The default store is bounded and process-local. A multi-worker or multi-node
+deployment must apply the same policy at a trusted ingress or use a shared
+counter store before relying on cluster-wide quotas. Configuration is exposed
+through `RATE_LIMIT_*` environment variables via the settings boundary, and
+`RATE_LIMIT_ENABLED=false` is reserved for controlled local diagnostics.
+
 ## Uploads
 Resume and minor-consent uploads are candidate-scoped and require processing
 consent. Validate the PDF filename, MIME, signature and configured size before

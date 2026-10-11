@@ -147,3 +147,74 @@ Priority:
 
 The objective is a complete, demonstrable, deployable submission before the deadline,
 not maximum feature count.
+
+### Deadline cycle packing
+
+The remaining cycle budget is critical. Do not split each backlog checkbox into a separate autonomous cycle.
+
+After the currently active rate-limit work:
+
+- Remaining M15 items `146 secret/log audit` and `148 index/query audit` MUST be treated as one coherent final M15 hardening work unit.
+- M16 items `151-157` SHOULD be completed as one coherent submission-readiness work unit wherever technically safe: OpenAPI audit, documentation currency, dependency audit, clean-clone deployment, deterministic demo reset, complete jury E2E, and presentation-source outline.
+- M17 items `160-165` SHOULD be treated as one final acceptance work unit wherever technically safe: requirements audit, defect triage, P0/P1 fixes, fresh CPU-only deployment, final load run, and responsive evidence.
+- Do not spend one autonomous cycle per individual checkbox.
+- If a P0/P1 defect is found during the final audit and can safely be fixed in the same work unit, fix and verify it in that same cycle.
+- Preserve the existing full supervisor verification after each work unit.
+
+### FINAL 18:00 SUBMISSION SPRINT
+
+Development freeze target: 2026-10-11 18:00 MSK.
+
+After the currently active rate-limit cycle is externally verified, treat ALL remaining
+M15, M16 and M17 submission work as ONE coherent final submission-readiness work unit,
+regardless of their milestone labels.
+
+The next implementation cycle must attempt to complete all remaining submission blockers:
+
+- secret/log audit
+- index/query audit
+- OpenAPI audit
+- documentation currency
+- dependency version audit
+- clean-clone deployment validation
+- deterministic demo reset
+- complete jury E2E
+- presentation-source outline
+- requirements audit
+- P0/P1/P2 triage
+- fix all discovered P0/P1 issues that can safely be fixed
+- fresh CPU-only deployment validation
+- final load validation
+- final responsive screenshot/evidence preparation
+
+Rules:
+- Do not create additional optional product functionality.
+- Do not defer a submission blocker merely because it belongs to another milestone.
+- P2 may be recorded and deferred.
+- P0/P1 must be fixed where safely possible.
+- Reuse existing tests and evidence instead of rebuilding equivalent mechanisms.
+- Prefer documentation/audit updates over architectural refactoring.
+- Do not split the above work into separate autonomous cycles unless an external blocker
+  makes completion in one cycle impossible.
+- Preserve one final full external supervisor verification before READY.
+
+Goal: code-complete and externally verified by 18:00 MSK, leaving the remaining time
+for human acceptance, Russian localization, deployment polish, documentation and presentation.
+
+### Wall-clock deadline awareness
+
+At the very beginning of every implementation work unit, before planning or editing,
+run:
+
+    date '+%Y-%m-%d %H:%M:%S %Z'
+
+Use that actual host wall-clock time to calculate the remaining time until
+2026-10-11 18:00 MSK development freeze and 2026-10-11 23:59 MSK final submission.
+
+Adjust scope to the remaining wall-clock budget:
+- before 18:00 MSK: finish submission-blocking implementation;
+- at or after 18:00 MSK: do not start new product work; prioritize verification,
+  P0/P1 fixes, deployment, demo readiness, localization, documentation and presentation;
+- as 23:59 MSK approaches: avoid risky refactors and preserve the last verified state.
+
+Do not estimate the current time from conversation context. Read it from the host.

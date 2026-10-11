@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     local_ai_timeout_seconds: float = Field(default=60.0, gt=0, le=300)
     local_ai_rate_limit_per_minute: int = Field(default=5, ge=1, le=60)
     local_ai_max_active_jobs_per_company: int = Field(default=1, ge=1, le=10)
+    rate_limit_enabled: bool = True
+    rate_limit_max_keys: int = Field(default=10_000, ge=100, le=1_000_000)
+    rate_limit_registration_per_minute: int = Field(default=10, ge=1, le=600)
+    rate_limit_assessment_per_hour: int = Field(default=6, ge=1, le=100)
+    rate_limit_uploads_per_hour: int = Field(default=5, ge=1, le=100)
+    rate_limit_invitations_per_minute: int = Field(default=30, ge=1, le=600)
+    rate_limit_chat_messages_per_minute: int = Field(default=60, ge=1, le=600)
+    rate_limit_privacy_requests_per_hour: int = Field(default=5, ge=1, le=100)
 
     @property
     def cors_origins(self) -> list[str]:
