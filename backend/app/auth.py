@@ -109,8 +109,23 @@ class OIDCVerifier:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="registration_domain_not_allowed")
 
         roles = _claim_roles(claims, self.settings.keycloak_client_id)
-        supported_roles = roles & ALL_ROLES
-        if roles and len(supported_roles) != 1:
+        # Keycloak adds infrastructure roles to every user (for example
+        # default-roles-<realm>, account and offline_access). They do not
+        # represent the platform onboarding choice and must not block it.
+        infrastructure_roles = {
+            "offline_access",
+            "uma_authorization",
+            "manage-account",
+            "manage-account-links",
+            "view-profile",
+        }
+        application_roles = {
+            role
+            for role in roles
+            if role not in infrastructure_roles and not role.startswith("default-roles-")
+        }
+        supported_roles = application_roles & ALL_ROLES
+        if application_roles and len(supported_roles) != 1:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="unsupported_or_ambiguous_role")
         return Principal(
             subject=subject,

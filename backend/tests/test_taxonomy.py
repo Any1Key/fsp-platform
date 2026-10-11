@@ -5,7 +5,16 @@ def test_taxonomy_api_returns_database_catalog_and_composed_categories(auth_cont
 
     assert response.status_code == 200
     body = response.json()
-    assert body["industries"] == [{"slug": "it-software", "name": "IT / Software Development"}]
+    assert {item["name"] for item in body["industries"]} == {
+        "IT / Software Development",
+        "FinTech / Financial Services",
+        "E-commerce / Retail",
+        "Healthcare / MedTech",
+        "Education / EdTech",
+        "Telecom / Communications",
+        "Logistics / Transport",
+        "Public Sector / GovTech",
+    }
     assert {item["slug"] for item in body["grades"]} == {"junior", "middle", "senior"}
     assert {item["slug"] for item in body["specializations"]} == {
         "backend-engineering",

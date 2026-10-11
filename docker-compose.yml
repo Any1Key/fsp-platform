@@ -32,7 +32,7 @@ services:
   mailpit:
     image: axllent/mailpit:v1.27
     ports:
-      - "${MAILPIT_PORT:-8025}:8025"
+      - "127.0.0.1:${MAILPIT_PORT:-8025}:8025"
     restart: unless-stopped
 
   keycloak:
@@ -48,8 +48,6 @@ services:
       KC_HEALTH_ENABLED: "true"
     volumes:
       - ./infrastructure/keycloak/realm-fsp.json:/opt/keycloak/data/import/realm-fsp.json:ro
-    ports:
-      - "${KEYCLOAK_PORT:-8081}:8080"
     depends_on:
       keycloak-db:
         condition: service_healthy
@@ -83,8 +81,6 @@ services:
       # The offline validation contract compares the generated report with
       # the committed artifact while tests run inside the backend container.
       - ./docs/VALIDATION_RESULTS.json:/app/docs/VALIDATION_RESULTS.json:ro
-    ports:
-      - "${BACKEND_PORT:-8000}:8000"
     depends_on:
       app-db:
         condition: service_healthy
@@ -128,8 +124,6 @@ services:
       NEXT_PUBLIC_KEYCLOAK_URL: ${NEXT_PUBLIC_KEYCLOAK_URL:-http://localhost:8081}
       NEXT_PUBLIC_KEYCLOAK_REALM: ${NEXT_PUBLIC_KEYCLOAK_REALM:-fsp}
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${NEXT_PUBLIC_KEYCLOAK_CLIENT_ID:-fsp-web}
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
       backend:
         condition: service_healthy

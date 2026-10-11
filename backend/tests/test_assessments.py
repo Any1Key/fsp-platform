@@ -7,6 +7,10 @@ import pytest
 from app.assessments import (
     AssessmentError,
     AssessmentService,
+    GRADES,
+    INDUSTRIES,
+    SPECIALIZATION_NAMES,
+    TEMPLATES,
     _submission_similarity,
     form_assessment_from_descriptions,
     public_attempt,
@@ -21,6 +25,88 @@ def _valid_followup(item) -> str:
         "arch-2": "measure the budget and latency at p95 before scaling",
     }
     return responses.get(item.family_id, "the explanation follows the constraint in the task")
+
+
+def test_every_catalog_specialization_and_industry_is_assessable() -> None:
+    attempts = [
+        AssessmentService(seed_factory=lambda: uuid4().hex).create_attempt(
+            f"catalog-smoke-{index}", specialization, grade, industry=industry
+        )
+        for index, (specialization, grade, industry) in enumerate(
+            (
+                (specialization, grade, industry)
+                for specialization in SPECIALIZATION_NAMES
+                for grade in GRADES
+                for industry in INDUSTRIES
+            )
+        )
+    ]
+
+    assert len(attempts) == len(SPECIALIZATION_NAMES) * len(GRADES) * len(INDUSTRIES)
+
+
+def test_assessment_prompt_context_changes_with_specialization_grade_and_industry() -> None:
+    backend = AssessmentService(seed_factory=lambda: "a" * 32).create_attempt(
+        "context-backend", "Backend Engineering", "Junior", industry=INDUSTRIES[0]
+    )
+    frontend = AssessmentService(seed_factory=lambda: "a" * 32).create_attempt(
+        "context-frontend", "Frontend Engineering", "Senior", industry=INDUSTRIES[1]
+    )
+
+    assert backend.items[0].prompt != frontend.items[0].prompt
+    assert "Backend Engineering" in backend.items[0].prompt
+    assert "Junior" in backend.items[0].prompt
+    assert INDUSTRIES[0] in backend.items[0].prompt
+    assert "Frontend Engineering" in frontend.items[0].prompt
+    assert "Senior" in frontend.items[0].prompt
+    assert INDUSTRIES[1] in frontend.items[0].prompt
+    assert backend.items[0].artifact.startswith("session-artifact:2026-10-11-context-v1:")
+
+
+def test_five_candidates_can_start_the_same_assessment_without_global_exposure_collision() -> None:
+    service = AssessmentService(seed_factory=iter([uuid4().hex for _ in range(5)]).__next__)
+
+    attempts = [
+        service.create_attempt(f"same-choice-{index}", "Backend Engineering", "Middle")
+        for index in range(5)
+    ]
+
+    assert len(attempts) == 5
+    assert len({attempt.seed for attempt in attempts}) == 5
+    assert len({tuple((item.family_id, item.artifact) for item in attempt.items) for attempt in attempts}) == 5
+
+
+def test_fifty_same_choices_receive_unique_forms() -> None:
+    service = AssessmentService(seed_factory=iter([f"{index:032x}" for index in range(50)]).__next__)
+
+    attempts = [
+        service.create_attempt(f"fifty-same-choice-{index}", "Backend Engineering", "Middle")
+        for index in range(50)
+    ]
+
+    signatures = {
+        tuple((item.family_id, item.artifact) for item in attempt.items)
+        for attempt in attempts
+    }
+    assert len(signatures) == 50
+
+
+def test_answer_options_are_shuffled_per_form_but_scoring_uses_the_real_key() -> None:
+    first = AssessmentService(seed_factory=lambda: "0" * 32).create_attempt(
+        "shuffle-first", "Backend Engineering", "Middle"
+    )
+    second = AssessmentService(seed_factory=lambda: "1" * 32).create_attempt(
+        "shuffle-second", "Backend Engineering", "Middle"
+    )
+
+    first_options = {item.family_id: item.options for item in first.items}
+    second_options = {item.family_id: item.options for item in second.items}
+    common_families = first_options.keys() & second_options.keys()
+    assert any(first_options[family] != second_options[family] for family in common_families)
+    for attempt in (first, second):
+        for item in attempt.items:
+            family = TEMPLATES[item.family_id]
+            assert item.options[attempt.answer_keys[item.item_id]] == family.options[family.correct_option]
 
 
 def test_forms_are_unique_and_keep_same_competency_shape() -> None:

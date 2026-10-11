@@ -56,9 +56,10 @@ body { font-family: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, m
 }
 .hero {
   width: 100%; margin: 0; padding: 54px max(32px, calc((100% - 1216px) / 2)) 78px;
-  display: grid; grid-template-columns: 1.15fr .85fr; gap: 64px; align-items: center; color: white;
+  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 64px; align-items: start; color: white;
   background: var(--surface-inverse);
 }
+.heroText { width: min(100%, 820px); margin-inline: auto; }
 .heroText, .proofCard, .authPanel, .signedInPanel, .signedInPanel > * { min-width: 0; }
 .eyebrow { color: #a9a1ff; font-size: 12px; letter-spacing: .13em; }
 h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055em; margin: 20px 0; }
@@ -103,7 +104,25 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .secondaryButton { background: #34353d; }
 .onboardingPanel { border-color: rgba(169,161,255,.48); }
 .onboardingError { color: #ffb6bd; }
-.signedInPanel { align-items: flex-start; flex-wrap: wrap; }
+.signedInPanel {
+  display: grid; grid-template-columns: 190px minmax(0, 1fr); align-items: start; gap: 16px;
+}
+.signedInPanel > div:first-child { grid-column: 1; grid-row: 1; }
+.signedInPanel > .authButton { grid-column: 2; grid-row: 1; justify-self: end; }
+.workspaceTabs {
+  grid-column: 1; grid-row: 2; display: flex; flex-direction: column; gap: 7px;
+  padding: 16px 12px 0 0; border-top: 1px solid rgba(255,255,255,.14);
+}
+.workspaceTab {
+  border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 9px 12px;
+  background: rgba(255,255,255,.04); color: #b7b7c1; cursor: pointer; font: inherit; font-size: 10px;
+}
+.workspaceTab:hover { border-color: rgba(169,161,255,.65); color: #ededed; }
+.workspaceTab.active { border-color: #a9a1ff; background: rgba(64,47,255,.72); color: white; }
+.workspaceContent {
+  grid-column: 2; grid-row: 2; display: grid; gap: 16px; min-width: 0;
+  border-left: 1px solid rgba(255,255,255,.14); padding-left: 16px;
+}
 .dashboardPanel {
   flex: 1 1 100%; display: grid; gap: 16px; border-top: 1px solid rgba(255,255,255,.14);
   padding-top: 16px; color: #ededed;
@@ -952,6 +971,7 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 .proofCard {
   background: white; color: var(--text); border-radius: 24px; padding: 30px;
   box-shadow: 0 25px 90px rgba(0,0,0,.28); transform: rotate(-1deg);
+  align-self: start; position: sticky; top: 24px; margin-top: 10px;
 }
 .cardLabel { color: var(--brand-primary); font-size: 11px; letter-spacing: .12em; }
 .proofCard h2 { font-size: 27px; margin: 14px 0 26px; }
@@ -1007,6 +1027,9 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
   .signedInPanel { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
   .signedInPanel > :not(.authButton) { grid-column: 1 / -1; }
   .signedInPanel > .authButton { grid-column: 2; grid-row: 1; align-self: start; }
+  .signedInPanel > div:first-child { grid-column: 1; grid-row: 1; }
+  .signedInPanel > .workspaceTabs { grid-column: 1; grid-row: 2; }
+  .signedInPanel > .workspaceContent { grid-column: 2; grid-row: 2; }
   .pipelineStageFields, .taskFields, .vacancyFields, .radarFilters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .radarFilters .radarCheckbox { grid-column: 1 / -1; }
   .taskRubricRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1015,8 +1038,17 @@ h1 { font-size: clamp(42px, 6vw, 78px); line-height: .98; letter-spacing: -.055e
 @media (max-width: 850px) {
   .topbar { padding: 18px 20px; }
   .badge { display: none; }
+  .signedInPanel { grid-template-columns: 1fr; }
+  .signedInPanel > div:first-child,
+  .signedInPanel > .authButton,
+  .signedInPanel > .workspaceTabs,
+  .signedInPanel > .workspaceContent { grid-column: 1; }
+  .signedInPanel > .authButton { grid-row: 1; justify-self: start; }
+  .signedInPanel > .workspaceTabs { grid-row: 2; flex-direction: row; overflow-x: auto; padding: 12px 0 0; }
+  .workspaceTab { flex: 0 0 auto; }
+  .signedInPanel > .workspaceContent { grid-row: 3; border-left: 0; border-top: 1px solid rgba(255,255,255,.14); padding: 16px 0 0; }
   .hero { grid-template-columns: 1fr; padding: 40px 20px 52px; gap: 34px; }
-  .proofCard { transform: none; }
+  .proofCard { transform: none; position: static; margin-top: 0; }
   .authPanel { align-items: stretch; flex-direction: column; }
   .privacyHeading { align-items: flex-start; flex-direction: column; }
   .fspBrandBar, .fspHeading, .fspLinkedRow, .fspLinkForm, .fspAchievementHeading { align-items: stretch; flex-direction: column; }

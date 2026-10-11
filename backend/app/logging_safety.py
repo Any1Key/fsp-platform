@@ -39,8 +39,14 @@ class SafeLogFilter(logging.Filter):
             message = f"{message}\n{redact_log_text(traceback_text)}"
             record.exc_info = None
             record.exc_text = None
-        record.msg = message
-        record.args = ()
+        # Uvicorn's access formatter consumes a five-item args tuple to
+        # render client, method, path, protocol and status. Keep that shape
+        # while redacting each value; clearing args breaks every access log.
+        if record.name == "uvicorn.access" and isinstance(record.args, tuple) and len(record.args) == 5:
+            record.args = tuple(redact_log_text(value) if isinstance(value, str) else value for value in record.args)
+        else:
+            record.msg = message
+            record.args = ()
         if record.stack_info:
             record.stack_info = redact_log_text(record.stack_info)
         return True

@@ -62,8 +62,6 @@ type Attempt = {
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const supportedSpecializations = new Set(["Backend Engineering"]);
-
 async function responseError(response: Response, fallback: string) {
   try {
     const body = (await response.json()) as { error?: { message?: string } };
@@ -103,8 +101,8 @@ export function CandidateAssessment({
       .then((value) => {
         if (!active) return;
         setTaxonomy(value);
-        const firstSupported = value.specializations.find((item) => supportedSpecializations.has(item.name));
-        if (firstSupported) setSpecialization(firstSupported.name);
+        const firstSpecialization = value.specializations[0];
+        if (firstSpecialization) setSpecialization(firstSpecialization.name);
         setSelectionState("ready");
       })
       .catch(() => {
@@ -254,10 +252,7 @@ export function CandidateAssessment({
             <label>
               Специализация
               <select value={specialization} onChange={(event) => setSpecialization(event.target.value)}>
-                {(taxonomy?.specializations ?? []).map((item) => {
-                  const supported = supportedSpecializations.has(item.name);
-                  return <option key={item.slug} value={item.name} disabled={!supported}>{item.name}{supported ? "" : " · скоро"}</option>;
-                })}
+                {(taxonomy?.specializations ?? []).map((item) => <option key={item.slug} value={item.name}>{item.name}</option>)}
               </select>
             </label>
             <label>

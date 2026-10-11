@@ -19,12 +19,22 @@ from typing import Any
 from uuid import uuid4
 
 GRADES = ("Junior", "Middle", "Senior")
-INDUSTRIES = ("IT / Software Development",)
+INDUSTRIES = (
+    "IT / Software Development",
+    "FinTech / Financial Services",
+    "E-commerce / Retail",
+    "Healthcare / MedTech",
+    "Education / EdTech",
+    "Telecom / Communications",
+    "Logistics / Transport",
+    "Public Sector / GovTech",
+)
 GRADE_RANK = {grade: index for index, grade in enumerate(GRADES)}
 RETEST_COOLDOWN_DAYS = 90
 EXPOSURE_COOLDOWN = timedelta(minutes=30)
 CANONICAL_EXPOSURE_WINDOW = timedelta(days=90)
 ASSESSMENT_FAMILY_VERSION = "2026-10-06"
+ASSESSMENT_PROFILE_VERSION = "2026-10-11-context-v1"
 SIMILARITY_MIN_TOKENS = 6
 SIMILARITY_REVIEW_THRESHOLD = 0.86
 
@@ -234,19 +244,115 @@ TEMPLATES: dict[str, TemplateFamily] = {
     "sec-2": TemplateFamily("sec-2", "security_operations", 3, "При подозрении на {event} безопаснее всего —", ("аудитировать событие без утечки содержимого", "переслать PII в чат", "игнорировать"), 0, True, True),
 }
 
+SPECIALIZATION_NAMES = (
+    "Backend Engineering",
+    "Frontend Engineering",
+    "Full-stack Engineering",
+    "QA / Test Automation",
+    "DevOps / SRE",
+    "Data Engineering",
+    "Data Science / ML",
+    "Mobile Engineering",
+)
+SPECIALIZATION_CONTEXTS = {
+    "Backend Engineering": {
+        "runtime": "сервисного кода и серверного runtime",
+        "api": "backend API и интеграций",
+        "sql": "серверной базы данных",
+        "testing": "backend-тестов",
+        "architecture": "распределённого backend-сервиса",
+        "security": "серверных данных и доступа",
+    },
+    "Frontend Engineering": {
+        "runtime": "клиентского TypeScript-кода",
+        "api": "браузерного API-клиента",
+        "sql": "данных, получаемых frontend через API",
+        "testing": "UI- и компонентных тестов",
+        "architecture": "frontend-приложения",
+        "security": "браузерной сессии и пользовательских данных",
+    },
+    "Full-stack Engineering": {
+        "runtime": "сквозного client-server сценария",
+        "api": "полного API-сценария от UI до backend",
+        "sql": "данных на границе приложения и базы",
+        "testing": "сквозных тестов продукта",
+        "architecture": "полного web-продукта",
+        "security": "данных между браузером и сервером",
+    },
+    "QA / Test Automation": {
+        "runtime": "тестового раннера",
+        "api": "контрактных API-тестов",
+        "sql": "проверки данных после тестового сценария",
+        "testing": "автоматизированного тестового набора",
+        "architecture": "тестовой инфраструктуры",
+        "security": "тестовых данных и доступов",
+    },
+    "DevOps / SRE": {
+        "runtime": "production runtime и worker-процессов",
+        "api": "эксплуатационного API-сервиса",
+        "sql": "надёжности хранилища",
+        "testing": "проверок доставки и восстановления",
+        "architecture": "инфраструктуры и отказоустойчивости",
+        "security": "секретов и инфраструктурного доступа",
+    },
+    "Data Engineering": {
+        "runtime": "pipeline runtime",
+        "api": "сервисов загрузки данных",
+        "sql": "таблиц и витрин данных",
+        "testing": "контролей качества данных",
+        "architecture": "потока данных",
+        "security": "доступа к данным",
+    },
+    "Data Science / ML": {
+        "runtime": "кода обучения и inference",
+        "api": "сервинга ML-модели",
+        "sql": "признаков и датасетов",
+        "testing": "валидации модели",
+        "architecture": "ML-пайплайна",
+        "security": "данных обучения и предсказаний",
+    },
+    "Mobile Engineering": {
+        "runtime": "мобильного приложения",
+        "api": "мобильного API-клиента",
+        "sql": "локального и серверного хранения",
+        "testing": "мобильных UI- и интеграционных тестов",
+        "architecture": "мобильного приложения",
+        "security": "мобильной сессии и данных пользователя",
+    },
+}
+GRADE_CONTEXTS = {
+    "Junior": "базового уровня с явными ограничениями",
+    "Middle": "самостоятельного production-уровня",
+    "Senior": "уровня проектирования и эксплуатационных компромиссов",
+}
+ASSESSMENT_FAMILY_IDS = (
+    "runtime-1", "runtime-2", "api-1", "api-2", "sql-1", "sql-2",
+    "test-1", "test-2", "arch-1", "arch-2", "sec-1", "sec-2",
+)
+
+# The first calibrated question family is shared until specialization-specific
+# forms are administered. Every catalog specialization is still validated by
+# the same deterministic assessment contract and can be matched by its slug.
 BLUEPRINTS = {
-    ("Backend Engineering", grade): Blueprint(
-        "Backend Engineering", grade,
-        ("runtime-1", "runtime-2", "api-1", "api-2", "sql-1", "sql-2", "test-1", "test-2", "arch-1", "arch-2", "sec-1", "sec-2"),
-    )
+    (specialization, grade): Blueprint(specialization, grade, ASSESSMENT_FAMILY_IDS)
+    for specialization in SPECIALIZATION_NAMES
     for grade in GRADES
 }
 
 
-def _variant(seed: str, family: TemplateFamily, index: int) -> tuple[str, str]:
+def _variant(
+    seed: str,
+    family: TemplateFamily,
+    index: int,
+    *,
+    specialization: str = "Backend Engineering",
+    grade: str = "Middle",
+    industry: str = INDUSTRIES[0],
+) -> tuple[str, str]:
     digest = hmac.new(seed.encode(), f"{family.family_id}:{index}".encode(), sha256).hexdigest()
     tokens = ("alpha", "beta", "gamma", "delta", "omega", "sigma")
     token = tokens[int(digest[:2], 16) % len(tokens)]
+    context = SPECIALIZATION_CONTEXTS[specialization]
     values = {
         "fn": f"normalize_{token}", "value": f"payload-{digest[2:8]}",
         "verb": "PUT", "route": f"/v1/items/{digest[8:14]}",
@@ -256,7 +362,20 @@ def _variant(seed: str, family: TemplateFamily, index: int) -> tuple[str, str]:
         "load": f"{int(digest[22:24], 16) + 20} req/s", "data": "minor-consent metadata",
         "event": f"anomaly-{digest[24:30]}",
     }
-    return family.prompt.format(**values), f"session-artifact:{digest[30:46]}"
+    prompt = family.prompt.format(**values)
+    domain_context = {
+        "language_runtime": context["runtime"],
+        "api_fundamentals": context["api"],
+        "sql_data": context["sql"],
+        "testing_debugging": context["testing"],
+        "architecture": context["architecture"],
+        "security_operations": context["security"],
+    }.get(family.domain, context["runtime"])
+    prompt = (
+        f"[{specialization} · {grade} · {industry} · вариант {digest[:8]}] "
+        f"Контекст: {domain_context}, {GRADE_CONTEXTS[grade]}. {prompt}"
+    )
+    return prompt, f"session-artifact:{ASSESSMENT_PROFILE_VERSION}:{digest[30:46]}"
 
 
 def _select_families(blueprint: Blueprint, seed: str) -> list[TemplateFamily]:
@@ -328,7 +447,11 @@ class AssessmentService:
             raise ValueError("canonical exposure window must be positive")
         self.attempts: dict[str, Attempt] = {}
         self.history: dict[str, list[str]] = {}
-        self.family_exposure: dict[str, list[datetime]] = {}
+        self.form_signatures: set[tuple[tuple[str, str], ...]] = set()
+        # Exposure limits are candidate-scoped. A global limit would make the
+        # fourth person in a demo fail simply because three other people chose
+        # the same specialization at the same time.
+        self.family_exposure: dict[tuple[str, str], list[datetime]] = {}
         self.family_exposure_started: dict[tuple[str, str], datetime] = {}
         self.retired_families: set[tuple[str, str]] = set()
         self.canonical_exposure_window = canonical_exposure_window
@@ -386,26 +509,43 @@ class AssessmentService:
         hidden_checks: dict[str, HiddenCheck] = {}
         canonical_available_at: dict[str, datetime] = {}
         for index, family in enumerate(selected):
-            prompt, artifact = _variant(seed, family, index)
+            prompt, artifact = _variant(
+                seed,
+                family,
+                index,
+                specialization=specialization,
+                grade=declared_grade,
+                industry=industry,
+            )
             item_id = f"item-{uuid4().hex}"
+            option_order = sorted(
+                range(len(family.options)),
+                key=lambda option_index: hmac.new(
+                    seed.encode(),
+                    f"{family.family_id}:option:{option_index}".encode(),
+                    sha256,
+                ).digest(),
+            )
+            options = tuple(family.options[option_index] for option_index in option_order)
+            correct_option = option_order.index(family.correct_option)
             item = AssessmentItem(
                 item_id,
                 family.family_id,
                 family.domain,
                 family.difficulty,
                 prompt,
-                family.options,
+                options,
                 family.progressive,
                 family.anchor,
                 artifact,
                 family.version,
             )
             items.append(item)
-            answer_keys[item_id] = family.correct_option
+            answer_keys[item_id] = correct_option
             followup_keys[item_id] = artifact
             if family.hidden_check_terms:
                 hidden_checks[item_id] = HiddenCheck(family.hidden_check_terms)
-            exposed = self.family_exposure.setdefault(family.family_id, [])
+            exposed = self.family_exposure.setdefault((candidate_id, family.family_id), [])
             exposed[:] = [stamp for stamp in exposed if self.now - stamp < EXPOSURE_COOLDOWN]
             if len(exposed) >= 3:
                 raise AssessmentError("template_family_exposure_budget_reached")
@@ -427,6 +567,10 @@ class AssessmentService:
             hidden_checks,
             canonical_available_at=canonical_available_at,
         )
+        form_signature = tuple((item.family_id, item.artifact) for item in attempt.items)
+        if form_signature in self.form_signatures:
+            raise AssessmentError("assessment_form_collision")
+        self.form_signatures.add(form_signature)
         self.attempts[attempt.attempt_id] = attempt
         self.history.setdefault(candidate_id, []).append(attempt.attempt_id)
         return attempt

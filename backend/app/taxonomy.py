@@ -7,6 +7,8 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from .assessments import INDUSTRIES
+
 
 def list_taxonomy(db: Session) -> dict[str, Any]:
     """Return the active catalog and explicit specialization/grade categories.
@@ -70,7 +72,10 @@ def list_taxonomy(db: Session) -> dict[str, Any]:
         for grade in grades
     ]
     return {
-        "industries": [{"slug": "it-software", "name": "IT / Software Development"}],
+        "industries": [
+            {"slug": name.casefold().replace(" / ", "-").replace(" ", "-").replace("&", "and"), "name": name}
+            for name in INDUSTRIES
+        ],
         "specializations": list(specializations.values()),
         "grades": grades,
         "categories": categories,

@@ -44,6 +44,8 @@ type AuthState =
   | { status: "signed-in"; session: Session }
   | { status: "error"; message: string };
 
+type WorkspaceTab = "overview" | "profile" | "assessment" | "opportunities" | "communication" | "matching" | "tasks" | "validation";
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export function AuthStatus() {
@@ -55,6 +57,7 @@ export function AuthStatus() {
   const [talentRadarRefreshKey, setTalentRadarRefreshKey] = useState(0);
   const [invitationRefreshKey, setInvitationRefreshKey] = useState(0);
   const [taskRefreshKey, setTaskRefreshKey] = useState(0);
+  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>("overview");
 
   useEffect(() => {
     let active = true;
@@ -165,43 +168,76 @@ export function AuthStatus() {
         <button className="authButton secondaryButton" onClick={() => keycloak.current?.logout()}>
           Выйти
         </button>
+        <nav className="workspaceTabs" aria-label="Разделы кабинета">
+          {auth.session.role === "candidate" ? (
+            <>
+              <button className={workspaceTab === "overview" ? "workspaceTab active" : "workspaceTab"} onClick={() => setWorkspaceTab("overview")}>Обзор</button>
+              <button className={workspaceTab === "profile" ? "workspaceTab active" : "workspaceTab"} onClick={() => setWorkspaceTab("profile")}>Профиль</button>
+              <button className={workspaceTab === "assessment" ? "workspaceTab active" : "workspaceTab"} onClick={() => setWorkspaceTab("assessment")}>Проверка навыков</button>
+              <button className={workspaceTab === "opportunities" ? "workspaceTab active" : "workspaceTab"} onClick={() => setWorkspaceTab("opportunities")}>Возможности</button>
+              <button className={workspaceTab === "communication" ? "workspaceTab active" : "workspaceTab"} onClick={() => setWorkspaceTab("communication")}>Общение</button>
+            </>
+          ) : (
+            <>
+              <button className={workspaceTab === "overview" ? "workspaceTab active" : "workspaceTab"} onClick={() => setWorkspaceTab("overview")}>Компания</button>
+              <button className={workspaceTab === "matching" ? "workspaceTab active" : "workspaceTab"} onClick={() => setWorkspaceTab("matching")}>Подбор</button>
+              <button className={workspaceTab === "tasks" ? "workspaceTab active" : "workspaceTab"} onClick={() => setWorkspaceTab("tasks")}>Задачи</button>
+              <button className={workspaceTab === "communication" ? "workspaceTab active" : "workspaceTab"} onClick={() => setWorkspaceTab("communication")}>Общение</button>
+              <button className={workspaceTab === "validation" ? "workspaceTab active" : "workspaceTab"} onClick={() => setWorkspaceTab("validation")}>Проверка</button>
+            </>
+          )}
+        </nav>
+        <div className="workspaceContent">
         {auth.session.role === "candidate" && (
           <>
+            {workspaceTab === "overview" && <>
             <CandidateSkillPassport token={keycloak.current?.token ?? ""} refreshKey={assessmentRefreshKey} />
             <CandidateCareerGraph token={keycloak.current?.token ?? ""} refreshKey={assessmentRefreshKey} />
+            <CandidateFsp token={keycloak.current?.token ?? ""} />
+            </>}
+            {workspaceTab === "profile" && <>
+            <CandidateProfile token={keycloak.current?.token ?? ""} />
+            <CandidateProtectedProfile token={keycloak.current?.token ?? ""} />
+            <CandidateResume token={keycloak.current?.token ?? ""} />
+            <PrivacySettings token={keycloak.current?.token ?? ""} />
+            </>}
+            {workspaceTab === "assessment" && <CandidateAssessment
+              token={keycloak.current?.token ?? ""}
+              onSubmitted={() => setAssessmentRefreshKey((value) => value + 1)}
+            />}
+            {workspaceTab === "opportunities" && <>
             <CandidateVacancies token={keycloak.current?.token ?? ""} />
             <CandidateInvitations token={keycloak.current?.token ?? ""} onMatchCreated={() => setTaskRefreshKey((value) => value + 1)} />
             <CandidateTaskAssignments token={keycloak.current?.token ?? ""} refreshKey={taskRefreshKey} />
             <CandidateChallenges token={keycloak.current?.token ?? ""} refreshKey={taskRefreshKey} />
-            <InternalChat token={keycloak.current?.token ?? ""} />
-            <CandidateAssessment
-              token={keycloak.current?.token ?? ""}
-              onSubmitted={() => setAssessmentRefreshKey((value) => value + 1)}
-            />
-            <CandidateFsp token={keycloak.current?.token ?? ""} />
-            <PrivacySettings token={keycloak.current?.token ?? ""} />
-            <CandidateProtectedProfile token={keycloak.current?.token ?? ""} />
-            <CandidateProfile token={keycloak.current?.token ?? ""} />
-            <CandidateResume token={keycloak.current?.token ?? ""} />
+            </>}
+            {workspaceTab === "communication" && <InternalChat token={keycloak.current?.token ?? ""} />}
           </>
         )}
         {auth.session.role === "employer" && (
           <>
+            {workspaceTab === "overview" && <>
             <EmployerCompanyProfile token={keycloak.current?.token ?? ""} />
             <EmployerTrust token={keycloak.current?.token ?? ""} />
+            </>}
+            {workspaceTab === "matching" && <>
             <EmployerHiringNeed token={keycloak.current?.token ?? ""} onSaved={() => setTalentRadarRefreshKey((value) => value + 1)} />
             <EmployerVacancies token={keycloak.current?.token ?? ""} />
             <EmployerApplications token={keycloak.current?.token ?? ""} />
             <EmployerHiringPipeline token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} />
+            <EmployerTalentRadar token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} onInvitationCreated={() => setInvitationRefreshKey((value) => value + 1)} />
+            <EmployerInvitations token={keycloak.current?.token ?? ""} refreshKey={invitationRefreshKey} />
+            </>}
+            {workspaceTab === "tasks" && <>
             <EmployerTaskAuthoring token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} />
             <EmployerTaskEvaluations token={keycloak.current?.token ?? ""} refreshKey={taskRefreshKey} />
             <EmployerChallenges token={keycloak.current?.token ?? ""} refreshKey={invitationRefreshKey} />
-            <EmployerTalentRadar token={keycloak.current?.token ?? ""} refreshKey={talentRadarRefreshKey} onInvitationCreated={() => setInvitationRefreshKey((value) => value + 1)} />
-            <EmployerInvitations token={keycloak.current?.token ?? ""} refreshKey={invitationRefreshKey} />
-            <InternalChat token={keycloak.current?.token ?? ""} />
-            <ValidationDashboard token={keycloak.current?.token ?? ""} />
+            </>}
+            {workspaceTab === "communication" && <InternalChat token={keycloak.current?.token ?? ""} />}
+            {workspaceTab === "validation" && <ValidationDashboard token={keycloak.current?.token ?? ""} />}
           </>
         )}
+        </div>
       </div>
     );
   }
