@@ -1,5 +1,6 @@
 .env
 email_confirmation_links.txt
+frontend/public/downloads/
 .env.agent
 .env.*
 !.env.example
